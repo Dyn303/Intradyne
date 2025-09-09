@@ -1,0 +1,24 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "intradyne-lite.fullname" . }}-config
+data:
+  config.yaml: |
+    risk:
+      capital: 10000
+    storage:
+      sqlite_path: /app/data/trades.sqlite
+    shariah:
+      crypto:
+        allowed: ["BTC/USDT","ETH/USDT"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "intradyne-lite.fullname" . }}-profiles
+data:
+  profiles.yaml: |
+    scalper: { atr_mult: 1.5, risk_per_trade_pct: 0.005 }
+    swing:   { atr_mult: 2.5, risk_per_trade_pct: 0.01 }
+    hybrid:  { atr_mult: 2.0, risk_per_trade_pct: 0.008 }

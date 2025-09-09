@@ -1,0 +1,2 @@
+alpaca-trade-api\nccxt\nfastapi\nib-insync\npyyaml\nuvicorn\n
+matplotlib

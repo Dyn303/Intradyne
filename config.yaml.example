@@ -1,0 +1,26 @@
+
+risk: { capital: 10000 }
+storage: { sqlite_path: /app/data/trades.sqlite }
+shariah:
+  crypto:
+    allowed: ["BTC/USDT","ETH/USDT"]
+  options:
+    allow: ["covered_call","protective_put"]
+accounts:
+  - id: ccxt-binance
+    kind: ccxt
+    exchange_id: ${CCXT_EXCHANGE_ID}
+    apiKey: ${CCXT_API_KEY}
+    secret: ${CCXT_SECRET}
+    sandbox: ${CCXT_SANDBOX}
+    params: {}
+  - id: alpaca-paper
+    kind: alpaca
+    key: ${ALPACA_KEY}
+    secret: ${ALPACA_SECRET}
+    base_url: ${ALPACA_BASE_URL}
+  - id: ibkr-paper
+    kind: ibkr
+    host: ${IBKR_HOST}
+    port: ${IBKR_PORT}
+    clientId: ${IBKR_CLIENT_ID}

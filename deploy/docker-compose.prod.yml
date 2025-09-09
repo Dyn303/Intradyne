@@ -1,0 +1,40 @@
+
+version: "3.9"
+services:
+  api:
+    build: ..
+    image: intradyne-lite:1.9.0
+    env_file: ["../.env"]
+    environment:
+      - CONFIG=/app/config.yaml
+      - WATCHER_AUTOSTART=${WATCHER_AUTOSTART:-1}
+      - PROFILE_DEFAULT=${PROFILE_DEFAULT:-hybrid}
+      - MOBILE_SIGNING_KEY=${MOBILE_SIGNING_KEY}
+      - RATE_LIMIT_REQS=${RATE_LIMIT_REQS:-120}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+    volumes:
+      - ../config.yaml.example:/app/config.yaml:ro
+      - ../profiles.yaml.example:/app/profiles.yaml:ro
+      - ../data:/app/data
+    networks: [web]
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      - ACME_AGREE=true
+      - CADDY_EMAIL=${CADDY_EMAIL}
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on: [api]
+    networks: [web]
+networks:
+  web: {}
+volumes:
+  caddy_data: {}
+  caddy_config: {}

@@ -1,0 +1,4 @@
+
+scalper: { trend_filter: true, sentiment_gate: true, min_sentiment: 0.0, atr_mult: 1.5, risk_per_trade_pct: 0.005, daily_max_loss_pct: 0.02, timeframe: "5m",  ma_n: 50 }
+swing:   { trend_filter: true, sentiment_gate: false, min_sentiment: -0.2, atr_mult: 2.5, risk_per_trade_pct: 0.01,  daily_max_loss_pct: 0.03, timeframe: "1h",  ma_n: 100 }
+hybrid:  { trend_filter: true, sentiment_gate: true, min_sentiment: -0.1, atr_mult: 2.0, risk_per_trade_pct: 0.008, daily_max_loss_pct: 0.025,timeframe: "15m", ma_n: 50 }

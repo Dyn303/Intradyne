@@ -1,0 +1,7 @@
+
+1) Install:
+   helm install intradyne-lite ./deploy/helm/intradyne-lite --set env.MOBILE_SIGNING_KEY=yoursecret
+2) Port-forward:
+   kubectl port-forward svc/intradyne-lite 8000:8000
+3) Test:
+   curl http://localhost:8000/healthz

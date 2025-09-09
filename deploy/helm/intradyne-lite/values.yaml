@@ -1,0 +1,19 @@
+
+image:
+  repository: intradyne-lite
+  tag: "1.8.0"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8000
+env:
+  CONFIG: /app/config.yaml
+  WATCHER_AUTOSTART: "1"
+  PROFILE_DEFAULT: hybrid
+  MOBILE_SIGNING_KEY: ""
+resources: {}
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+apiKey: "any"   # set your gateway auth if needed

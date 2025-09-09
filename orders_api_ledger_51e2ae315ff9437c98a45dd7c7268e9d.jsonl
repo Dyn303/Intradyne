@@ -1,0 +1,2 @@
+{"ts":"2025-09-09T16:20:34.885504Z","event":"guardrail_breach","type":"dd_halt","metric":0.3,"threshold":0.2,"action":"halt","hash_prev":null,"hash":"f4d250823247ef7d28ee8d385c9f8a3b00dcfdc719f8447194363eacd579bff7"}
+{"ts":"2025-09-09T16:20:34.908644Z","event":"order_blocked","symbol":"BTC/USDT","side":"buy","qty":1.0,"action":"halt","reasons":["30d drawdown 0.300 >= 0.200"],"hash_prev":"f4d250823247ef7d28ee8d385c9f8a3b00dcfdc719f8447194363eacd579bff7","hash":"0ea3a78a15173ebee3fe21783e414c3c089a54d166f8a4d90ffb0b79ffd0bba1"}

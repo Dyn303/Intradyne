@@ -1,0 +1,49 @@
+
+openapi: 3.0.3
+info:
+  title: IntraDyne Lite Mobile API
+  version: v1.7.8
+paths:
+  /mobile/summary:
+    get:
+      security: [{ApiKeyAuth: []}]
+      summary: Mobile summary (settings + PnL)
+      parameters: []
+      responses:
+        '200':
+          description: ok
+  /mobile/trades/recent:
+    get:
+      security: [{ApiKeyAuth: []}]
+      summary: Recent trades
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+      responses:
+        '200': { description: ok }
+  /analytics/equity.png:
+    get:
+      security: [{ApiKeyAuth: []}]
+      summary: Equity curve image
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer, default: 90 }
+      responses:
+        '200': { description: ok }
+  /analytics/summary:
+    get:
+      security: [{ApiKeyAuth: []}]
+      summary: Summary stats
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer, default: 90 }
+      responses:
+        '200': { description: ok }
+securitySchemes:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-API-Key

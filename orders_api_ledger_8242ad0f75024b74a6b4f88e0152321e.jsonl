@@ -1,0 +1,1 @@
+{"ts":"2025-09-09T16:20:34.796112Z","event":"order_allowed","symbol":"BTC/USDT","side":"buy","qty":1.0,"reasons":[],"exec":{"order_id":"dd8f36f0-680d-492d-b13d-9f6598dc27b0","status":"accepted"},"hash_prev":null,"hash":"7aecae520927121b172c87af29a2db86cd6eae0b9f0b80c7e0d983db514d6e62"}

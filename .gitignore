@@ -1,0 +1,17 @@
+﻿# Ignore real environment files
+.env
+.env.*
+# Allow example template
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Others
+*.log
+.vscode/
+.idea/

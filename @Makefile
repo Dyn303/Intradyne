@@ -1,0 +1,16 @@
+SHELL := /bin/sh
+
+.PHONY: lint type test run
+
+lint:
+	ruff check .
+
+type:
+	mypy src
+
+test:
+	pytest -q @tests
+
+run:
+	uvicorn src.api.app:app --reload --port 8000
+

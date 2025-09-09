@@ -1,0 +1,52 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "intradyne-lite.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "intradyne-lite.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "intradyne-lite.name" . }}
+    spec:
+      containers:
+      - name: intradyne-lite
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CONFIG
+          value: {{ .Values.env.CONFIG | quote }}
+        - name: WATCHER_AUTOSTART
+          value: {{ .Values.env.WATCHER_AUTOSTART | quote }}
+        - name: PROFILE_DEFAULT
+          value: {{ .Values.env.PROFILE_DEFAULT | quote }}
+        - name: MOBILE_SIGNING_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "intradyne-lite.fullname" . }}-secrets
+              key: MOBILE_SIGNING_KEY
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        - name: config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        - name: profiles
+          mountPath: /app/profiles.yaml
+          subPath: profiles.yaml
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "intradyne-lite.fullname" . }}-pvc
+      - name: config
+        configMap:
+          name: {{ include "intradyne-lite.fullname" . }}-config
+      - name: profiles
+        configMap:
+          name: {{ include "intradyne-lite.fullname" . }}-profiles

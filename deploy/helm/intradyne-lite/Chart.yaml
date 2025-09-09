@@ -1,0 +1,7 @@
+
+apiVersion: v2
+name: intradyne-lite
+description: IntraDyne Lite backend
+type: application
+version: 0.1.0
+appVersion: "1.8.0"

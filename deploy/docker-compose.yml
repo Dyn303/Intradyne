@@ -1,0 +1,26 @@
+
+version: "3.9"
+services:
+  intradyne-lite:
+    build: .
+    image: intradyne-lite:1.8.0
+    ports: ["8000:8000"]
+    environment:
+      - CONFIG=/app/config.yaml
+      - WATCHER_AUTOSTART=1
+      - PROFILE_DEFAULT=hybrid
+      # Optional alerting
+      - TG_BOT_TOKEN=${TG_BOT_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_TO=${SMTP_TO}
+      - SMTP_FROM=${SMTP_FROM}
+      # Mobile signing
+      - MOBILE_SIGNING_KEY=${MOBILE_SIGNING_KEY}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./profiles.yaml:/app/profiles.yaml:ro
+      - ./data:/app/data
