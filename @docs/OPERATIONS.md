@@ -15,7 +15,9 @@ This runbook covers day‑2 ops: lifecycle, health, incidents, and backup/key ro
 
 ## Health, Logs, Metrics
 - Liveness: `curl http://localhost:8000/healthz` or `make ping`.
+- Readiness: `curl http://localhost:8000/readyz` (used by compose healthcheck).
 - Connectivity check: `curl 'http://localhost:8000/ops/test_connectors?symbol=BTC/USDT' -H 'X-API-Key: dev'`.
+- Network probes: `curl 'http://localhost:8000/ops/test_connectivity?hosts=api.kraken.com,api.coinbase.com'`.
 - Logs (follow): `docker compose -f deploy/docker-compose.yml logs -f` (add `api` service name if desired).
 - Metrics: app exposes latency stats via analytics endpoints; ship structured JSON logs to your stack (e.g., Loki/ELK). Ensure Docker JSON file driver or sidecar.
 - OTEL tips: set `OTEL_EXPORTER_OTLP_ENDPOINT`, propagate `OTEL_SERVICE_NAME=intradyne-lite`, and run the Python process under an OTEL wrapper if you add instrumentation.
@@ -41,3 +43,24 @@ This runbook covers day‑2 ops: lifecycle, health, incidents, and backup/key ro
 - Revoke old credentials at providers; verify alerts via `/ops/ping`.
 
 References: see `@docs/RISK_GUARDRAILS.md`, `@docs/SHARIAH_FILTER.md`, `RUNBOOK.md`.
+
+## Volumes & Persistence
+- API service mounts:
+  - `./data` → `/app/data` (SQLite and runtime data)
+  - `./config.yaml` → `/app/config.yaml` (read-only)
+  - `./profiles.yaml` → `/app/profiles.yaml` (read-only)
+  - `./explainability_ledger.jsonl` → `/app/explainability_ledger.jsonl` (append-only explainability ledger with hash chaining)
+
+- Postgres (optional):
+  - Uses named volume `pgdata:` mapped to `/var/lib/postgresql/data` for durable storage.
+  - Service is defined under compose profile `db`. Start with:
+    `docker compose -f deploy/docker-compose.yml --profile db up -d`
+  - Default env (override via `.env`):
+    - `POSTGRES_USER=intradyne`
+    - `POSTGRES_PASSWORD=intradyne`
+    - `POSTGRES_DB=intradyne`
+
+Backups
+- Ledger: copy `explainability_ledger.jsonl` while the service is quiescent, or rotate by moving the file and signaling the app if you add SIGHUP support.
+- SQLite: copy `./data/trades.sqlite` with service stopped, or use `sqlite3 .backup`.
+- Postgres: `pg_dump -Fc -h localhost -U $POSTGRES_USER $POSTGRES_DB > backup.dump` (with `--profile db`).

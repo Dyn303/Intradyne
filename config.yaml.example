@@ -3,7 +3,7 @@ risk: { capital: 10000 }
 storage: { sqlite_path: /app/data/trades.sqlite }
 shariah:
   crypto:
-    allowed: ["BTC/USDT","ETH/USDT"]
+    allowed: ["BTC/USDT","ETH/USDT","SOL/USDT","XRP/USDT","ADA/USDT","LTC/USDT","AVAX/USDT","DOT/USDT","MATIC/USDT"]
   options:
     allow: ["covered_call","protective_put"]
 accounts:

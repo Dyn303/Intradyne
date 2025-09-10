@@ -1,0 +1,71 @@
+{
+  "windows": 5,
+  "avg_sharpe": 61.420751696774346,
+  "avg_net_pnl": 4508.574114099878,
+  "avg_max_dd": 0.00017905383783854614,
+  "details": [
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 3004.7288942541495,
+      "net_pnl": 5986.474423470743,
+      "max_dd": 0.0001958792835298101,
+      "sharpe": 69.65520408580714,
+      "sortino": 35.6791651526185,
+      "profit_factor": Infinity,
+      "exposure_time": 0.9892371788513045,
+      "final_equity": 15986.474423470743
+    },
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 2504.7593236706603,
+      "net_pnl": 4990.088056217974,
+      "max_dd": 0.0001874464046640525,
+      "sharpe": 64.07367991824611,
+      "sortino": 31.95575533967466,
+      "profit_factor": Infinity,
+      "exposure_time": 0.9908739212379725,
+      "final_equity": 14990.088056217974
+    },
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 2135.7111428164367,
+      "net_pnl": 4254.431222436089,
+      "max_dd": 0.0001829795447741732,
+      "sharpe": 58.567125891543846,
+      "sortino": 28.673306384387757,
+      "profit_factor": Infinity,
+      "exposure_time": 0.992361868862216,
+      "final_equity": 14254.43122243609
+    },
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 1863.9113336755827,
+      "net_pnl": 3713.0737591052566,
+      "max_dd": 0.0001740836998488037,
+      "sharpe": 55.972994515403904,
+      "sortino": 27.106013799645677,
+      "profit_factor": Infinity,
+      "exposure_time": 0.9935522269616109,
+      "final_equity": 13713.073759105257
+    },
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 1802.066147378507,
+      "net_pnl": 3598.8031092693273,
+      "max_dd": 0.0001548802563758912,
+      "sharpe": 58.83475407287074,
+      "sortino": 27.641872734872127,
+      "profit_factor": Infinity,
+      "exposure_time": 0.9586805555555555,
+      "final_equity": 13598.803109269327
+    }
+  ],
+  "fees_maker_bps": 2,
+  "fees_taker_bps": 10,
+  "slippage_bps": 8
+}

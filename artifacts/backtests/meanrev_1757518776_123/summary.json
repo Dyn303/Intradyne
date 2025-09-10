@@ -1,0 +1,12 @@
+{
+  "trades": 0,
+  "win_rate": 0.0,
+  "gross_pnl": 2518.435740030855,
+  "net_pnl": 5027.141279578054,
+  "max_dd": 9.431092027028905e-05,
+  "sharpe": 156.21367833904284,
+  "sortino": 110.35440403546806,
+  "profit_factor": Infinity,
+  "exposure_time": 0.9908739212379725,
+  "final_equity": 15027.141279578054
+}

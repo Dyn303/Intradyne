@@ -1,0 +1,20 @@
+{
+  "windows": 1,
+  "avg_sharpe": 58.83475407287074,
+  "avg_net_pnl": 3598.8031092693273,
+  "avg_max_dd": 0.0001548802563758912,
+  "details": [
+    {
+      "trades": 0,
+      "win_rate": 0.0,
+      "gross_pnl": 1802.066147378507,
+      "net_pnl": 3598.8031092693273,
+      "max_dd": 0.0001548802563758912,
+      "sharpe": 58.83475407287074,
+      "sortino": 27.641872734872127,
+      "profit_factor": Infinity,
+      "exposure_time": 0.9586805555555555,
+      "final_equity": 13598.803109269327
+    }
+  ]
+}

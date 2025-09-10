@@ -1,26 +1,20 @@
-
 version: "3.9"
 services:
-  intradyne-lite:
-    build: .
-    image: intradyne-lite:1.8.0
-    ports: ["8000:8000"]
+  engine:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: intradyne-engine
+    restart: unless-stopped
+    env_file:
+      - ../.env
     environment:
-      - CONFIG=/app/config.yaml
-      - WATCHER_AUTOSTART=1
-      - PROFILE_DEFAULT=hybrid
-      # Optional alerting
-      - TG_BOT_TOKEN=${TG_BOT_TOKEN}
-      - TG_CHAT_ID=${TG_CHAT_ID}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_TO=${SMTP_TO}
-      - SMTP_FROM=${SMTP_FROM}
-      # Mobile signing
-      - MOBILE_SIGNING_KEY=${MOBILE_SIGNING_KEY}
+      - TZ=Asia/Kuching
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      - ./profiles.yaml:/app/profiles.yaml:ro
-      - ./data:/app/data
+      - ../reports:/app/reports
+      - ../data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"

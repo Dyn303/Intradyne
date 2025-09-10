@@ -15,3 +15,7 @@ node_modules/
 *.log
 .vscode/
 .idea/
+ 
+# Outputs (runtime)
+/reports/
+/data/

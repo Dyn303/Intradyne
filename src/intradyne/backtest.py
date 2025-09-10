@@ -8,11 +8,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--days", type=int, default=30)
     p.add_argument("--symbols", type=str, default="BTC,ETH")
+    p.add_argument("--ma", type=int, default=20)
     args = p.parse_args()
     symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
     # normalize to BASE/USDT
     syms = [s if "/" in s else f"{s}/USDT" for s in symbols]
-    n = run_backtest(days=args.days, symbols=syms)
+    n = run_backtest(days=args.days, symbols=syms, ma_window=args.ma)
     print(f"backtest_completed orders={n}")
 
 

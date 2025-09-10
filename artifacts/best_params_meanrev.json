@@ -1,0 +1,23 @@
+{
+  "m_breakout_window": 168,
+  "m_min_range_bps": 19,
+  "r_window": 99,
+  "r_band_width": 2.549630458064386,
+  "risk_max_pos_pct": 0.02106823416427889,
+  "risk_dd_soft": 0.05997212706045119,
+  "risk_dd_hard": 0.03678490657175142,
+  "risk_sl_pct": 0.008231858337691703,
+  "risk_tp_pct": 0.009871359262583354,
+  "metrics": {
+    "trades": 0,
+    "win_rate": 0.0,
+    "gross_pnl": 49.88288140677746,
+    "net_pnl": 90.42466297671854,
+    "max_dd": 0.002685130388642445,
+    "sharpe": 13.371428534462998,
+    "sortino": 1.3194955832634323,
+    "profit_factor": Infinity,
+    "exposure_time": 0.0028857579358343237,
+    "final_equity": 10090.424662976719
+  }
+}

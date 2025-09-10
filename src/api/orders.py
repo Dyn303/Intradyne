@@ -6,7 +6,8 @@ from typing import Callable, Dict, Tuple, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from src.risk.guardrails import Guardrails, OrderReq, ShariahPolicy, PriceFeed, RiskData, Ledger
+from src.risk.guardrails import Guardrails, OrderReq, ShariahPolicy, PriceFeed, RiskData
+from src.core.ledger import Ledger
 from src.config import load_settings
 
 
