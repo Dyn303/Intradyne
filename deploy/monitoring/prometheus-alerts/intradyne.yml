@@ -20,3 +20,11 @@ groups:
           summary: "High scrape duration"
           description: "Average scrape_duration_seconds over 5m > 0.5s for intradyne_api."
 
+      - alert: Nginx_5xx_Rate
+        expr: (rate(nginx_http_requests_total{status=~"5.."}[5m]) > 0.05) OR (rate(nginx_http_requests_total{code="5xx"}[5m]) > 0.05)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nginx 5xx rate high"
+          description: "5xx responses > 0.05 req/s over 5m on Nginx"

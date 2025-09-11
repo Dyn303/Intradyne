@@ -53,3 +53,20 @@
 - Verify: `https://$DOMAIN/healthz`, `https://$DOMAIN/readyz`, `https://$DOMAIN/metrics`
 - Resources: default caps ~512MB RAM and 0.5 CPU (edit `deploy/docker-compose.prod.yml`).
 - Network: Caddy (ports 80/443) reverse-proxies to `api:8000` inside the network and manages TLS.
+
+### Email alerts (Grafana SMTP)
+- Set SMTP in `.env` (examples):
+  - `GF_SMTP_ENABLED=true`
+  - `GF_SMTP_HOST=smtp.example.com:587`
+  - `GF_SMTP_USER=your_user`
+  - `GF_SMTP_PASSWORD=your_pass`
+  - `GF_SMTP_FROM_ADDRESS=alerts@example.com`
+  - `GF_SMTP_FROM_NAME=Intradyne Grafana`
+- Restart monitoring: `make monitoring-down && make monitoring-up`
+- Update receiver email in `deploy/monitoring/grafana/provisioning/alerting/contact-points.yaml` or via Grafana UI.
+
+## 2.2 Nginx variant (edge rate limiting)
+- Start edge proxy: `docker compose -f deploy/docker-compose.nginx.yml up -d --build`
+- Optional monitoring: `docker compose -f deploy/docker-compose.nginx.yml --profile monitoring up -d --build`
+- Nginx exposes `/nginx_status` internally; exporter publishes metrics to Prometheus.
+- Alerts: Prometheus rule `Nginx_5xx_Rate` warns on elevated 5xx.

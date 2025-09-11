@@ -9,3 +9,6 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ['api:8000']
+  - job_name: nginx
+    static_configs:
+      - targets: ['nginx-exporter:9113']

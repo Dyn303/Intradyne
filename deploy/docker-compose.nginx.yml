@@ -30,6 +30,38 @@ services:
       - api
     networks: [edge]
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.11.0
+    restart: unless-stopped
+    command: ["-nginx.scrape-uri", "http://nginx/nginx_status"]
+    depends_on:
+      - nginx
+    networks: [edge]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: [monitoring]
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus-alerts:/etc/prometheus/alerts:ro
+    networks: [edge]
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    profiles: [monitoring]
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks: [edge]
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
 networks:
   edge: {}
-
