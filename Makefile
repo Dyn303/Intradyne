@@ -1,5 +1,5 @@
 
-.PHONY: build run up down prod-up prod-down test ping lint type docker-up docker-logs docker-down api-up api-logs clean-artifacts
+.PHONY: build run up down prod-up prod-down test ping lint type docker-up docker-logs docker-down api-up api-logs clean-artifacts monitoring-up monitoring-down
 build:
 	docker build -t intradyne-lite:1.9.0 .
 run:
@@ -32,6 +32,12 @@ docker-logs:
 
 docker-down:
 	docker compose -f deploy/docker-compose.yml down
+
+monitoring-up:
+	docker compose -f deploy/docker-compose.prod.yml --profile monitoring up -d --build
+
+monitoring-down:
+	docker compose -f deploy/docker-compose.prod.yml --profile monitoring down
 
 api-up:
 	uvicorn intradyne.api.app:app --host 0.0.0.0 --port 8000
