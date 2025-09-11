@@ -1,8 +1,48 @@
-from src.core.logging import setup_logging, JsonFormatter, redact_secrets, RedactingFilter
+from __future__ import annotations
 
-__all__ = [
-    "setup_logging",
-    "JsonFormatter",
-    "redact_secrets",
-    "RedactingFilter",
-]
+import json
+import logging
+import os
+from typing import Any, Dict
+
+
+def _redact(obj: Any) -> Any:
+    sensitive = {"key", "secret", "token", "password"}
+    if isinstance(obj, dict):
+        out: Dict[str, Any] = {}
+        for k, v in obj.items():
+            kl = k.lower()
+            if any(s in kl for s in sensitive):
+                sv = v if isinstance(v, str) else str(v)
+                out[k] = sv[: max(0, min(4, len(sv)))] + "****"
+            else:
+                out[k] = _redact(v)
+        return out
+    if isinstance(obj, list):
+        return [_redact(x) for x in obj]
+    return obj
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "level": record.levelname,
+            "time": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "logger": record.name,
+            "msg": record.getMessage(),
+        }
+        if record.args:
+            payload["args"] = _redact(record.args)
+        return json.dumps(payload, separators=(",", ":"))
+
+
+def setup_logging(level: str | None = None) -> None:
+    lvl_name = (level or os.getenv("LOG_LEVEL", "INFO")).upper()
+    lvl = getattr(logging, lvl_name, logging.INFO)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(lvl)
+    h = logging.StreamHandler()
+    h.setFormatter(JsonFormatter())
+    root.addHandler(h)
+

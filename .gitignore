@@ -19,3 +19,18 @@ node_modules/
 # Outputs (runtime)
 /reports/
 /data/
+artifacts/
+optuna.db
+trading_summary.csv
+portfolio_snapshot.json
+explainability_ledger.jsonl
+guardrails_ledger.jsonl
+orders_api_ledger_*.jsonl
+
+# Virtualenvs
+.venv/
+
+# Archives and backups
+_prev/
+@*/
+intradyne_lite/

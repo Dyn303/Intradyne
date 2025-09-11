@@ -1,0 +1,35 @@
+# VCS
+.git
+.gitignore
+
+# Python env and caches
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Heavy runtime artifacts and data
+artifacts/
+data/
+reports/
+optuna.db
+trading_summary.csv
+portfolio_snapshot.json
+explainability_ledger.jsonl
+guardrails_ledger.jsonl
+orders_api_ledger_*.jsonl
+
+# Archives and previous builds
+_prev/
+@*/
+intradyne_lite/
+
+# Local IDE
+.vscode/
+.idea/
+
+# Tests and docs aren’t needed in runtime image
+tests/
+@tests/
+@docs/
