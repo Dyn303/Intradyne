@@ -3,12 +3,13 @@
 
 ## 1. Build & Local Run
 - `make build`
-- `make run` (uses config.yaml.example + profiles.yaml.example)
+- `make run` (serves API at http://localhost:8080; uses example configs)
 
 ## 2. Production with TLS
 1) Copy `.env.example` → `.env` and fill secrets (`MOBILE_SIGNING_KEY`, `CADDY_EMAIL`, `DOMAIN`, broker keys).
 2) `make prod-up`
 3) Check: `curl -k https://$DOMAIN/healthz`
+4) Metrics: `GET /metrics` (Prometheus format)
 
 ## 3. Accounts & Connectivity
 - Configure `accounts[]` in `config.yaml` (CCXT/Alpaca/IBKR).
@@ -39,6 +40,7 @@
 ## 10. Incident
 - Check logs (`docker logs`), `/analytics/latency`, and alert channel.
 - Toggle profile or stop watcher: `/watcher/stop`
+ - Health: `GET /healthz`, Readiness: `GET /readyz`, Metrics: `GET /metrics`
 
 ## 11. Dev QA
 - Lint: `.venv/Scripts/python -m ruff check intradyne src app tests`

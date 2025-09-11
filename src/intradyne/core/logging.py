@@ -37,7 +37,7 @@ class JsonFormatter(logging.Formatter):
 
 
 def setup_logging(level: str | None = None) -> None:
-    lvl_name = (level or os.getenv("LOG_LEVEL", "INFO")).upper()
+    lvl_name = ((level or os.getenv("LOG_LEVEL") or "INFO")).upper()
     lvl = getattr(logging, lvl_name, logging.INFO)
     root = logging.getLogger()
     root.handlers.clear()
@@ -45,4 +45,3 @@ def setup_logging(level: str | None = None) -> None:
     h = logging.StreamHandler()
     h.setFormatter(JsonFormatter())
     root.addHandler(h)
-

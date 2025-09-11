@@ -15,6 +15,7 @@ try:  # pydantic v2
         model_config = {  # type: ignore[attr-defined]
             "case_sensitive": False,
             "env_file": (".env", ".env.txt", ".env.example"),
+            "extra": "ignore",
         }
 
     BaseSettings = _Base
@@ -28,6 +29,7 @@ except Exception:  # v1
             class Config:  # type: ignore[override]
                 case_sensitive = False
                 env_file = (".env", ".env.txt", ".env.example")
+                extra = "ignore"
 
         BaseSettings = _Base
         Field = _Field
@@ -107,15 +109,10 @@ class Settings(BaseSettings):  # type: ignore[misc]
 
 
 def load_settings() -> Settings:
+    # Build from pydantic Settings; allow any RuntimeErrors to propagate
+    # (e.g., missing creds in production). Only fall back if pydantic isn't available.
     try:
         s = Settings()  # type: ignore[call-arg]
-        # Apply compatibility and validations
-        try:
-            s._map_compat()
-            s._validate_required_in_prod()
-        except Exception:
-            raise
-        return s
     except Exception:
         # Minimal manual fallback (no .env parsing) if pydantic is unavailable
         class _Manual(Settings):  # type: ignore[misc]
@@ -146,12 +143,12 @@ def load_settings() -> Settings:
                 self.CCXT_SECRET = env.get("CCXT_SECRET")
 
         s = _Manual()
-        try:
-            s._map_compat()
-            s._validate_required_in_prod()
-        except Exception:
-            raise
         return s
+
+    # Apply compatibility and validations
+    s._map_compat()
+    s._validate_required_in_prod()
+    return s
 
 
 __all__ = ["Settings", "load_settings"]

@@ -30,7 +30,7 @@ class Ledger:
         prev = self._last_hash()
         rec = {"ts": datetime.utcnow().isoformat() + "Z", "event": event}
         rec.update(payload)
-        rec["hash_prev"] = prev
+        rec["hash_prev"] = prev or ""
         rec["hash"] = self._hash_record(rec)
         with open(self.path, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, separators=(",", ":")) + "\n")
@@ -59,4 +59,3 @@ class Ledger:
 
 
 __all__ = ["Ledger"]
-
