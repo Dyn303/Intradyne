@@ -1,0 +1,22 @@
+groups:
+  - name: intradyne-api
+    interval: 1m
+    rules:
+      - alert: API_Down
+        expr: up{job="intradyne_api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Intradyne API is down"
+          description: "No targets up for job=intradyne_api for 2 minutes."
+
+      - alert: High_Scrape_Duration
+        expr: avg_over_time(scrape_duration_seconds{job="intradyne_api"}[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High scrape duration"
+          description: "Average scrape_duration_seconds over 5m > 0.5s for intradyne_api."
+

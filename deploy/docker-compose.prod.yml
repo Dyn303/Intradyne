@@ -48,6 +48,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus-alerts:/etc/prometheus/alerts:ro
     networks: [web]
 
   grafana:
