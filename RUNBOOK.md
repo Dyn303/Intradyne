@@ -46,3 +46,10 @@
 - Lint: `.venv/Scripts/python -m ruff check intradyne src app tests`
 - Typecheck: `.venv/Scripts/python -m mypy` (scoped via `mypy.ini` to core modules)
 - Tests: `.venv/Scripts/python -m pytest -q`
+
+## 2.1 Production with TLS (Updated)
+- Create and fill `.env` with `CADDY_EMAIL`, `DOMAIN`, broker creds, and `LOG_LEVEL`.
+- Start: `docker compose -f deploy/docker-compose.prod.yml up -d --build`
+- Verify: `https://$DOMAIN/healthz`, `https://$DOMAIN/readyz`, `https://$DOMAIN/metrics`
+- Resources: default caps ~512MB RAM and 0.5 CPU (edit `deploy/docker-compose.prod.yml`).
+- Network: Caddy (ports 80/443) reverse-proxies to `api:8000` inside the network and manages TLS.
