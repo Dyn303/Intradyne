@@ -38,4 +38,3 @@ def load_settings() -> Settings:
         BITGET_API_PASSPHRASE=bitget_passphrase,
         CCXT_EXCHANGE_ID=ex_id,
     )
-

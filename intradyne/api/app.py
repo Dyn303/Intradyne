@@ -39,4 +39,3 @@ def set_halt(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     global _halt_enabled
     _halt_enabled = bool(payload.get("enabled", False))
     return {"enabled": _halt_enabled}
-
