@@ -25,6 +25,7 @@ class MeanRevStrategy:
     symbol: str
     window: int = 60
     k: float = 2.0
+    time_stop_s: int = 180
     state: MeanRevState = field(default_factory=MeanRevState)
     id: str = "meanrev_micro_v1"
 
@@ -44,4 +45,3 @@ class MeanRevStrategy:
                 "features": {"mid": mid, "lower": lower, "upper": upper},
             }
         return None
-

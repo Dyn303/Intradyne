@@ -3,17 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import random
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 import orjson
-from loguru import logger
 
 from .config import load_settings
 from .data_loader import DataLoader, LoaderConfig, timeframe_to_seconds
@@ -37,7 +35,7 @@ def _annualization_factor(tf_seconds: int) -> float:
     return math.sqrt((365 * 24 * 3600) / max(1, tf_seconds))
 
 
-def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy: str, params: Dict[str, Any], maker_bps: int, taker_bps: int, slippage_bps: int, seed: int = 42, out_dir: Optional[Path] = None) -> BacktestResult:
+def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy: str, params: Dict[str, Any], maker_bps: int, taker_bps: int, slippage_bps: int, seed: int = 42, out_dir: Optional[Path] = None, fast_mode: bool = False, early_target_trades_per_day: Optional[int] = None) -> BacktestResult:
     settings = load_settings()
     random.seed(seed)
     np.random.seed(seed)
@@ -72,6 +70,7 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
         whitelist=wl,
         live_broker=None,
         live_enabled=False,
+        fast_mode=fast_mode,
     )
     strat_params = {strategy: params.get(strategy, {})}
     execman = ExecutionManager(ctx)
@@ -81,7 +80,7 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
     run_id = f"{strategy}_{int(time.time())}_{seed}"
     out_dir = out_dir or (Path(settings.artifacts_dir) / "backtests" / run_id)
     out_dir.mkdir(parents=True, exist_ok=True)
-    trades_fp = (out_dir / "trades.jsonl").open("wb")
+    trades_fp = None if fast_mode else (out_dir / "trades.jsonl").open("wb")
 
     # Backtest loop: merged stream
     tf_sec = timeframe_to_seconds(timeframe)
@@ -97,7 +96,8 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
     peak_equity = start_equity
 
     async def write_trade(event: Dict[str, Any]) -> None:
-        trades_fp.write(orjson.dumps(event) + b"\n")
+        if trades_fp is not None:
+            trades_fp.write(orjson.dumps(event) + b"\n")
 
     async def loop() -> None:
         nonlocal gross_profit, gross_loss, wins, losses, trades, exposure_steps, total_steps, peak_equity
@@ -115,10 +115,16 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
                 exposure_steps += 1
             # drawdown update
             peak_equity = max(peak_equity, eq)
-            dd = (peak_equity - eq) / peak_equity if peak_equity > 0 else 0.0
             if eq < start_equity * (1 - risk.dd_hard):
                 risk.state.dd_hard_triggered = True
             risk.update_drawdown(start_equity, eq)
+            # Early trade-rate pruning (optional)
+            if early_target_trades_per_day and (end_ms > start_ms):
+                elapsed = (bar["ts"] * 1000 - start_ms) / (end_ms - start_ms)
+                if elapsed > 0.1:  # wait at least 10% of window
+                    target_so_far = early_target_trades_per_day * elapsed
+                    if ctx.trades < target_so_far * 0.5:  # behind pace
+                        raise RuntimeError("EARLY_PRUNE_TRADES")
             # capture realized pnl changes via portfolio positions updates
             # We infer fills via ledger writes (paper fills). Not strictly needed for metrics here.
         # After stream end, close any open positions at last price
@@ -130,8 +136,17 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
     # Run event loop
     import asyncio
 
-    asyncio.run(loop())
-    trades_fp.close()
+    try:
+        asyncio.run(loop())
+    except RuntimeError as e:
+        if str(e) == "EARLY_PRUNE_TRADES":
+            # bubble up for optimizer to prune
+            raise
+        else:
+            raise
+    finally:
+        if trades_fp is not None:
+            trades_fp.close()
 
     # Compute metrics
     pnl = portfolio.balances.get(portfolio.quote_ccy, 0.0) - start_equity
@@ -157,7 +172,7 @@ def run(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy
     exposure = exposure_steps / max(1, total_steps)
 
     summary = {
-        "trades": trades,  # count of fills, tracked externally if needed
+        "trades": ctx.trades,
         "win_rate": wins / max(1, wins + losses),
         "gross_pnl": portfolio.get_position(symbols[0]).realized_pnl if symbols else 0.0,
         "net_pnl": pnl,

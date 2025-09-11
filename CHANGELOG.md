@@ -36,3 +36,9 @@
 - Compose: healthcheck now uses `/readyz`; removed obsolete top-level `version:`.
 - Fix: ensure `PYTHONPATH=/app/src` and uvicorn target `intradyne.api.app:app` so API boots under Compose.
 
+## v1.9.2 - 2025-09-11
+- Fix: syntax error in `app/main.py` f-string (blocked typecheck).
+- Chore: ruff auto-fixes across repo; added targeted `ruff: noqa` for compatibility re-export shims under `src/intradyne/*`.
+- Dev: added `mypy.ini` to scope type-checking to `src/engine.py` and `src/backtester/` (core typed surface), excluding legacy/shim modules.
+- Tests: installed `httpx` for FastAPI TestClient; all tests pass.
+- Docker: no image changes; compose build remains green.

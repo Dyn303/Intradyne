@@ -70,7 +70,9 @@ def test_connectivity(hosts: str | None = None, timeout: float = 3.0):
     and external HTTPS endpoints. `hosts` is a comma-separated list of hostnames
     to test over TLS:443; defaults to common exchange APIs.
     """
-    import socket, ssl, time
+    import socket
+    import ssl
+    import time
 
     def _dns(h: str):
         try:

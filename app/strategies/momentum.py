@@ -15,6 +15,7 @@ class MomentumStrategy:
     symbol: str
     breakout_window: int = 60  # seconds
     min_range_bps: int = 5
+    time_stop_s: int = 120
     state: MomentumState = field(default_factory=MomentumState)
     id: str = "mom_scalper_v1"
 
@@ -39,4 +40,3 @@ class MomentumStrategy:
                 "features": {"range_bps": range_bps},
             }
         return None
-

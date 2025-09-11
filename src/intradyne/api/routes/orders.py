@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Tuple
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel

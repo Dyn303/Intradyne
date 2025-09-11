@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Dict, List
 
 from loguru import logger
@@ -22,6 +21,9 @@ class StrategyRouter:
         self.meanrev = {s: MeanRevStrategy(symbol=s) for s in symbols}
         self.open_symbols: set[str] = set()
         self.stops: dict[str, tuple[float, float]] = {}  # symbol -> (sl,tp)
+        self.entry_ts: dict[str, float] = {}  # symbol -> first entry ts
+        self.micro_slices: int = 3
+        self.time_stop_s: int = 120
         # Apply parameter overrides if provided
         params = params or {}
         for s in symbols:
@@ -33,6 +35,11 @@ class StrategyRouter:
             for k, v in params.get("meanrev", {}).items():
                 if hasattr(r, k):
                     setattr(r, k, v)  # type: ignore
+        # Execution-level knobs
+        ex_params = params.get("execution", {})
+        if isinstance(ex_params, dict):
+            self.micro_slices = int(ex_params.get("micro_slices", self.micro_slices))
+            self.time_stop_s = int(ex_params.get("time_stop_s", self.time_stop_s))
 
     async def on_tick(self, l1: Dict[str, object]) -> None:
         sym = l1["symbol"]
@@ -47,15 +54,29 @@ class StrategyRouter:
             return
 
         pos = self.portfolio.get_position(sym)
-        # Check exits (SL/TP)
+        # Check exits (SL/TP/Time-stop)
         if pos.base > 0 and sym in self.stops:
             sl, tp = self.stops[sym]
-            if last_f <= sl or last_f >= tp:
+            timed_out = False
+            ent = self.entry_ts.get(sym)
+            if ent is not None and (l1["ts"] - ent) >= self.time_stop_s:
+                timed_out = True
+            if last_f <= sl or last_f >= tp or timed_out:
                 qty = pos.base
-                features = {"exit_reason": "sl" if last_f <= sl else "tp"}
+                reason = "sl" if last_f <= sl else ("tp" if last_f >= tp else "time_stop")
+                features = {"exit_reason": reason}
                 checks = {"whitelist": True, "spot_only": True, "long_only": True}
-                await self.execman.submit(sym, "sell", "market", qty, None, l1, "stop_exit", features, checks)
+                # Micro-sliced exits
+                slice_qty = max(qty / max(1, self.micro_slices), 0.0)
+                remaining = qty
+                for i in range(self.micro_slices):
+                    q = slice_qty if i < self.micro_slices - 1 else remaining
+                    if q <= 0:
+                        break
+                    await self.execman.submit(sym, "sell", "market", q, None, l1, "stop_exit", features, checks)
+                    remaining -= q
                 self.stops.pop(sym, None)
+                self.entry_ts.pop(sym, None)
                 return
 
         open_positions = sum(1 for p in self.portfolio.positions.values() if p.base > 0)
@@ -68,9 +89,6 @@ class StrategyRouter:
             if not sig:
                 continue
             if sig["action"] == "buy":
-                # Do not pyramid: skip if already long
-                if pos.base > 0:
-                    continue
                 qty = self.risk.sizer(self.portfolio.equity({sym: last_f}), last_f)
                 if qty <= 0:
                     continue
@@ -82,6 +100,16 @@ class StrategyRouter:
                     "spot_only": True,
                     "long_only": True,
                 }
-                await self.execman.submit(sym, "buy", "market", qty, None, l1, strat.id, features, checks)
+                # Micro-sliced entries (scale-in allowed)
+                slice_qty = max(qty / max(1, self.micro_slices), 0.0)
+                remaining = qty
+                for i in range(self.micro_slices):
+                    q = slice_qty if i < self.micro_slices - 1 else remaining
+                    if q <= 0:
+                        break
+                    await self.execman.submit(sym, "buy", "market", q, None, l1, strat.id, features, checks)
+                    remaining -= q
                 self.stops[sym] = (sl, tp)
+                # Record entry time if not present
+                self.entry_ts.setdefault(sym, l1["ts"])
                 break

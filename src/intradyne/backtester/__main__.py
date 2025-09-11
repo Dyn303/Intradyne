@@ -4,7 +4,6 @@ import argparse
 import random
 from pathlib import Path
 
-from src.backtester.engine import run_backtest as run_engine  # type: ignore[attr-defined]
 from intradyne.core.logging import setup_logging
 from src.backtester.engine import run_backtest_advanced
 

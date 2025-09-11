@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -71,8 +71,7 @@ async def run_trader() -> None:
                 settings.risk.dd_hard = float(risk_over.get("dd_hard", settings.risk.dd_hard))
             logger.info(f"Loaded strategy params from {prod_file}")
         except Exception as e:
-            logger.warning(f"Failed to load strategy params {prod_file}: {e}
-")
+            logger.warning(f"Failed to load strategy params {prod_file}: {e}")
 
     risk = RiskManager(
         max_pos_pct=settings.risk.max_pos_pct,

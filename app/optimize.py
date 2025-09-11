@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import optuna
 from optuna.pruners import MedianPruner
@@ -29,8 +28,8 @@ def _score(metrics: Dict[str, Any], objective: str, lam_dd: float, lam_var: floa
 def suggest_params(trial: optuna.Trial) -> Dict[str, Any]:
     params: Dict[str, Any] = {
         "momentum": {
-            "breakout_window": trial.suggest_int("m_breakout_window", 20, 180),
-            "min_range_bps": trial.suggest_int("m_min_range_bps", 3, 30),
+            "breakout_window": trial.suggest_int("m_breakout_window", 10, 60),
+            "min_range_bps": trial.suggest_int("m_min_range_bps", 2, 10),
         },
         "meanrev": {
             "window": trial.suggest_int("r_window", 20, 180),
@@ -43,11 +42,15 @@ def suggest_params(trial: optuna.Trial) -> Dict[str, Any]:
             "per_trade_sl_pct": trial.suggest_float("risk_sl_pct", 0.001, 0.01),
             "tp_pct": trial.suggest_float("risk_tp_pct", 0.0005, 0.01),
         },
+        "execution": {
+            "micro_slices": trial.suggest_categorical("exec_micro_slices", [3, 5, 7]),
+            "time_stop_s": trial.suggest_int("exec_time_stop_s", 30, 180),
+        },
     }
     return params
 
 
-def optimize(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy: str, n_trials: int, n_jobs: int, objective: str, lam_dd: float) -> Path:
+def optimize(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, strategy: str, n_trials: int, n_jobs: int, objective: str, lam_dd: float, min_trades_per_day: int = 0) -> Path:
     settings = load_settings()
     artifacts = Path(settings.artifacts_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -57,10 +60,29 @@ def optimize(symbols: List[str], start_ms: int, end_ms: int, timeframe: str, str
     def obj(trial: optuna.Trial) -> float:
         params = suggest_params(trial)
         try:
-            res = run_backtest(symbols, start_ms, end_ms, timeframe, strategy, params, maker_bps=2, taker_bps=5, slippage_bps=2, seed=42)
+            res = run_backtest(
+                symbols,
+                start_ms,
+                end_ms,
+                timeframe,
+                strategy,
+                params,
+                maker_bps=2,
+                taker_bps=5,
+                slippage_bps=2,
+                seed=42,
+                fast_mode=True,
+                early_target_trades_per_day=min_trades_per_day if min_trades_per_day > 0 else None,
+            )
         except Exception as e:
             # Non-compliant or failure => prune
             raise optuna.TrialPruned(f"invalid trial: {e}")
+        # Enforce minimum trades per day if requested
+        if min_trades_per_day > 0:
+            days = max(1.0, (end_ms - start_ms) / (1000.0 * 86400.0))
+            trades = float(res.metrics.get("trades", 0))
+            if trades / days < float(min_trades_per_day):
+                raise optuna.TrialPruned(f"too few trades: {trades/days:.2f} < {min_trades_per_day}")
         score = _score(res.metrics, objective, lam_dd, 0.0)
         trial.set_user_attr("metrics", res.metrics)
         return score
@@ -101,6 +123,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--jobs", type=int, default=1)
     p.add_argument("--objective", type=str, choices=["sharpe", "pnl", "combo"], default="sharpe")
     p.add_argument("--lambda-dd", dest="lambda_dd", type=float, default=0.5)
+    p.add_argument("--min-trades-per-day", dest="min_trades_per_day", type=int, default=0)
     return p.parse_args()
 
 
@@ -111,7 +134,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     symbols = [s.strip() for s in ns.symbols.split(",") if s.strip()]
     start_ms = int(pd.Timestamp(ns.start, tz="UTC").timestamp() * 1000)
     end_ms = int(pd.Timestamp(ns.end, tz="UTC").timestamp() * 1000)
-    optimize(symbols, start_ms, end_ms, ns.timeframe, ns.strategy, ns.trials, ns.jobs, ns.objective, ns.lambda_dd)
+    optimize(symbols, start_ms, end_ms, ns.timeframe, ns.strategy, ns.trials, ns.jobs, ns.objective, ns.lambda_dd, ns.min_trades_per_day)
     return 0
 
 

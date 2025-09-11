@@ -39,3 +39,8 @@
 ## 10. Incident
 - Check logs (`docker logs`), `/analytics/latency`, and alert channel.
 - Toggle profile or stop watcher: `/watcher/stop`
+
+## 11. Dev QA
+- Lint: `.venv/Scripts/python -m ruff check intradyne src app tests`
+- Typecheck: `.venv/Scripts/python -m mypy` (scoped via `mypy.ini` to core modules)
+- Tests: `.venv/Scripts/python -m pytest -q`
