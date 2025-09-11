@@ -37,12 +37,12 @@ cp .env.example .env
 python -m app.main
 ```
 
-5) Endpoints (default `PORT=8000`):
+5) Endpoints (default container port 8000; published as `localhost:8080`):
 
-- `http://localhost:8000/readyz`
-- `http://localhost:8000/healthz`
-- `http://localhost:8000/metrics`
-- `http://localhost:8000/state`
+- `http://localhost:8080/readyz`
+- `http://localhost:8080/healthz`
+- `http://localhost:8080/metrics`
+- `http://localhost:8080/state`
 
 6) Run tests and linters:
 
@@ -63,7 +63,7 @@ Build and run:
 
 ```
 docker build -t intradyne-lite -f docker/Dockerfile .
-docker run --rm -p 8000:8000 --env-file .env intradyne-lite
+docker run --rm -p 8080:8000 --env-file .env intradyne-lite
 ```
 
 ## Safety & Compliance Notes
@@ -88,6 +88,12 @@ python -m app.backtest --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024
 
 ```
 python -m app.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 1m --strategy momentum --trials 50 --jobs 2 --objective sharpe --lambda-dd 0.5
+```
+
+- Enforce minimum trade frequency during tuning (e.g., 30/day):
+
+```
+python -m app.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 5s --strategy momentum --trials 100 --jobs 2 --objective sharpe --lambda-dd 0.5 --min-trades-per-day 30
 ```
 
 - Evaluate out-of-sample with saved best params:
