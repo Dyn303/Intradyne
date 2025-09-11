@@ -42,3 +42,9 @@
 - Dev: added `mypy.ini` to scope type-checking to `src/engine.py` and `src/backtester/` (core typed surface), excluding legacy/shim modules.
 - Tests: installed `httpx` for FastAPI TestClient; all tests pass.
 - Docker: no image changes; compose build remains green.
+
+## v1.9.3 - 2025-09-11
+- Infra: container now serves API by default (uvicorn), healthchecked via `/readyz`, port published `8080->8000` in compose.
+- Hygiene: added `.dockerignore` to trim build context; tightened `.gitignore` for artifacts/data/venv.
+- Core: added `src/intradyne/core/logging.py` with `setup_logging` + JSON logs; maintains secret redaction.
+- Status: lint clean, tests green, mypy (scoped) passes, container healthy.
