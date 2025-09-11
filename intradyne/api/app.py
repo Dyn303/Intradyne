@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import Any, Dict
 
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Response
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 
 from .. import __version__
 
@@ -39,3 +40,9 @@ def set_halt(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     global _halt_enabled
     _halt_enabled = bool(payload.get("enabled", False))
     return {"enabled": _halt_enabled}
+
+
+@app.get("/metrics")
+def metrics() -> Response:
+    data = generate_latest(REGISTRY)
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)

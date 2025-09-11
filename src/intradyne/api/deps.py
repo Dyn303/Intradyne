@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List, Tuple
 
 from intradyne.core.config import load_settings
 from intradyne.core.ledger import Ledger
@@ -8,15 +9,15 @@ from intradyne.risk.guardrails import Guardrails, ShariahPolicy, PriceFeed, Risk
 
 
 class _DefaultPriceFeed(PriceFeed):
-    def get_price(self, symbol: str, at=None):  # type: ignore[override]
+    def get_price(self, symbol: str, at: Optional[datetime] = None) -> Optional[float]:
         return None
 
 
 class _DefaultRiskData(RiskData):
-    def equity_series_30d(self):  # type: ignore[override]
+    def equity_series_30d(self) -> List[Tuple[datetime, float]]:
         return []
 
-    def equity_daily_returns_30d(self):  # type: ignore[override]
+    def equity_daily_returns_30d(self) -> List[float]:
         return []
 
 
