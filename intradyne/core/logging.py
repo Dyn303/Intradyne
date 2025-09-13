@@ -32,9 +32,11 @@ def redact_secrets(obj: Any) -> Any:
     else:
         return obj
 
+
 # Re-export runtime setup from canonical module
 try:
     from src.intradyne.core.logging import setup_logging  # type: ignore
 except Exception:  # pragma: no cover
+
     def setup_logging(level: str | None = None) -> None:  # type: ignore
         pass

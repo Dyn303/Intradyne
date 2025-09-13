@@ -16,7 +16,10 @@ _halt_enabled = False
 
 @app.get("/version")
 def version() -> Dict[str, Any]:
-    return {"version": __version__, "build_time": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"}
+    return {
+        "version": __version__,
+        "build_time": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+    }
 
 
 @app.get("/healthz")
