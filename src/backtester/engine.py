@@ -43,6 +43,11 @@ def run_backtest(
     sl_atr_k: float = 0.0,
     tp_atr_k: float = 0.0,
     risk_per_trade: float = 0.0,
+    # New knobs to reduce over-trading / improve expectancy
+    confirm_bars: int = 1,
+    atr_entry_min: float = 0.0,  # min ATR%% to avoid chop (e.g., 0.001 = 10 bps)
+    atr_entry_max: float = 0.0,  # max ATR%% to avoid too-volatile entries (0 disables)
+    regime: bool = False,  # basic regime classification (trend vs. chop)
     report: bool = False,
 ) -> int | Dict[str, object]:
     import math
@@ -60,6 +65,8 @@ def run_backtest(
         ema: float | None = None
         # ATR proxy: rolling mean absolute return (% per bar)
         abs_rets: List[float] = []
+        # Bar-confirmation counter
+        confirm_up: int = 0
         # generate a deterministic synthetic price path per symbol
         for t in range(days * 24):  # hourly samples
             # smooth oscillation + gentle drift
@@ -87,14 +94,52 @@ def run_backtest(
                 if not trend_ema or trend_ema <= 1
                 else (ema is not None and price > (ema or price))
             )
-            if not above_ma and price > ma and in_trend:
+            # Update confirmation counter
+            if price > ma:
+                confirm_up += 1
+            else:
+                confirm_up = 0
+            # Basic regime classification (trend vs. chop)
+            regime_ok = True
+            if regime:
+                # Trend if EMA slope positive and |price-ma|/ma > 10 bps; else chop
+                ema_slope_ok = False
+                if trend_ema and ema is not None:
+                    # approximate slope via last two prices
+                    prev = prices[-2]
+                    ema_prev = (
+                        prev
+                        if ema is None
+                        else (
+                            ema * (1.0 - 2.0 / (trend_ema + 1.0))
+                            + prev * (2.0 / (trend_ema + 1.0))
+                        )
+                    )
+                    ema_slope_ok = (ema or price) > ema_prev
+                dist_ok = abs(price - ma) / max(1e-9, ma) > 0.001  # >10bps from MA
+                is_trend = ema_slope_ok and dist_ok
+                if not is_trend:
+                    # In chop, require stricter confirmation (one extra bar)
+                    regime_ok = confirm_up >= max(1, confirm_bars + 1)
+            # ATR entry window gate
+            atr_pct = (sum(abs_rets) / len(abs_rets)) if abs_rets else 0.0
+            atr_min_ok = (atr_entry_min <= 0) or (atr_pct >= atr_entry_min)
+            atr_max_ok = (atr_entry_max <= 0) or (atr_pct <= atr_entry_max)
+            if (
+                not above_ma
+                and price > ma
+                and in_trend
+                and confirm_up >= max(1, confirm_bars)
+                and atr_min_ok
+                and atr_max_ok
+                and regime_ok
+            ):
                 # cross up -> buy
                 orders += 1
                 above_ma = True
                 entry_px = price
             elif above_ma:
                 # Optional ATR-based early exit (SL/TP)
-                atr_pct = (sum(abs_rets) / len(abs_rets)) if abs_rets else 0.0
                 stop_hit = False
                 take_hit = False
                 if entry_px is not None and atr_pct > 0:
