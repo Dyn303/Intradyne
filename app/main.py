@@ -137,6 +137,11 @@ async def run_trader() -> None:
         router.time_stop_s = int(max(router.time_stop_s, 0))
         router._max_spread_bps = int(max(0, settings.max_spread_bps))  # type: ignore[attr-defined]
         router._entry_cooldown_s = int(max(0, settings.entry_cooldown_s))  # type: ignore[attr-defined]
+        # Sentiment knobs
+        router._sentiment_enabled = bool(settings.sentiment_enabled)  # type: ignore[attr-defined]
+        router._sentiment_long_min = float(settings.sentiment_long_min)  # type: ignore[attr-defined]
+        router._sentiment_size_min = float(settings.sentiment_size_min)  # type: ignore[attr-defined]
+        router._sentiment_size_max = float(settings.sentiment_size_max)  # type: ignore[attr-defined]
     except Exception:
         pass
 

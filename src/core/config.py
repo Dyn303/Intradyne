@@ -128,6 +128,13 @@ class Settings(BaseSettings):  # type: ignore[misc]
                     f"Missing required credentials in production: {', '.join(missing)}"
                 )
 
+    # Sentiment (optional, disabled by default)
+    SENTIMENT_ENABLE: bool = False
+    SENTIMENT_LONG_MIN: float = 0.0
+    SENTIMENT_SIZE_MIN: float = 0.8
+    SENTIMENT_SIZE_MAX: float = 1.2
+    SENTIMENT_SMOOTH_N: int = 12
+
 
 def load_settings() -> Settings:
     # Build from pydantic Settings; allow any RuntimeErrors to propagate
@@ -170,6 +177,13 @@ def load_settings() -> Settings:
                 self.CCXT_EXCHANGE_ID = env.get("CCXT_EXCHANGE_ID")
                 self.CCXT_API_KEY = env.get("CCXT_API_KEY")
                 self.CCXT_SECRET = env.get("CCXT_SECRET")
+                self.SENTIMENT_ENABLE = (
+                    env.get("SENTIMENT_ENABLE", "") or ""
+                ).lower() in {"1", "true", "yes"}
+                self.SENTIMENT_LONG_MIN = float(env.get("SENTIMENT_LONG_MIN", "0.0"))
+                self.SENTIMENT_SIZE_MIN = float(env.get("SENTIMENT_SIZE_MIN", "0.8"))
+                self.SENTIMENT_SIZE_MAX = float(env.get("SENTIMENT_SIZE_MAX", "1.2"))
+                self.SENTIMENT_SMOOTH_N = int(env.get("SENTIMENT_SMOOTH_N", "12"))
 
         s = _Manual()
         return s

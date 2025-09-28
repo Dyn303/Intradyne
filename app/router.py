@@ -14,6 +14,13 @@ from .strategies.ml import MLStrategy
 from .metrics_ml import ML_SIGNALS
 from .metrics import METRICS
 
+try:
+    from src.data.sentiment import get_sentiment_score_cached  # type: ignore
+except Exception:  # pragma: no cover
+
+    def get_sentiment_score_cached(ttl: int = 300) -> float:  # type: ignore
+        return 0.0
+
 
 class StrategyRouter:
     def __init__(
@@ -389,6 +396,17 @@ class StrategyRouter:
             except Exception:
                 pass
             if sig.get("action") == "buy":
+                # Sentiment gate and sizing throttle (optional)
+                s_score = 0.0
+                if hasattr(self, "_sentiment_enabled") and self._sentiment_enabled:
+                    try:
+                        s_score = float(get_sentiment_score_cached())
+                        if s_score < float(
+                            getattr(self, "_sentiment_long_min", 0.0) or 0.0
+                        ):
+                            continue
+                    except Exception:
+                        s_score = 0.0
                 if getattr(strat, "id", "") == "ml":
                     try:
                         ML_SIGNALS.labels(sym).inc()
@@ -411,6 +429,18 @@ class StrategyRouter:
                     except Exception:
                         pass
                 qty = self.risk.sizer(self.portfolio.equity({sym: last_f}), last_f)
+                if (
+                    hasattr(self, "_sentiment_enabled")
+                    and self._sentiment_enabled
+                    and qty > 0
+                ):
+                    try:
+                        a = float(getattr(self, "_sentiment_size_min", 0.8))
+                        b = float(getattr(self, "_sentiment_size_max", 1.2))
+                        f = a + (b - a) * (s_score + 1.0) / 2.0
+                        qty *= max(0.0, f)
+                    except Exception:
+                        pass
                 if qty <= 0:
                     continue
                 sl, tp = self.risk.sl_tp_levels(
@@ -421,7 +451,16 @@ class StrategyRouter:
                     if isinstance(sig.get("features"), dict)
                     else {}
                 )
-                features.update({"sl": sl, "tp": tp})
+                try:
+                    features.update(
+                        {
+                            "sl": sl,
+                            "tp": tp,
+                            "sentiment": s_score,
+                        }
+                    )
+                except Exception:
+                    features.update({"sl": sl, "tp": tp})
                 checks = {"whitelist": True, "spot_only": True, "long_only": True}
                 slice_qty = max(qty / max(1, self.micro_slices), 0.0)
                 remaining = qty

@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     # Execution filters
     max_spread_bps: int = 0  # 0 disables; otherwise skip entries if spread>bps
     entry_cooldown_s: int = 0  # cooldown after SL before re-entry
+    # Sentiment gating/size (engine side)
+    sentiment_enabled: bool = False
+    sentiment_long_min: float = 0.0
+    sentiment_size_min: float = 0.8
+    sentiment_size_max: float = 1.2
 
     risk: RiskConfig = RiskConfig()
     fees: FeesConfig = FeesConfig()
@@ -111,5 +116,9 @@ def load_settings() -> Settings:
         ),
         max_spread_bps=int(os.getenv("MAX_SPREAD_BPS", "0")),
         entry_cooldown_s=int(os.getenv("ENTRY_COOLDOWN_S", "0")),
+        sentiment_enabled=os.getenv("SENTIMENT_ENABLED", "false").lower() == "true",
+        sentiment_long_min=float(os.getenv("SENTIMENT_LONG_MIN", "0.0")),
+        sentiment_size_min=float(os.getenv("SENTIMENT_SIZE_MIN", "0.8")),
+        sentiment_size_max=float(os.getenv("SENTIMENT_SIZE_MAX", "1.2")),
     )
     return s
