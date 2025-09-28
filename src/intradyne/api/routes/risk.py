@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from fastapi import APIRouter
 
+import orjson
 from intradyne.api.deps import get_guardrails
 from intradyne.core.config import load_settings
 from intradyne.risk.guardrails import dd_30d
@@ -14,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/risk/status")
-def risk_status():
+async def risk_status():
     gr = get_guardrails()
     settings = load_settings()
     since = datetime.utcnow() - timedelta(hours=24)
@@ -37,7 +38,7 @@ def risk_status():
 
 
 @router.get("/ledger/tail")
-def ledger_tail(n: int = 100) -> List[Dict]:
+async def ledger_tail(n: int = 100) -> List[Dict]:
     gr = get_guardrails()
     path = gr.ledger.path
     lines: List[str] = []
@@ -48,12 +49,11 @@ def ledger_tail(n: int = 100) -> List[Dict]:
                     lines.append(line)
     except FileNotFoundError:
         return []
-    import json
 
     out: List[Dict] = []
     for line in lines[-max(0, int(n)) :]:
         try:
-            rec = json.loads(line)
+            rec = orjson.loads(line)
             rec.pop("SMTP_PASS", None)
             out.append(rec)
         except Exception:
@@ -62,18 +62,43 @@ def ledger_tail(n: int = 100) -> List[Dict]:
 
 
 @router.get("/metrics")
-def metrics():
-    from datetime import timedelta
-
+async def metrics():
     gr = get_guardrails()
     now = datetime.utcnow()
     counts = {
-        "breaches_1h": sum(1 for r in gr.ledger.iter_recent(now - timedelta(hours=1)) if r.get("event") == "guardrail_breach"),
-        "breaches_24h": sum(1 for r in gr.ledger.iter_recent(now - timedelta(hours=24)) if r.get("event") == "guardrail_breach"),
-        "breaches_7d": sum(1 for r in gr.ledger.iter_recent(now - timedelta(days=7)) if r.get("event") == "guardrail_breach"),
+        "breaches_1h": sum(
+            1
+            for r in gr.ledger.iter_recent(now - timedelta(hours=1))
+            if r.get("event") == "guardrail_breach"
+        ),
+        "breaches_24h": sum(
+            1
+            for r in gr.ledger.iter_recent(now - timedelta(hours=24))
+            if r.get("event") == "guardrail_breach"
+        ),
+        "breaches_7d": sum(
+            1
+            for r in gr.ledger.iter_recent(now - timedelta(days=7))
+            if r.get("event") == "guardrail_breach"
+        ),
     }
     try:
         dd = dd_30d(gr.risk.equity_series_30d())
     except Exception:
         dd = 0.0
     return {"counts": counts, "dd_30d": dd}
+
+
+@router.get("/overview")
+async def overview():
+    st = await risk_status()
+    # Minimal version
+    from intradyne.api.health import VERSION as _V
+
+    # Ledger last 5
+    tail = await ledger_tail(5)
+    return {
+        "version": _V,
+        "risk": st,
+        "ledger_tail": tail,
+    }

@@ -35,7 +35,9 @@ def get_prices(symbols: Iterable[str]) -> Dict[str, float]:
     return out
 
 
-def place_order(symbol: str, side: str, qty: float, mode: str = "paper") -> Dict[str, object]:
+def place_order(
+    symbol: str, side: str, qty: float, mode: str = "paper"
+) -> Dict[str, object]:
     # Stub: for live mode, require keys but do not expose
     import os
 
@@ -46,5 +48,10 @@ def place_order(symbol: str, side: str, qty: float, mode: str = "paper") -> Dict
     if not key or not secret:
         return {"status": "error", "error": "missing_api_keys"}
     # Do not place real orders in this implementation; just acknowledge
-    return {"status": "ack", "api_key": safe_log_key(key), "symbol": symbol, "side": side, "qty": qty}
-
+    return {
+        "status": "ack",
+        "api_key": safe_log_key(key),
+        "symbol": symbol,
+        "side": side,
+        "qty": qty,
+    }

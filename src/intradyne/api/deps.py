@@ -61,3 +61,19 @@ def set_halt(enabled: bool) -> None:
 
 def is_halted() -> bool:
     return _HALT_ENABLED
+
+
+# Optional API key requirement for frontend/backend requests
+async def require_api_key(x_api_key: str | None = None) -> None:
+    import os
+
+    req = (os.getenv("API_AUTH_REQUIRED") or "").strip().lower() in {"1", "true", "yes"}
+    if not req:
+        return
+    expected = os.getenv("X_API_KEY") or os.getenv("API_KEY") or ""
+    if not expected:
+        return  # if no key configured, do not block
+    if (x_api_key or "") != expected:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="invalid_api_key")

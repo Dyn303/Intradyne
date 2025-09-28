@@ -22,7 +22,10 @@ def halt_status():
 
 
 @router.post("/admin/halt")
-def halt_set(payload: dict, x_admin_secret: str | None = Header(default=None, alias="X-Admin-Secret")):
+def halt_set(
+    payload: dict,
+    x_admin_secret: str | None = Header(default=None, alias="X-Admin-Secret"),
+):
     # Simple admin-only: if ADMIN_SECRET is set in env, require matching header; else allow (dev)
     import os
 

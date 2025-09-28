@@ -6,7 +6,9 @@ from src.core.types import Order, VenueQuote, ChildOrder
 
 
 class SmartOrderRouter:
-    async def route_order(self, order: Order, venues: Iterable[VenueQuote]) -> List[ChildOrder]:
+    async def route_order(
+        self, order: Order, venues: Iterable[VenueQuote]
+    ) -> List[ChildOrder]:
         # Naive: route entire qty to best price
         best = None
         for v in venues:
@@ -22,8 +24,15 @@ class SmartOrderRouter:
         if not best:
             return []
         qty = min(order.qty, best.available)
-        return [ChildOrder(venue=best.venue, symbol=order.symbol, side=order.side, qty=qty, price=best.price)]
+        return [
+            ChildOrder(
+                venue=best.venue,
+                symbol=order.symbol,
+                side=order.side,
+                qty=qty,
+                price=best.price,
+            )
+        ]
 
 
 __all__ = ["SmartOrderRouter"]
-

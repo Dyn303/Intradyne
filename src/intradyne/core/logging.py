@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import Any, Dict
+
+import orjson
 
 
 def _redact(obj: Any) -> Any:
@@ -33,11 +34,11 @@ class JsonFormatter(logging.Formatter):
         }
         if record.args:
             payload["args"] = _redact(record.args)
-        return json.dumps(payload, separators=(",", ":"))
+        return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS).decode("utf-8")
 
 
 def setup_logging(level: str | None = None) -> None:
-    lvl_name = ((level or os.getenv("LOG_LEVEL") or "INFO")).upper()
+    lvl_name = (level or os.getenv("LOG_LEVEL") or "INFO").upper()
     lvl = getattr(logging, lvl_name, logging.INFO)
     root = logging.getLogger()
     root.handlers.clear()

@@ -38,4 +38,3 @@ class BitgetAdapter(ExchangeAdapter):
 
 
 __all__ = ["BitgetAdapter"]
-

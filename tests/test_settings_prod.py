@@ -27,7 +27,9 @@ def test_prod_allows_when_creds_present(monkeypatch: pytest.MonkeyPatch):
     assert s.BITGET_API_KEY.startswith("bg_")
 
 
-def test_ccxt_mapping_fills_bitget_when_exchange_is_bitget(monkeypatch: pytest.MonkeyPatch):
+def test_ccxt_mapping_fills_bitget_when_exchange_is_bitget(
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.setenv("APP_ENV", "dev")
     monkeypatch.delenv("BITGET_API_KEY", raising=False)
     monkeypatch.delenv("BITGET_API_SECRET", raising=False)
@@ -53,6 +55,8 @@ def test_redaction_helper():
         ],
     }
     red = redact_secrets(data)
-    assert red["BITGET_API_KEY"].endswith("****") and red["BITGET_API_KEY"].startswith("bg_a")
+    assert red["BITGET_API_KEY"].endswith("****") and red["BITGET_API_KEY"].startswith(
+        "bg_a"
+    )
     assert red["nested"]["secret"].endswith("****")
     assert red["tokens"][0]["apiToken"].endswith("****")

@@ -5,13 +5,15 @@ from dataclasses import dataclass, field
 from typing import Deque, Dict, Optional, Tuple
 
 
-def bollinger(prices: Deque[float], window: int = 60, k: float = 2.0) -> Optional[Tuple[float, float, float]]:
+def bollinger(
+    prices: Deque[float], window: int = 60, k: float = 2.0
+) -> Optional[Tuple[float, float, float]]:
     if len(prices) < window:
         return None
     w = list(prices)[-window:]
     mean = sum(w) / window
     var = sum((x - mean) ** 2 for x in w) / window
-    std = var ** 0.5
+    std = var**0.5
     return mean, mean - k * std, mean + k * std
 
 

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
-import json
 import logging
 import os
 import re
 from typing import Any, Dict
+
+import orjson
 
 
 class JsonFormatter(logging.Formatter):
@@ -17,11 +18,13 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             base["exc_info"] = self.formatException(record.exc_info)
-        return json.dumps(base, separators=(",", ":"))
+        return orjson.dumps(base, option=orjson.OPT_SORT_KEYS).decode("utf-8")
 
 
 def setup_logging(level: str | None = None) -> None:
-    lvl = getattr(logging, (level or os.getenv("LOG_LEVEL", "INFO")).upper(), logging.INFO)
+    lvl = getattr(
+        logging, (level or os.getenv("LOG_LEVEL", "INFO")).upper(), logging.INFO
+    )
     h = logging.StreamHandler()
     h.setFormatter(JsonFormatter())
     root = logging.getLogger()

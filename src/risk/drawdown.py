@@ -11,4 +11,3 @@ def dd_30d(equity_series: List[Tuple[datetime, float]]) -> float:
 
 
 __all__ = ["dd_30d"]
-

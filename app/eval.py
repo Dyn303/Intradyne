@@ -11,13 +11,25 @@ from .config import load_settings
 from .backtest import run as run_backtest
 
 
-def evaluate(symbols: List[str], windows: List[tuple[int, int]], timeframe: str, params_file: Path, strategy: str = "momentum", maker_bps: int = 2, taker_bps: int = 5, slippage_bps: int = 2) -> Path:
+def evaluate(
+    symbols: List[str],
+    windows: List[tuple[int, int]],
+    timeframe: str,
+    params_file: Path,
+    strategy: str = "momentum",
+    maker_bps: int = 2,
+    taker_bps: int = 5,
+    slippage_bps: int = 2,
+) -> Path:
     settings = load_settings()
     artifacts = Path(settings.artifacts_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
     raw = json.loads(params_file.read_text())
     # Accept either nested param dict or flat Optuna params; map when flat
-    if any(k.startswith("m_") or k.startswith("r_") or k.startswith("risk_") for k in raw.keys()):
+    if any(
+        k.startswith("m_") or k.startswith("r_") or k.startswith("risk_")
+        for k in raw.keys()
+    ):
         params: Dict[str, Any] = {
             "momentum": {},
             "meanrev": {},
@@ -45,15 +57,27 @@ def evaluate(symbols: List[str], windows: List[tuple[int, int]], timeframe: str,
         params = raw
 
     results: List[Dict[str, Any]] = []
-    for (start_ms, end_ms) in windows:
-        res = run_backtest(symbols, start_ms, end_ms, timeframe, strategy, params, maker_bps=maker_bps, taker_bps=taker_bps, slippage_bps=slippage_bps, seed=123)
+    for start_ms, end_ms in windows:
+        res = run_backtest(
+            symbols,
+            start_ms,
+            end_ms,
+            timeframe,
+            strategy,
+            params,
+            maker_bps=maker_bps,
+            taker_bps=taker_bps,
+            slippage_bps=slippage_bps,
+            seed=123,
+        )
         results.append(res.metrics)
 
     # Aggregate
     agg = {
         "windows": len(results),
         "avg_sharpe": sum(r.get("sharpe", 0.0) for r in results) / max(1, len(results)),
-        "avg_net_pnl": sum(r.get("net_pnl", 0.0) for r in results) / max(1, len(results)),
+        "avg_net_pnl": sum(r.get("net_pnl", 0.0) for r in results)
+        / max(1, len(results)),
         "avg_max_dd": sum(r.get("max_dd", 0.0) for r in results) / max(1, len(results)),
         "details": results,
     }
@@ -69,7 +93,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--end", type=str, required=True)
     p.add_argument("--timeframe", type=str, default="1m")
     p.add_argument("--params-file", type=str, required=True)
-    p.add_argument("--strategy", type=str, choices=["momentum", "meanrev"], default="momentum")
+    p.add_argument(
+        "--strategy", type=str, choices=["momentum", "meanrev"], default="momentum"
+    )
     p.add_argument("--fees-maker-bps", type=int, default=2)
     p.add_argument("--fees-taker-bps", type=int, default=5)
     p.add_argument("--slippage-bps", type=int, default=2)
@@ -83,7 +109,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     end = pd.Timestamp(ns.end, tz="UTC")
     # Single window; could split into multiple disjoint ones for CV
     windows = [(int(start.timestamp() * 1000), int(end.timestamp() * 1000))]
-    evaluate(symbols, windows, ns.timeframe, Path(ns.params_file), strategy=ns.strategy, maker_bps=ns.fees_maker_bps, taker_bps=ns.fees_taker_bps, slippage_bps=ns.slippage_bps)
+    evaluate(
+        symbols,
+        windows,
+        ns.timeframe,
+        Path(ns.params_file),
+        strategy=ns.strategy,
+        maker_bps=ns.fees_maker_bps,
+        taker_bps=ns.fees_taker_bps,
+        slippage_bps=ns.slippage_bps,
+    )
     return 0
 
 

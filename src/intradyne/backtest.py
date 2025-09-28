@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 from src.backtester.engine import run_backtest
@@ -19,5 +19,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

@@ -10,7 +10,9 @@ import pandas as pd
 from .eval import evaluate
 
 
-def split_windows(start: pd.Timestamp, end: pd.Timestamp, stride_days: int) -> List[tuple[int, int]]:
+def split_windows(
+    start: pd.Timestamp, end: pd.Timestamp, stride_days: int
+) -> List[tuple[int, int]]:
     windows: List[tuple[int, int]] = []
     cur = start
     while cur < end:
@@ -26,7 +28,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--start", type=str, required=True)
     p.add_argument("--end", type=str, required=True)
     p.add_argument("--timeframe", type=str, default="1m")
-    p.add_argument("--strategy", type=str, choices=["momentum", "meanrev"], default="momentum")
+    p.add_argument(
+        "--strategy", type=str, choices=["momentum", "meanrev"], default="momentum"
+    )
     p.add_argument("--params-file", type=str, required=True)
     p.add_argument("--stride-days", type=int, default=7)
     p.add_argument("--fees-maker-bps", type=int, default=2)
@@ -40,9 +44,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     windows = split_windows(start, end, ns.stride_days)
 
     details: List[Dict[str, Any]] = []
-    for (s_ms, e_ms) in windows:
+    for s_ms, e_ms in windows:
         # Evaluate per window; evaluate() writes artifacts/report.json each time — we aggregate here too
-        out = evaluate(symbols, [(s_ms, e_ms)], ns.timeframe, Path(ns.params_file), strategy=ns.strategy, maker_bps=ns.fees_maker_bps, taker_bps=ns.fees_taker_bps, slippage_bps=ns.slippage_bps)
+        out = evaluate(
+            symbols,
+            [(s_ms, e_ms)],
+            ns.timeframe,
+            Path(ns.params_file),
+            strategy=ns.strategy,
+            maker_bps=ns.fees_maker_bps,
+            taker_bps=ns.fees_taker_bps,
+            slippage_bps=ns.slippage_bps,
+        )
         data = json.loads(Path(out).read_text())
         if data.get("details"):
             details.extend(data["details"])
@@ -71,4 +84,3 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

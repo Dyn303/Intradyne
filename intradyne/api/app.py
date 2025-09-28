@@ -3,19 +3,29 @@ from __future__ import annotations
 import datetime as dt
 from typing import Any, Dict
 
-from fastapi import FastAPI, Body, Response
+from fastapi import Body, FastAPI, Response
+from fastapi.responses import ORJSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 
 from .. import __version__
 
+# Routers
+from .routes import orders as orders_routes  # type: ignore
+from .routes import risk as risk_routes  # type: ignore
+from .routes import admin as admin_routes  # type: ignore
+from .routes import ai as ai_routes  # type: ignore
+from .routes import data as data_routes  # type: ignore
+from .routes import ws as ws_routes  # type: ignore
+from .routes import research as research_routes  # type: ignore
 
-app = FastAPI(title="Intradyne API")
+
+app = FastAPI(title="Intradyne API", default_response_class=ORJSONResponse)
 
 _halt_enabled = False
 
 
 @app.get("/version")
-def version() -> Dict[str, Any]:
+async def version() -> Dict[str, Any]:
     return {
         "version": __version__,
         "build_time": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
@@ -23,29 +33,39 @@ def version() -> Dict[str, Any]:
 
 
 @app.get("/healthz")
-def healthz() -> Dict[str, Any]:
+async def healthz() -> Dict[str, Any]:
     return {"status": "ok", "version": __version__}
 
 
 @app.get("/readyz")
-def readyz() -> Dict[str, Any]:
+async def readyz() -> Dict[str, Any]:
     # Always return ready in this lightweight stub
     return {"ready": True, "components": {"db": True, "redis": True}}
 
 
 @app.get("/admin/halt")
-def get_halt() -> Dict[str, Any]:
+async def get_halt() -> Dict[str, Any]:
     return {"enabled": _halt_enabled}
 
 
 @app.post("/admin/halt")
-def set_halt(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+async def set_halt(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     global _halt_enabled
     _halt_enabled = bool(payload.get("enabled", False))
     return {"enabled": _halt_enabled}
 
 
 @app.get("/metrics")
-def metrics() -> Response:
+async def metrics() -> Response:
     data = generate_latest(REGISTRY)
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
+
+# Mount sub-routers
+app.include_router(orders_routes.router)
+app.include_router(risk_routes.router)
+app.include_router(admin_routes.router)
+app.include_router(ai_routes.router)
+app.include_router(data_routes.router)
+app.include_router(ws_routes.router)
+app.include_router(research_routes.router)

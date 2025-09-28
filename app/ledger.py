@@ -51,5 +51,3 @@ class ExplainabilityLedger:
             f.write(line + "\n")
         self._last_hash = payload["hash"]
         logger.bind(event="ledger_write").info(payload)
-
-

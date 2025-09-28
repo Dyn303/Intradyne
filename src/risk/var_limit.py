@@ -10,4 +10,3 @@ def historical_var(returns: List[float], alpha: float = 0.95) -> float:
 
 
 __all__ = ["historical_var"]
-

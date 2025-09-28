@@ -48,9 +48,7 @@ class Settings(BaseSettings):  # type: ignore[misc]
     # Allowed symbols (comma-separated). Accepts either BASE or BASE/QUOTE.
     # Default Shariah-compliant crypto whitelist (spot-only)
     # Expand/override via config or env ALLOWED_SYMBOLS (comma-separated)
-    ALLOWED_SYMBOLS: str = (
-        "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
-    )
+    ALLOWED_SYMBOLS: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
 
     # Infra
     DB_URL: str = "sqlite:///data/trades.sqlite"
@@ -61,6 +59,9 @@ class Settings(BaseSettings):  # type: ignore[misc]
     # API and rate limits
     RATE_LIMIT_WINDOW: int = 60
     RATE_LIMIT_REQS: int = 120
+    # AI endpoints can override rate limits; fallback to global if unset
+    AI_RATE_LIMIT_WINDOW: int | None = None
+    AI_RATE_LIMIT_REQS: int | None = None
 
     # Broker creds (env only; never commit secrets)
     BITGET_API_KEY: Optional[str] = None
@@ -82,17 +83,28 @@ class Settings(BaseSettings):  # type: ignore[misc]
 
     def _map_compat(self) -> None:
         # Map CCXT_* to BITGET_* if exchange is bitget and bitget vars not set
-        ccxt_exch = (self.CCXT_EXCHANGE_ID or os.getenv("CCXT_EXCHANGE_ID") or "").lower()
+        ccxt_exch = (
+            self.CCXT_EXCHANGE_ID or os.getenv("CCXT_EXCHANGE_ID") or ""
+        ).lower()
         if ccxt_exch == "bitget":
-            ccxt_key = self.CCXT_API_KEY or os.getenv("CCXT_API_KEY") or os.getenv("CCXT_APIKEY")
+            ccxt_key = (
+                self.CCXT_API_KEY
+                or os.getenv("CCXT_API_KEY")
+                or os.getenv("CCXT_APIKEY")
+            )
             ccxt_secret = self.CCXT_SECRET or os.getenv("CCXT_SECRET")
             if not (self.BITGET_API_KEY or "").strip() and (ccxt_key or "").strip():
                 object.__setattr__(self, "BITGET_API_KEY", ccxt_key)
-            if not (self.BITGET_API_SECRET or "").strip() and (ccxt_secret or "").strip():
+            if (
+                not (self.BITGET_API_SECRET or "").strip()
+                and (ccxt_secret or "").strip()
+            ):
                 object.__setattr__(self, "BITGET_API_SECRET", ccxt_secret)
 
     def _validate_required_in_prod(self) -> None:
-        env = (os.getenv("APP_ENV") or os.getenv("ENV") or os.getenv("ENVIRONMENT") or "").lower()
+        env = (
+            os.getenv("APP_ENV") or os.getenv("ENV") or os.getenv("ENVIRONMENT") or ""
+        ).lower()
         is_prod = env in {"prod", "production"}
         if is_prod:
             missing: list[str] = []
@@ -132,9 +144,17 @@ def load_settings() -> Settings:
                 self.DB_URL = env.get("DB_URL", "sqlite:///data/trades.sqlite")
                 self.REDIS_URL = env.get("REDIS_URL")
                 self.LOG_LEVEL = env.get("LOG_LEVEL", "INFO")
-                self.EXPLAIN_LEDGER_PATH = env.get("EXPLAIN_LEDGER_PATH", "explainability_ledger.jsonl")
+                self.EXPLAIN_LEDGER_PATH = env.get(
+                    "EXPLAIN_LEDGER_PATH", "explainability_ledger.jsonl"
+                )
                 self.RATE_LIMIT_WINDOW = int(env.get("RATE_LIMIT_WINDOW", "60"))
                 self.RATE_LIMIT_REQS = int(env.get("RATE_LIMIT_REQS", "120"))
+                self.AI_RATE_LIMIT_WINDOW = (
+                    int(env.get("AI_RATE_LIMIT_WINDOW", "0")) or None
+                )
+                self.AI_RATE_LIMIT_REQS = (
+                    int(env.get("AI_RATE_LIMIT_REQS", "0")) or None
+                )
                 self.BITGET_API_KEY = env.get("BITGET_API_KEY")
                 self.BITGET_API_SECRET = env.get("BITGET_API_SECRET")
                 self.BITGET_API_PASSPHRASE = env.get("BITGET_API_PASSPHRASE")

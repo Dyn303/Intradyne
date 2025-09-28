@@ -11,33 +11,143 @@ from src.backtester.engine import run_backtest_advanced
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="intradyne.backtester")
     p.add_argument("--days", type=int, default=30)
-    p.add_argument("--mode", type=str, choices=["daily","hybrid","trend1h"], default="daily")
+    p.add_argument(
+        "--mode", type=str, choices=["daily", "hybrid", "trend1h"], default="daily"
+    )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--symbols", type=str, default="BTC/USDT,ETH/USDT")
-    p.add_argument("--auto-topk", type=int, default=0, dest="auto_topk", help="If >0, select top-K symbols by momentum from whitelist")
+    p.add_argument(
+        "--auto-topk",
+        type=int,
+        default=0,
+        dest="auto_topk",
+        help="If >0, select top-K symbols by momentum from whitelist",
+    )
     p.add_argument("--ledger", type=str, default="explainability_ledger.jsonl")
     p.add_argument("--starting-equity", type=float, default=10000.0)
     # Strategy params
     p.add_argument("--ma", type=int, default=20, help="Daily MA window (days)")
-    p.add_argument("--ma1h-fast", type=int, default=10, dest="ma1h_fast", help="Hybrid 1h fast MA")
-    p.add_argument("--ma1h-slow", type=int, default=30, dest="ma1h_slow", help="Hybrid 1h slow MA")
-    p.add_argument("--ma15m", type=int, default=10, help="Hybrid scalp TF fast MA (applies to chosen scalp TF)")
-    p.add_argument("--scalp-tf", type=str, default="15m", dest="scalp_tf", help="Scalping timeframe: 15m or 5m")
-    p.add_argument("--scalp-dev-pct", type=float, default=0.005, dest="scalp_dev_pct", help="Scalp entry deviation below 15m MA (e.g., 0.005=0.5%)")
-    p.add_argument("--scalp-hold", type=int, default=8, dest="scalp_hold_bars", help="Max 15m bars to hold a scalp trade")
-    p.add_argument("--scalp-alloc", type=float, default=0.10, dest="scalp_alloc_frac", help="Fraction of equity to allocate per scalp trade (0-1)")
-    p.add_argument("--scalp-cooldown", type=int, default=8, dest="scalp_cooldown_bars", help="Bars to wait after a scalp exit before next scalp")
-    p.add_argument("--scalp-z", type=float, default=1.5, dest="scalp_z_thresh", help="Z-score threshold below which to allow scalps (negative z)")
-    p.add_argument("--scalp-tp-pct", type=float, default=0.003, dest="scalp_tp_pct", help="Take profit percent (e.g., 0.003 = 0.3%)")
-    p.add_argument("--scalp-sl-pct", type=float, default=0.004, dest="scalp_sl_pct", help="Stop loss percent (e.g., 0.004 = 0.4%)")
-    p.add_argument("--slippage-bps", type=float, default=2.0, dest="slippage_bps", help="Per-side slippage in basis points")
-    p.add_argument("--scalp-max-per-day", type=int, default=8, dest="scalp_max_per_day", help="Max scalp entries per day per symbol")
-    p.add_argument("--atr-min-pct", type=float, default=0.003, dest="atr_min_pct", help="Min volatility (std of returns) for scalps")
-    p.add_argument("--atr-max-pct", type=float, default=0.02, dest="atr_max_pct", help="Max volatility for scalps")
-    p.add_argument("--tod-start", type=int, default=6, dest="tod_start_utc", help="UTC hour to start allowing scalps")
-    p.add_argument("--tod-end", type=int, default=22, dest="tod_end_utc", help="UTC hour to stop allowing scalps")
-    p.add_argument("--profile", type=str, default="default", help="Profile presets: default or aggressive-sim")
-    p.add_argument("--sweep-highfreq", action="store_true", help="Run a small parameter sweep for high-frequency hybrid mode")
+    p.add_argument(
+        "--ma1h-fast", type=int, default=10, dest="ma1h_fast", help="Hybrid 1h fast MA"
+    )
+    p.add_argument(
+        "--ma1h-slow", type=int, default=30, dest="ma1h_slow", help="Hybrid 1h slow MA"
+    )
+    p.add_argument(
+        "--ma15m",
+        type=int,
+        default=10,
+        help="Hybrid scalp TF fast MA (applies to chosen scalp TF)",
+    )
+    p.add_argument(
+        "--scalp-tf",
+        type=str,
+        default="15m",
+        dest="scalp_tf",
+        help="Scalping timeframe: 15m or 5m",
+    )
+    p.add_argument(
+        "--scalp-dev-pct",
+        type=float,
+        default=0.005,
+        dest="scalp_dev_pct",
+        help="Scalp entry deviation below 15m MA (e.g., 0.005=0.5%)",
+    )
+    p.add_argument(
+        "--scalp-hold",
+        type=int,
+        default=8,
+        dest="scalp_hold_bars",
+        help="Max 15m bars to hold a scalp trade",
+    )
+    p.add_argument(
+        "--scalp-alloc",
+        type=float,
+        default=0.10,
+        dest="scalp_alloc_frac",
+        help="Fraction of equity to allocate per scalp trade (0-1)",
+    )
+    p.add_argument(
+        "--scalp-cooldown",
+        type=int,
+        default=8,
+        dest="scalp_cooldown_bars",
+        help="Bars to wait after a scalp exit before next scalp",
+    )
+    p.add_argument(
+        "--scalp-z",
+        type=float,
+        default=1.5,
+        dest="scalp_z_thresh",
+        help="Z-score threshold below which to allow scalps (negative z)",
+    )
+    p.add_argument(
+        "--scalp-tp-pct",
+        type=float,
+        default=0.003,
+        dest="scalp_tp_pct",
+        help="Take profit percent (e.g., 0.003 = 0.3%)",
+    )
+    p.add_argument(
+        "--scalp-sl-pct",
+        type=float,
+        default=0.004,
+        dest="scalp_sl_pct",
+        help="Stop loss percent (e.g., 0.004 = 0.4%)",
+    )
+    p.add_argument(
+        "--slippage-bps",
+        type=float,
+        default=2.0,
+        dest="slippage_bps",
+        help="Per-side slippage in basis points",
+    )
+    p.add_argument(
+        "--scalp-max-per-day",
+        type=int,
+        default=8,
+        dest="scalp_max_per_day",
+        help="Max scalp entries per day per symbol",
+    )
+    p.add_argument(
+        "--atr-min-pct",
+        type=float,
+        default=0.003,
+        dest="atr_min_pct",
+        help="Min volatility (std of returns) for scalps",
+    )
+    p.add_argument(
+        "--atr-max-pct",
+        type=float,
+        default=0.02,
+        dest="atr_max_pct",
+        help="Max volatility for scalps",
+    )
+    p.add_argument(
+        "--tod-start",
+        type=int,
+        default=6,
+        dest="tod_start_utc",
+        help="UTC hour to start allowing scalps",
+    )
+    p.add_argument(
+        "--tod-end",
+        type=int,
+        default=22,
+        dest="tod_end_utc",
+        help="UTC hour to stop allowing scalps",
+    )
+    p.add_argument(
+        "--profile",
+        type=str,
+        default="default",
+        help="Profile presets: default or aggressive-sim",
+    )
+    p.add_argument(
+        "--sweep-highfreq",
+        action="store_true",
+        help="Run a small parameter sweep for high-frequency hybrid mode",
+    )
     args = p.parse_args(argv)
 
     setup_logging()
@@ -49,6 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         # Momentum selector: top-K by 60-day return among allowed whitelist
         from src.core.config import load_settings
         from src.backtester.engine import get_candles, _symbol_to_pair
+
         s = load_settings()
         wl = s.allowed_crypto_list()
         pairs = [_symbol_to_pair(x) for x in wl]
@@ -171,7 +282,12 @@ def main(argv: list[str] | None = None) -> int:
             slippage_bps=args.slippage_bps,
         )
     else:
-        summary, csv_path, json_path = run_backtest_advanced(days=args.days, symbols=symbols, starting_equity=args.starting_equity, ma_window=args.ma)
+        summary, csv_path, json_path = run_backtest_advanced(
+            days=args.days,
+            symbols=symbols,
+            starting_equity=args.starting_equity,
+            ma_window=args.ma,
+        )
     print(f"CSV: {csv_path}")
     print(f"JSON: {json_path}")
     return 0

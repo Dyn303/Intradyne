@@ -1,4 +1,9 @@
-from app.compliance import assert_whitelisted, enforce_spot_only, forbid_shorting, ComplianceError
+from app.compliance import (
+    assert_whitelisted,
+    enforce_spot_only,
+    forbid_shorting,
+    ComplianceError,
+)
 
 
 def test_whitelist_blocks_non_whitelisted():
@@ -27,4 +32,3 @@ def test_forbid_shorting_when_no_inventory():
         pass
     else:
         assert False, "Expected ComplianceError for shorting"
-

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Deque, Dict
+from typing import Deque, Dict, Optional, Tuple
 
 
 @dataclass
@@ -12,7 +12,9 @@ class RiskState:
     dd_soft_triggered: bool = False
     dd_hard_triggered: bool = False
     kill_switch: bool = False
-    symbol_windows: Dict[str, Deque[tuple[float, float]]] = field(default_factory=dict)  # ts, price for 60m
+    symbol_windows: Dict[str, Deque[tuple[float, float]]] = field(
+        default_factory=dict
+    )  # ts, price for 60m
 
 
 @dataclass
@@ -26,13 +28,29 @@ class RiskManager:
     max_concurrent_pos: int
     kill_switch_breaches: int
     state: RiskState = field(default_factory=RiskState)
+    # Optional ATR-based exits
+    use_atr: bool = False
+    atr_window: Optional[int] = None
+    atr_k_sl: Optional[float] = None
+    atr_k_tp: Optional[float] = None
 
     def sizer(self, equity: float, price: float) -> float:
         max_notional = equity * self.max_pos_pct
         qty = max_notional / price if price > 0 else 0.0
         return max(qty, 0.0)
 
-    def sl_tp_levels(self, entry_price: float) -> tuple[float, float]:
+    def sl_tp_levels(
+        self, entry_price: float, atr: Optional[float] = None
+    ) -> Tuple[float, float]:
+        # Prefer ATR-based exits if configured and ATR provided
+        if self.use_atr and atr is not None and atr > 0:
+            k_sl = self.atr_k_sl or 0.0
+            k_tp = self.atr_k_tp or 0.0
+            if k_sl > 0 and k_tp > 0:
+                sl_abs = max(1e-9, entry_price - k_sl * atr)
+                tp_abs = max(1e-9, entry_price + k_tp * atr)
+                return sl_abs, tp_abs
+        # Fallback to percentage-based SL/TP
         sl = entry_price * (1.0 - self.per_trade_sl_pct)
         tp = entry_price * (1.0 + self.tp_pct)
         return sl, tp
@@ -70,7 +88,10 @@ class RiskManager:
     def can_open_new_position(self, open_positions: int) -> bool:
         if self.state.kill_switch or self.state.dd_hard_triggered:
             return False
-        return open_positions < self.max_concurrent_pos and not self.state.dd_soft_triggered
+        return (
+            open_positions < self.max_concurrent_pos
+            and not self.state.dd_soft_triggered
+        )
 
     def _register_breach(self, ts: float) -> None:
         self.state.breaches_24h.append(ts)
@@ -82,4 +103,3 @@ class RiskManager:
             q.popleft()
         if len(q) >= self.kill_switch_breaches:
             self.state.kill_switch = True
-

@@ -17,4 +17,3 @@ def test_max_drawdown_from_running_peak():
     equity = [100.0, 110.0, 120.0, 115.0, 90.0, 95.0, 130.0]
     mdd = compute_max_drawdown(equity)
     assert round(mdd, 6) == 25.0
-

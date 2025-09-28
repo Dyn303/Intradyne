@@ -5,4 +5,3 @@ from ._common import BaseStrategy
 
 class ModerateStrategy(BaseStrategy):
     pass
-

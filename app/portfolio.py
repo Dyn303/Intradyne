@@ -17,7 +17,9 @@ class Position:
         notional_new = qty * price
         notional_old = self.base * self.avg_price
         total_base = self.base + qty
-        self.avg_price = (notional_old + notional_new) / total_base if total_base > 0 else 0.0
+        self.avg_price = (
+            (notional_old + notional_new) / total_base if total_base > 0 else 0.0
+        )
         self.base = total_base
 
     def update_on_sell(self, qty: float, price: float) -> float:
@@ -58,7 +60,9 @@ class Portfolio:
         bps = self.maker_bps if is_maker else self.taker_bps
         return notional * (bps / 10_000.0)
 
-    def buy(self, symbol: str, qty: float, price: float, is_maker: bool = False) -> None:
+    def buy(
+        self, symbol: str, qty: float, price: float, is_maker: bool = False
+    ) -> None:
         notional = qty * price
         fee = self.fee_for(notional, is_maker)
         total_cost = notional + fee
@@ -68,7 +72,9 @@ class Portfolio:
         pos = self.get_position(symbol)
         pos.update_on_buy(qty, price)
 
-    def sell(self, symbol: str, qty: float, price: float, is_maker: bool = False) -> float:
+    def sell(
+        self, symbol: str, qty: float, price: float, is_maker: bool = False
+    ) -> float:
         pos = self.get_position(symbol)
         if qty > pos.base:
             qty = pos.base
@@ -77,4 +83,3 @@ class Portfolio:
         pnl = pos.update_on_sell(qty, price)
         self.balances[self.quote_ccy] += notional - fee
         return pnl
-

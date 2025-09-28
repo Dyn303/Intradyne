@@ -55,4 +55,3 @@ class DataFeed:
 
     async def stop(self) -> None:
         self._running = False
-

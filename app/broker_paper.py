@@ -40,9 +40,19 @@ class PaperBroker:
         else:
             return price * (1.0 - bps)
 
-    def place_order(self, symbol: str, side: str, type_: str, qty: float, price: Optional[float], l1: Dict[str, float]) -> Order:
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        type_: str,
+        qty: float,
+        price: Optional[float],
+        l1: Dict[str, float],
+    ) -> Order:
         oid = self._new_order_id()
-        order = Order(id=oid, symbol=symbol, side=side, type=type_, qty=qty, price=price)
+        order = Order(
+            id=oid, symbol=symbol, side=side, type=type_, qty=qty, price=price
+        )
         self.orders[oid] = order
         self._try_fill(order, l1)
         return order
@@ -64,11 +74,21 @@ class PaperBroker:
             order.status = "filled"
             order.filled = order.qty
         elif order.type == "limit":
-            if order.side == "buy" and ask is not None and order.price is not None and ask <= order.price:
+            if (
+                order.side == "buy"
+                and ask is not None
+                and order.price is not None
+                and ask <= order.price
+            ):
                 self._execute(order, order.qty, order.price, is_maker=True)
                 order.status = "filled"
                 order.filled = order.qty
-            elif order.side == "sell" and bid is not None and order.price is not None and bid >= order.price:
+            elif (
+                order.side == "sell"
+                and bid is not None
+                and order.price is not None
+                and bid >= order.price
+            ):
                 self._execute(order, order.qty, order.price, is_maker=True)
                 order.status = "filled"
                 order.filled = order.qty
@@ -77,9 +97,17 @@ class PaperBroker:
                 pass
 
     def _execute(self, order: Order, qty: float, price: float, is_maker: bool) -> None:
-        logger.bind(event="paper_fill").info({"order_id": order.id, "symbol": order.symbol, "side": order.side, "qty": qty, "price": price, "maker": is_maker})
+        logger.bind(event="paper_fill").info(
+            {
+                "order_id": order.id,
+                "symbol": order.symbol,
+                "side": order.side,
+                "qty": qty,
+                "price": price,
+                "maker": is_maker,
+            }
+        )
         if order.side == "buy":
             self.portfolio.buy(order.symbol, qty, price, is_maker=is_maker)
         else:
             self.portfolio.sell(order.symbol, qty, price, is_maker=is_maker)
-

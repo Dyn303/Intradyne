@@ -46,7 +46,9 @@ def submit_order(
             "side": adj.side,
             "qty": adj.qty,
             "reasons": reasons,
-            "exec": {k: result.get(k) for k in ("order_id", "status", "venue") if k in result},
+            "exec": {
+                k: result.get(k) for k in ("order_id", "status", "venue") if k in result
+            },
         },
     )
     return True, result
@@ -57,9 +59,15 @@ def create_order(inp: OrderIn):
     gr = get_guardrails()
 
     def _exec(o: OrderReq) -> Dict:
-        return {"trade_id": str(uuid.uuid4()), "order_id": str(uuid.uuid4()), "status": "accepted"}
+        return {
+            "trade_id": str(uuid.uuid4()),
+            "order_id": str(uuid.uuid4()),
+            "status": "accepted",
+        }
 
-    ok, payload = submit_order(gr, OrderReq(symbol=inp.symbol, side=inp.side, qty=inp.qty), _exec)
+    ok, payload = submit_order(
+        gr, OrderReq(symbol=inp.symbol, side=inp.side, qty=inp.qty), _exec
+    )
     if not ok:
         raise HTTPException(status_code=400, detail=payload)
     return payload

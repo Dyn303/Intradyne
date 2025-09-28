@@ -11,4 +11,3 @@ def test_metrics_endpoint_exposes_prometheus_format():
     assert r.status_code == 200
     # Prometheus text exposition starts with comment HELP/TYPE lines
     assert r.text.startswith("#")
-

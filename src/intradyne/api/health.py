@@ -37,6 +37,7 @@ def readyz():
             # parse path
             path = s.DB_URL.split("sqlite:///")[-1]
             import os as _os
+
             _os.makedirs(_os.path.dirname(path) or ".", exist_ok=True)
             conn = sqlite3.connect(path)
             conn.execute("SELECT 1")
@@ -52,7 +53,9 @@ def readyz():
             u = urlparse(s.REDIS_URL)
             import socket
 
-            with socket.create_connection((u.hostname or "localhost", int(u.port or 6379)), timeout=0.2):
+            with socket.create_connection(
+                (u.hostname or "localhost", int(u.port or 6379)), timeout=0.2
+            ):
                 pass
             redis_ok = True
         else:
@@ -60,7 +63,12 @@ def readyz():
     except Exception:
         redis_ok = False
     ready = db_ok and redis_ok
-    return JSONResponse(status_code=status.HTTP_200_OK if ready else status.HTTP_503_SERVICE_UNAVAILABLE, content={"ready": ready, "components": {"db": db_ok, "redis": redis_ok}})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK
+        if ready
+        else status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"ready": ready, "components": {"db": db_ok, "redis": redis_ok}},
+    )
 
 
 @router.get("/ops/test_connectivity")
@@ -96,10 +104,18 @@ def test_connectivity(hosts: str | None = None, timeout: float = 3.0):
             ctx = ssl.create_default_context()
             ss = ctx.wrap_socket(s, server_hostname=h)
             # Minimal request to elicit a response
-            ss.send(b"HEAD / HTTP/1.1\r\nHost: " + h.encode() + b"\r\nConnection: close\r\n\r\n")
+            ss.send(
+                b"HEAD / HTTP/1.1\r\nHost: "
+                + h.encode()
+                + b"\r\nConnection: close\r\n\r\n"
+            )
             line = (ss.recv(120) or b"").decode("latin1", "ignore").splitlines()[:1]
             ss.close()
-            return {"ok": True, "ms": int((time.time() - t0) * 1000), "status": (line[0] if line else "")}
+            return {
+                "ok": True,
+                "ms": int((time.time() - t0) * 1000),
+                "status": (line[0] if line else ""),
+            }
         except Exception as e:  # noqa: BLE001
             return {"ok": False, "error": str(e)}
 
@@ -122,7 +138,9 @@ def test_connectivity(hosts: str | None = None, timeout: float = 3.0):
         "api.binance.com",
         "example.com",
     ]
-    host_list = [h.strip() for h in (hosts.split(",") if hosts else default_hosts) if h.strip()]
+    host_list = [
+        h.strip() for h in (hosts.split(",") if hosts else default_hosts) if h.strip()
+    ]
 
     external = {}
     for h in host_list:

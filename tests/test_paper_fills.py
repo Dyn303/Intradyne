@@ -27,4 +27,3 @@ def test_limit_buy_fill_when_touched():
     o1 = pb.place_order("ETH/USDT", "buy", "limit", 2.0, 100.5, l1)
     assert o1.status == "filled"
     assert abs(pf.positions["ETH/USDT"].base - 2.0) < 1e-9
-

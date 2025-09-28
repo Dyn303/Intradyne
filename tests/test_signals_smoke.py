@@ -31,4 +31,3 @@ def test_aggressive():
 
 def test_very_aggressive():
     _smoke_strategy(VeryAggressiveStrategy)
-

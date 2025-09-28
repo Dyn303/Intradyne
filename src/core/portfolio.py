@@ -46,9 +46,14 @@ class Portfolio:
     ) -> List[Tuple[str, str, float, float]]:
         # Ensure cash symbol exists
         targets = {**target_weights}
-        targets.setdefault("USDT", 1.0 - sum(v for k, v in targets.items() if k != "USDT"))
+        targets.setdefault(
+            "USDT", 1.0 - sum(v for k, v in targets.items() if k != "USDT")
+        )
         # Compute current holdings value
-        holdings_value = sum(self.positions.get(sym, 0.0) * prices.get(sym, 0.0) for sym in self.positions)
+        holdings_value = sum(
+            self.positions.get(sym, 0.0) * prices.get(sym, 0.0)
+            for sym in self.positions
+        )
         total_equity = self.cash + holdings_value
         if total_equity <= 0:
             return []
@@ -92,4 +97,3 @@ class Portfolio:
                     trades.append((sym, side, sell_qty, fill_px))
                     self.trades_today += 1
         return trades
-

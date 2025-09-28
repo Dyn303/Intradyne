@@ -13,7 +13,9 @@ class BaseStrategy:
         # Simple momentum proxy: signal = price / mean(price in universe)
         if not prices:
             return {s: 0.0 for s in self.universe}
-        avg = sum(prices.get(s, 0.0) for s in self.universe if s != "USDT") / max(1, len(self.universe) - 1)
+        avg = sum(prices.get(s, 0.0) for s in self.universe if s != "USDT") / max(
+            1, len(self.universe) - 1
+        )
         signals = {}
         for s in self.universe:
             if s == "USDT":
@@ -23,9 +25,15 @@ class BaseStrategy:
                 signals[s] = p / (avg or 1.0)
         return signals
 
-    def allocate_portfolio(self, signals: Dict[str, float], portfolio) -> Dict[str, float]:
+    def allocate_portfolio(
+        self, signals: Dict[str, float], portfolio
+    ) -> Dict[str, float]:
         # Convert signals to positive weights and normalize; include some cash (USDT)
-        pos = {k: max(0.0, v) for k, v in signals.items() if k in self.universe and k != "USDT"}
+        pos = {
+            k: max(0.0, v)
+            for k, v in signals.items()
+            if k in self.universe and k != "USDT"
+        }
         total = sum(pos.values())
         weights: Dict[str, float] = {}
         if total <= 0:
@@ -43,4 +51,3 @@ class BaseStrategy:
             # Adjust cash to close rounding
             weights["USDT"] = max(0.0, weights.get("USDT", 0.0) + (1.0 - s))
         return weights
-

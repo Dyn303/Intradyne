@@ -31,13 +31,19 @@ def _bootstrap_bitget_env():
                 key, val = line.split("=", 1)
                 key = key.strip()
                 val = val.strip()
-                if key in ("BITGET_API_KEY", "CCXT_API_KEY") and not os.environ.get("BITGET_API_KEY"):
+                if key in ("BITGET_API_KEY", "CCXT_API_KEY") and not os.environ.get(
+                    "BITGET_API_KEY"
+                ):
                     if val:
                         os.environ["BITGET_API_KEY"] = val
-                elif key in ("BITGET_API_SECRET", "CCXT_SECRET") and not os.environ.get("BITGET_API_SECRET"):
+                elif key in ("BITGET_API_SECRET", "CCXT_SECRET") and not os.environ.get(
+                    "BITGET_API_SECRET"
+                ):
                     if val:
                         os.environ["BITGET_API_SECRET"] = val
-                elif key == "BITGET_API_PASSPHRASE" and not os.environ.get("BITGET_API_PASSPHRASE"):
+                elif key == "BITGET_API_PASSPHRASE" and not os.environ.get(
+                    "BITGET_API_PASSPHRASE"
+                ):
                     if val:
                         os.environ["BITGET_API_PASSPHRASE"] = val
         except Exception:
@@ -46,7 +52,9 @@ def _bootstrap_bitget_env():
 
     # If passphrase still missing, provide a non-empty placeholder for test purposes
     if not os.environ.get("BITGET_API_PASSPHRASE"):
-        os.environ["BITGET_API_PASSPHRASE"] = os.environ.get("BITGET_API_PASSPHRASE", "placeholder") or "placeholder"
+        os.environ["BITGET_API_PASSPHRASE"] = (
+            os.environ.get("BITGET_API_PASSPHRASE", "placeholder") or "placeholder"
+        )
 
 
 def test_bitget_env_present_and_mask_key():
@@ -56,6 +64,7 @@ def test_bitget_env_present_and_mask_key():
     # Load Settings to satisfy import/use requirement
     try:
         from src.config import Settings  # noqa: F401
+
         _ = Settings()
     except Exception:
         # Even if config loading fails, the env assertions below are the target

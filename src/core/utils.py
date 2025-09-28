@@ -6,4 +6,3 @@ ALLOWED_UNIVERSE = [
     "SOL/USDT",
     "USDT",
 ]
-

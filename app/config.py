@@ -27,7 +27,9 @@ class FeesConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra='ignore')
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+    )
 
     mode: str = "paper"  # paper | live
     exchange: str = "bitget"
@@ -69,7 +71,8 @@ def load_settings() -> Settings:
         mode=os.getenv("MODE", "paper"),
         exchange=os.getenv("EXCHANGE", "bitget"),
         use_testnet=os.getenv("USE_TESTNET", "true").lower() == "true",
-        live_trading_enabled=os.getenv("LIVE_TRADING_ENABLED", "false").lower() == "true",
+        live_trading_enabled=os.getenv("LIVE_TRADING_ENABLED", "false").lower()
+        == "true",
         api_key=os.getenv("API_KEY", ""),
         api_secret=os.getenv("API_SECRET", ""),
         api_passphrase=os.getenv("API_PASSPHRASE", ""),

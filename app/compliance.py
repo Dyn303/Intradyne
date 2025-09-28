@@ -33,5 +33,3 @@ def forbid_shorting(side: str, base_inventory: float) -> None:
     # Long-only: sells are allowed only to close existing inventory (no negative inventory)
     if side.lower() == "sell" and base_inventory <= 0:
         raise ComplianceError("Short selling blocked by Shariah compliance.")
-
-

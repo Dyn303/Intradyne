@@ -28,4 +28,3 @@ class ChildOrder:
 
 
 __all__ = ["Order", "VenueQuote", "ChildOrder"]
-

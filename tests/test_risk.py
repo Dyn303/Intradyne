@@ -20,4 +20,3 @@ def test_flash_crash_detection():
     ts = 1000.0
     assert rm.flash_crash_check("BTC/USDT", ts, 100.0) is False
     assert rm.flash_crash_check("BTC/USDT", ts + 1, 65.0) is True
-

@@ -20,7 +20,9 @@ class BaseStrategy:
     def generate_signals(self, prices: Dict[str, float]) -> Signal:
         raise NotImplementedError
 
-    def allocate_portfolio(self, signals: Signal, portfolio) -> Weights:  # portfolio is src.core.portfolio.Portfolio
+    def allocate_portfolio(
+        self, signals: Signal, portfolio
+    ) -> Weights:  # portfolio is src.core.portfolio.Portfolio
         raise NotImplementedError
 
     def clamp_weights(self, weights: Weights) -> Weights:
@@ -28,4 +30,3 @@ class BaseStrategy:
         w = {k: v for k, v in weights.items() if k in ALLOWED_UNIVERSE}
         w.setdefault("USDT", 0.0)
         return clamp_weights(w)
-

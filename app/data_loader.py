@@ -50,7 +50,9 @@ class DataLoader:
         _ensure_dir(root)
         return root / f"{sym}_{timeframe}.csv"
 
-    async def fetch_ohlcv_ccxt(self, symbol: str, timeframe: str, start_ms: int, end_ms: int) -> pd.DataFrame:
+    async def fetch_ohlcv_ccxt(
+        self, symbol: str, timeframe: str, start_ms: int, end_ms: int
+    ) -> pd.DataFrame:
         ex = getattr(ccxt, self.cfg.exchange)({"enableRateLimit": True})
         await ex.load_markets()
         tf = timeframe
@@ -68,12 +70,23 @@ class DataLoader:
                 break
         await ex.close()
         if not all_rows:
-            return pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume"])  # empty
-        df = pd.DataFrame(all_rows, columns=["timestamp", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(
+                columns=["timestamp", "open", "high", "low", "close", "volume"]
+            )  # empty
+        df = pd.DataFrame(
+            all_rows, columns=["timestamp", "open", "high", "low", "close", "volume"]
+        )
         df = df[(df["timestamp"] >= start_ms) & (df["timestamp"] <= end_ms)]
         return df
 
-    async def load_ohlcv(self, symbol: str, timeframe: str, start_ms: int, end_ms: int, use_cache: bool = True) -> pd.DataFrame:
+    async def load_ohlcv(
+        self,
+        symbol: str,
+        timeframe: str,
+        start_ms: int,
+        end_ms: int,
+        use_cache: bool = True,
+    ) -> pd.DataFrame:
         path = self._symbol_path(symbol, timeframe)
         if use_cache and path.exists():
             df = pd.read_csv(path)
@@ -89,7 +102,9 @@ class DataLoader:
                     df = self._synthesize_direct(symbol, timeframe, start_ms, end_ms)
             else:
                 try:
-                    df = await self.fetch_ohlcv_ccxt(symbol, timeframe, start_ms, end_ms)
+                    df = await self.fetch_ohlcv_ccxt(
+                        symbol, timeframe, start_ms, end_ms
+                    )
                 except Exception:
                     df = self._synthesize_direct(symbol, timeframe, start_ms, end_ms)
             if not df.empty:
@@ -129,12 +144,17 @@ class DataLoader:
                 lo = min(l0, o, c)
                 vol = v0 / segments
                 rows.append([ts, o, hi, lo, c, vol])
-        return pd.DataFrame(rows, columns=["timestamp", "open", "high", "low", "close", "volume"])
+        return pd.DataFrame(
+            rows, columns=["timestamp", "open", "high", "low", "close", "volume"]
+        )
 
     @staticmethod
-    def _synthesize_direct(symbol: str, timeframe: str, start_ms: int, end_ms: int) -> pd.DataFrame:
+    def _synthesize_direct(
+        symbol: str, timeframe: str, start_ms: int, end_ms: int
+    ) -> pd.DataFrame:
         # Deterministic synthetic OHLCV via seeded random walk
         import numpy as np
+
         sec = timeframe_to_seconds(timeframe)
         if sec <= 0:
             sec = 60
@@ -154,7 +174,9 @@ class DataLoader:
             lo = min(o, c) * (1.0 - 0.0008)
             vol = 5.0 + (i % 7)
             rows.append([ts, o, hi, lo, c, vol])
-        return pd.DataFrame(rows, columns=["timestamp", "open", "high", "low", "close", "volume"])
+        return pd.DataFrame(
+            rows, columns=["timestamp", "open", "high", "low", "close", "volume"]
+        )
 
     @staticmethod
     def resample(df: pd.DataFrame, timeframe: str) -> pd.DataFrame:
@@ -163,19 +185,28 @@ class DataLoader:
         s = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         df = df.set_index(s)
         rule = timeframe
-        ohlc = df[["open", "high", "low", "close", "volume"]].resample(rule).agg({
-            "open": "first",
-            "high": "max",
-            "low": "min",
-            "close": "last",
-            "volume": "sum",
-        }).dropna()
+        ohlc = (
+            df[["open", "high", "low", "close", "volume"]]
+            .resample(rule)
+            .agg(
+                {
+                    "open": "first",
+                    "high": "max",
+                    "low": "min",
+                    "close": "last",
+                    "volume": "sum",
+                }
+            )
+            .dropna()
+        )
         ohlc["timestamp"] = ohlc.index.view("int64") // 1_000_000
         cols = ["timestamp", "open", "high", "low", "close", "volume"]
         return ohlc[cols]
 
     @staticmethod
-    def bars_to_l1(df: pd.DataFrame, spread_bps: float = 1.0) -> Iterator[Dict[str, Any]]:
+    def bars_to_l1(
+        df: pd.DataFrame, spread_bps: float = 1.0
+    ) -> Iterator[Dict[str, Any]]:
         if df.empty:
             return iter(())
         for _, row in df.iterrows():
@@ -193,7 +224,9 @@ class DataLoader:
                 "volume": float(row.get("volume", 0.0)),
             }
 
-    async def multi_symbol_stream(self, symbols: List[str], timeframe: str, start_ms: int, end_ms: int) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
+    async def multi_symbol_stream(
+        self, symbols: List[str], timeframe: str, start_ms: int, end_ms: int
+    ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         # Load all symbols then merge by timestamp using heap
         import heapq
 
@@ -202,7 +235,9 @@ class DataLoader:
             df = await self.load_ohlcv(s, timeframe, start_ms, end_ms)
             frames[s] = df
 
-        iters: Dict[str, Iterator[Dict[str, Any]]] = {s: self.bars_to_l1(frames[s]).__iter__() for s in symbols}
+        iters: Dict[str, Iterator[Dict[str, Any]]] = {
+            s: self.bars_to_l1(frames[s]).__iter__() for s in symbols
+        }
         heap: List[Tuple[float, str, Dict[str, Any]]] = []
         for s, it in iters.items():
             try:

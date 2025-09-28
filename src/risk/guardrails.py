@@ -1,10 +1,11 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from src.core.ledger import Ledger
+from prometheus_client import Counter
 
 
 # Defaults (can be overridden via constructor/env)
@@ -13,6 +14,12 @@ DD_HALT_PCT = float(os.getenv("DD_HALT_PCT", 0.20))
 FLASH_CRASH_PCT = float(os.getenv("FLASH_CRASH_PCT", 0.30))
 KILL_SWITCH_BREACHES = int(os.getenv("KILL_SWITCH_BREACHES", 3))
 VAR_1D_MAX = float(os.getenv("VAR_1D_MAX", 0.05))
+
+_BREACH_COUNTER = Counter(
+    "intradyne_guardrail_breaches_total",
+    "Total guardrail breaches",
+    labelnames=("type", "action"),
+)
 
 
 @dataclass
@@ -24,7 +31,6 @@ class OrderReq:
 
     def step_down(self, factor: float = 0.5) -> "OrderReq":
         return replace(self, qty=max(self.qty * factor, 0.0))
-
 
     # Ledger is provided by src.core.ledger
 
@@ -84,11 +90,19 @@ def is_crypto_symbol(symbol: str) -> bool:
 
 
 class ShariahPolicy:
-    def __init__(self, allowed_crypto: Optional[Iterable[str]] = None, blocked_tags: Optional[Iterable[str]] = None):
+    def __init__(
+        self,
+        allowed_crypto: Optional[Iterable[str]] = None,
+        blocked_tags: Optional[Iterable[str]] = None,
+    ):
         self.allowed_crypto = set(allowed_crypto or [])
-        self.blocked_tags = set(blocked_tags or ["gambling", "riba", "porn"])  # extensible
+        self.blocked_tags = set(
+            blocked_tags or ["gambling", "riba", "porn"]
+        )  # extensible
 
-    def check(self, symbol: str, meta: Optional[Dict[str, Any]] = None) -> Tuple[bool, str]:
+    def check(
+        self, symbol: str, meta: Optional[Dict[str, Any]] = None
+    ) -> Tuple[bool, str]:
         if is_crypto_symbol(symbol):
             if self.allowed_crypto and symbol not in self.allowed_crypto:
                 return False, f"Crypto {symbol} not in allowed list"
@@ -126,10 +140,20 @@ class Guardrails:
         payload = {"type": btype}
         payload.update(fields)
         self.ledger.append("guardrail_breach", payload)
+        try:
+            _BREACH_COUNTER.labels(
+                type=btype, action=str(fields.get("action", ""))
+            ).inc()
+        except Exception:
+            pass
 
     def _recent_breach_count(self, hours: int = 24) -> int:
         since = datetime.utcnow() - timedelta(hours=hours)
-        return sum(1 for r in self.ledger.iter_recent(since) if r.get("event") == "guardrail_breach")
+        return sum(
+            1
+            for r in self.ledger.iter_recent(since)
+            if r.get("event") == "guardrail_breach"
+        )
 
     def gate_trade(self, req: OrderReq) -> Tuple[str, List[str], OrderReq]:
         reasons: List[str] = []
@@ -144,10 +168,20 @@ class Guardrails:
         eq = self.risk.equity_series_30d()
         dd = dd_30d(eq)
         if dd >= self.th["dd_halt"]:
-            self._breach("dd_halt", metric=round(dd, 6), threshold=self.th["dd_halt"], action="halt")
+            self._breach(
+                "dd_halt",
+                metric=round(dd, 6),
+                threshold=self.th["dd_halt"],
+                action="halt",
+            )
             return "halt", [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"], req
         if dd >= self.th["dd_warn"]:
-            self._breach("dd_warn", metric=round(dd, 6), threshold=self.th["dd_warn"], action="warn")
+            self._breach(
+                "dd_warn",
+                metric=round(dd, 6),
+                threshold=self.th["dd_warn"],
+                action="warn",
+            )
             reasons.append(f"dd_warn {dd:.3f}")
 
         # 3) Flash crash check (1h drop > threshold)
@@ -157,8 +191,18 @@ class Guardrails:
         if p_now and p_1h and p_1h > 0:
             drop = (p_1h - p_now) / p_1h
             if drop > self.th["flash"]:
-                self._breach("flash_crash", symbol=req.symbol, metric=round(drop, 6), threshold=self.th["flash"], action="pause")
-                return "pause", [f"flash_crash {drop:.3f} > {self.th['flash']:.3f}"], req
+                self._breach(
+                    "flash_crash",
+                    symbol=req.symbol,
+                    metric=round(drop, 6),
+                    threshold=self.th["flash"],
+                    action="pause",
+                )
+                return (
+                    "pause",
+                    [f"flash_crash {drop:.3f} > {self.th['flash']:.3f}"],
+                    req,
+                )
 
         # 4) Kill switch (N breaches in last 24h)
         if self._recent_breach_count(24) >= int(self.th["kill_switch"]):
@@ -169,10 +213,13 @@ class Guardrails:
         rets = self.risk.equity_daily_returns_30d()
         var = historical_var(rets, alpha=0.95)
         if var > self.th["var_max"]:
-            self._breach("var_stepdown", metric=round(var, 6), threshold=self.th["var_max"], action="stepdown")
+            self._breach(
+                "var_stepdown",
+                metric=round(var, 6),
+                threshold=self.th["var_max"],
+                action="stepdown",
+            )
             req = req.step_down()
             reasons.append(f"var {var:.3f} > {self.th['var_max']:.3f}")
 
         return "allow", reasons, req
-
-
