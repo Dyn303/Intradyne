@@ -196,4 +196,3 @@ async def get_sentiment(refresh: int = 0) -> Dict[str, Any]:
         "ts": int(_time.time()),
         "cached": int(refresh) == 0,
     }
-

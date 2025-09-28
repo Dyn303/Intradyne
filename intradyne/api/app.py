@@ -71,12 +71,16 @@ def _startup_logging() -> None:
     setup_logging(_os.getenv("LOG_LEVEL"))
 
 
-# Optional API key requirement + general rate limit
-_auth_required = (_os.getenv("API_AUTH_REQUIRED") or "").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-}
+# API auth: default-on in production, else env-driven
+_env = (
+    _os.getenv("APP_ENV") or _os.getenv("ENV") or _os.getenv("ENVIRONMENT") or ""
+).lower()
+_auth_cfg = (_os.getenv("API_AUTH_REQUIRED") or "").strip().lower()
+_auth_required = (
+    True
+    if _env in {"prod", "production"} and not _auth_cfg
+    else _auth_cfg in {"1", "true", "yes"}
+)
 deps_auth = [Depends(require_api_key)] if _auth_required else []
 deps_common = deps_auth + [Depends(general_rate_limit)]
 

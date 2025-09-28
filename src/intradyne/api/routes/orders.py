@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from intradyne.risk.guardrails import Guardrails, OrderReq
-from intradyne.api.deps import get_guardrails
+from intradyne.api.deps import get_guardrails, is_halted
 
 
 router = APIRouter()
@@ -24,6 +24,22 @@ def submit_order(
     order: OrderReq,
     executor: Callable[[OrderReq], Dict],
 ) -> Tuple[bool, Dict]:
+    # Hard halt switch (admin)
+    try:
+        if is_halted():
+            guardrails.ledger.append(
+                "order_blocked",
+                {
+                    "symbol": order.symbol,
+                    "side": order.side,
+                    "qty": order.qty,
+                    "action": "halt",
+                    "reasons": ["admin_halt"],
+                },
+            )
+            return False, {"error": "halt", "reasons": ["admin_halt"]}
+    except Exception:
+        pass
     action, reasons, adj = guardrails.gate_trade(order)
     if action != "allow":
         guardrails.ledger.append(
