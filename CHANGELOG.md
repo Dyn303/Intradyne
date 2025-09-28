@@ -48,3 +48,10 @@
 - Hygiene: added `.dockerignore` to trim build context; tightened `.gitignore` for artifacts/data/venv.
 - Core: added `src/intradyne/core/logging.py` with `setup_logging` + JSON logs; maintains secret redaction.
 - Status: lint clean, tests green, mypy (scoped) passes, container healthy.
+
+## v1.9.4 - 2025-09-28
+- API: add general rate limiter for non-AI routes (Redis or in-memory sliding window).
+- API: initialize structured JSON logging on startup for consistent logs.
+- Core: clean allowed symbol builder to avoid self-pairs (e.g., USDT/USDT).
+- Core: deduplicate logging implementation; `src/intradyne/core/logging.py` now re-exports canonical `src/core/logging.py`.
+- CI: ensure ruff formatting applied repo-wide.
