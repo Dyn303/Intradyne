@@ -43,6 +43,10 @@ def run_compare(days: int, symbols: List[str]) -> Dict[str, Any]:
         atr_entry_min=0.001,  # skip very choppy (<10bps avg move)
         atr_entry_max=0.02,  # skip too volatile (>2% avg move)
         regime=True,
+        use_sentiment=True,
+        sentiment_min=0.0,
+        size_min=0.9,
+        size_max=1.2,
         report=True,
     )
     return {"baseline": base, "tuned": tuned}

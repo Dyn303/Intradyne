@@ -48,6 +48,11 @@ def run_backtest(
     atr_entry_min: float = 0.0,  # min ATR%% to avoid chop (e.g., 0.001 = 10 bps)
     atr_entry_max: float = 0.0,  # max ATR%% to avoid too-volatile entries (0 disables)
     regime: bool = False,  # basic regime classification (trend vs. chop)
+    # Sentiment simulation (optional)
+    use_sentiment: bool = False,
+    sentiment_min: float = 0.0,
+    size_min: float = 0.8,
+    size_max: float = 1.2,
     report: bool = False,
 ) -> int | Dict[str, object]:
     import math
@@ -125,6 +130,11 @@ def run_backtest(
             atr_pct = (sum(abs_rets) / len(abs_rets)) if abs_rets else 0.0
             atr_min_ok = (atr_entry_min <= 0) or (atr_pct >= atr_entry_min)
             atr_max_ok = (atr_entry_max <= 0) or (atr_pct <= atr_entry_max)
+            # Synthetic sentiment (slow oscillation)
+            sent = 0.0
+            if use_sentiment:
+                sent = math.sin(2.0 * math.pi * (t / float(max(1, 24 * 7))))
+            sent_ok = (not use_sentiment) or (sent >= sentiment_min)
             if (
                 not above_ma
                 and price > ma
@@ -133,6 +143,7 @@ def run_backtest(
                 and atr_min_ok
                 and atr_max_ok
                 and regime_ok
+                and sent_ok
             ):
                 # cross up -> buy
                 orders += 1
@@ -161,7 +172,13 @@ def run_backtest(
                         weight = 1.0
                         if risk_per_trade > 0 and atr_pct > 0:
                             weight = min(1.0, risk_per_trade / max(1e-9, atr_pct))
-                        eff_r = r * weight
+                        # Sentiment-based sizing throttle
+                        factor = 1.0
+                        if use_sentiment:
+                            factor = (
+                                size_min + (size_max - size_min) * (sent + 1.0) / 2.0
+                            )
+                        eff_r = r * weight * max(0.0, factor)
                         all_returns.append(eff_r)
                         pnl += eff_r
                         wins += 1 if eff_r > 0 else 0
@@ -175,7 +192,13 @@ def run_backtest(
             weight = 1.0
             if risk_per_trade > 0 and atr_pct > 0:
                 weight = min(1.0, risk_per_trade / max(1e-9, atr_pct))
-            eff_r = r * weight
+            # Apply sentiment factor for closing mark as well
+            factor = 1.0
+            if use_sentiment:
+                # approximate sentiment at end
+                sent = math.sin(2.0 * math.pi * (len(prices) / float(max(1, 24 * 7))))
+                factor = size_min + (size_max - size_min) * (sent + 1.0) / 2.0
+            eff_r = r * weight * max(0.0, factor)
             all_returns.append(eff_r)
             pnl += eff_r
             wins += 1 if eff_r > 0 else 0
