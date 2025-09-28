@@ -142,3 +142,41 @@ async def list_ohlc() -> List[Dict[str, Any]]:
         except Exception:
             continue
     return out
+
+
+@router.get("/data/sentiment")
+async def get_sentiment(refresh: int = 0) -> Dict[str, Any]:
+    """Return a normalized sentiment score in [-1, 1].
+
+    - When `refresh=1`, attempts a fresh fetch (if allowed by env settings),
+      else returns cached/last-known score.
+    """
+    try:
+        from src.data.sentiment import (
+            get_sentiment_score_cached,
+            fetch_fear_greed_async,
+        )
+    except Exception:  # pragma: no cover
+        raise HTTPException(status_code=503, detail="sentiment_unavailable")
+
+    score: float
+    if int(refresh) == 1:
+        try:
+            s = await fetch_fear_greed_async()
+            if s is None:
+                score = float(get_sentiment_score_cached())
+            else:
+                score = float(s)
+        except Exception:
+            score = float(get_sentiment_score_cached())
+    else:
+        score = float(get_sentiment_score_cached())
+
+    import time as _time
+
+    return {
+        "score": score,
+        "source": "fear_greed",
+        "ts": int(_time.time()),
+        "cached": int(refresh) == 0,
+    }
