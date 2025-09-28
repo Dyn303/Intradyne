@@ -29,7 +29,7 @@ def run_compare(days: int, symbols: List[str]) -> Dict[str, Any]:
         report=True,
     )
     # Tuned: bar-confirmation, higher trend EMA, larger TP multiple,
-    # ATR-based sizing throttle, and basic regime classification.
+    # ATR-based sizing throttle, regime classification, and TA filters (RSI/BB/ADX).
     tuned = run_backtest(
         days=days,
         symbols=[s if "/" in s else f"{s}/USDT" for s in symbols],
@@ -47,6 +47,14 @@ def run_compare(days: int, symbols: List[str]) -> Dict[str, Any]:
         sentiment_min=0.0,
         size_min=0.9,
         size_max=1.2,
+        rsi_on=True,
+        rsi_period=14,
+        rsi_min=50.0,
+        rsi_max=80.0,
+        bb_window=20,
+        bb_width_min=0.003,
+        adx_window=14,
+        adx_min=15.0,
         report=True,
     )
     return {"baseline": base, "tuned": tuned}

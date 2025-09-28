@@ -53,6 +53,15 @@ def run_backtest(
     sentiment_min: float = 0.0,
     size_min: float = 0.8,
     size_max: float = 1.2,
+    # Technical analysis gates (optional)
+    rsi_on: bool = False,
+    rsi_period: int = 14,
+    rsi_min: float = 0.0,
+    rsi_max: float = 100.0,
+    adx_window: int = 0,
+    adx_min: float = 0.0,
+    bb_window: int = 0,
+    bb_width_min: float = 0.0,
     report: bool = False,
 ) -> int | Dict[str, object]:
     import math
@@ -130,6 +139,48 @@ def run_backtest(
             atr_pct = (sum(abs_rets) / len(abs_rets)) if abs_rets else 0.0
             atr_min_ok = (atr_entry_min <= 0) or (atr_pct >= atr_entry_min)
             atr_max_ok = (atr_entry_max <= 0) or (atr_pct <= atr_entry_max)
+            # Technical analysis: RSI
+            rsi_ok = True
+            if rsi_on and rsi_period > 1 and len(prices) >= rsi_period + 1:
+                gains = 0.0
+                losses = 0.0
+                for i in range(len(prices) - rsi_period, len(prices)):
+                    ch = prices[i] - prices[i - 1]
+                    if ch >= 0:
+                        gains += ch
+                    else:
+                        losses += -ch
+                avg_g = gains / float(rsi_period)
+                avg_l = losses / float(rsi_period)
+                rs = (avg_g / avg_l) if avg_l > 0 else float("inf")
+                rsi = 100.0 - (100.0 / (1.0 + rs))
+                rsi_ok = (rsi >= rsi_min) and (rsi <= rsi_max)
+            # Technical analysis: Bollinger width (volatility presence)
+            bb_ok = True
+            if bb_window and bb_window > 1 and len(prices) >= bb_window:
+                w = prices[-bb_window:]
+                mean = sum(w) / float(bb_window)
+                var = sum((x - mean) ** 2 for x in w) / float(bb_window)
+                std = var**0.5
+                width = (2.0 * std) / max(1e-9, mean)
+                bb_ok = width >= bb_width_min
+            # Technical analysis: ADX (trend strength)
+            adx_ok = True
+            if adx_window and adx_window > 1 and len(prices) >= adx_window + 1:
+                # Simplified ADX using close-to-close
+                trs: list[float] = []
+                dm_pos: list[float] = []
+                dm_neg: list[float] = []
+                for i in range(1, adx_window + 1):
+                    up = prices[-i] - prices[-i - 1]
+                    trs.append(abs(up))
+                    dm_pos.append(max(up, 0.0))
+                    dm_neg.append(max(-up, 0.0))
+                atr_s = sum(trs) / float(adx_window) if trs else 0.0
+                di_pos = 100.0 * (sum(dm_pos) / float(adx_window)) / max(1e-9, atr_s)
+                di_neg = 100.0 * (sum(dm_neg) / float(adx_window)) / max(1e-9, atr_s)
+                dx = 100.0 * abs(di_pos - di_neg) / max(1e-9, (di_pos + di_neg))
+                adx_ok = dx >= adx_min
             # Synthetic sentiment (slow oscillation)
             sent = 0.0
             if use_sentiment:
@@ -144,6 +195,9 @@ def run_backtest(
                 and atr_max_ok
                 and regime_ok
                 and sent_ok
+                and rsi_ok
+                and bb_ok
+                and adx_ok
             ):
                 # cross up -> buy
                 orders += 1
