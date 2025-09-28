@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, Depends
+import os as _os
 from fastapi.middleware.cors import CORSMiddleware
 from intradyne.api.health import router as health_router
 from intradyne.api.routes.orders import router as orders_router
@@ -14,13 +15,13 @@ from fastapi import Response
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 from intradyne.api.deps import require_api_key
 from intradyne.api.models import FrontendConfig
+from intradyne.api.ratelimit import general_rate_limit
+from intradyne.core.logging import setup_logging
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="IntraDyne Lite API")
     # CORS for frontend readiness
-    import os as _os
-
     origins = [o for o in (_os.getenv("FRONTEND_ORIGINS") or "*").split(",") if o]
     app.add_middleware(
         CORSMiddleware,
@@ -30,23 +31,28 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     # Optional API auth
-    import os as _os
-
     _auth_required = (_os.getenv("API_AUTH_REQUIRED") or "").strip().lower() in {
         "1",
         "true",
         "yes",
     }
-    deps = [Depends(require_api_key)] if _auth_required else []
+    deps_auth = [Depends(require_api_key)] if _auth_required else []
+    deps_common = deps_auth + [Depends(general_rate_limit)]
 
-    app.include_router(health_router, dependencies=deps, tags=["Health"])
-    app.include_router(orders_router, dependencies=deps, tags=["Orders"])
-    app.include_router(risk_router, dependencies=deps, tags=["Risk"])
-    app.include_router(admin_router, dependencies=deps, tags=["Admin"])
-    app.include_router(ai_router, dependencies=deps, tags=["AI"])
-    app.include_router(data_router, dependencies=deps, tags=["Data"])
-    app.include_router(ws_router, dependencies=deps, tags=["WebSocket"])
-    app.include_router(research_router, dependencies=deps, tags=["Research"])
+    # Apply general rate limit to HTTP routers; WS router excluded
+    app.include_router(health_router, dependencies=deps_common, tags=["Health"])
+    app.include_router(orders_router, dependencies=deps_common, tags=["Orders"])
+    app.include_router(risk_router, dependencies=deps_common, tags=["Risk"])
+    app.include_router(admin_router, dependencies=deps_common, tags=["Admin"])
+    app.include_router(ai_router, dependencies=deps_common, tags=["AI"])
+    app.include_router(data_router, dependencies=deps_common, tags=["Data"])
+    app.include_router(ws_router, tags=["WebSocket"])
+    app.include_router(research_router, dependencies=deps_common, tags=["Research"])
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        setup_logging(_os.getenv("LOG_LEVEL"))
+
     return app
 
 
@@ -61,8 +67,6 @@ def metrics() -> Response:
 
 @app.get("/frontend/config", response_model=FrontendConfig, tags=["Frontend"])
 def frontend_config() -> FrontendConfig:
-    import os as _os
-
     return FrontendConfig(
         api_base=_os.getenv("API_BASE_URL", ""),
         ws_ticks="/ws/ticks",
