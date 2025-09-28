@@ -1,6 +1,6 @@
 name: CI
 
-"on":
+on:
   push:
     branches:
       - main
@@ -63,4 +63,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       
+
+
 
