@@ -7,6 +7,16 @@ from typing import Any, Dict, List
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
+try:
+    from prometheus_client import Gauge
+
+    _SENTIMENT_GAUGE = Gauge(
+        "intradyne_sentiment_score",
+        "Normalized sentiment score [-1,1]",
+    )
+except Exception:  # pragma: no cover
+    _SENTIMENT_GAUGE = None  # type: ignore
+
 
 router = APIRouter()
 
@@ -174,9 +184,16 @@ async def get_sentiment(refresh: int = 0) -> Dict[str, Any]:
 
     import time as _time
 
+    try:
+        if _SENTIMENT_GAUGE is not None:
+            _SENTIMENT_GAUGE.set(float(score))
+    except Exception:
+        pass
+
     return {
         "score": score,
         "source": "fear_greed",
         "ts": int(_time.time()),
         "cached": int(refresh) == 0,
     }
+
