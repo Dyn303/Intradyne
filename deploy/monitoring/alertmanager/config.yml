@@ -1,0 +1,39 @@
+route:
+  receiver: default
+  group_by: ['job']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: pagerduty
+    - matchers:
+        - severity="warning"
+      receiver: opsgenie
+
+receivers:
+  - name: default
+    slack_configs:
+      - send_resolved: true
+        api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#alerts'
+        title: '{{ .CommonAnnotations.summary }}'
+        text: '{{ .CommonAnnotations.description }}\nLabels: {{ .CommonLabels }}'
+    email_configs:
+      - send_resolved: true
+        to: '${ALERT_EMAIL_TO}'
+        from: '${ALERT_EMAIL_FROM}'
+        smarthost: '${ALERT_SMTP_HOST}:${ALERT_SMTP_PORT}'
+        auth_username: '${ALERT_SMTP_USER}'
+        auth_identity: '${ALERT_SMTP_USER}'
+        auth_password: '${ALERT_SMTP_PASS}'
+  - name: pagerduty
+    pagerduty_configs:
+      - routing_key: '${PAGERDUTY_ROUTING_KEY}'
+        send_resolved: true
+  - name: opsgenie
+    opsgenie_configs:
+      - api_key: '${OPSGENIE_API_KEY}'
+        tags: 'intradyne'
+        send_resolved: true

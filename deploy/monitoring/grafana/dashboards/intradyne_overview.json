@@ -1,0 +1,47 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Engine MFE p50",
+      "targets": [{"expr": "intradyne_mfe_pct_p50"}],
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Engine MAE p50",
+      "targets": [{"expr": "intradyne_mae_pct_p50"}],
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "Trades (total)",
+      "targets": [{"expr": "intradyne_trades_total"}],
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8}
+    },
+    {
+      "type": "timeseries",
+      "title": "Equity",
+      "targets": [{"expr": "intradyne_equity"}],
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8}
+    },
+    {
+      "type": "timeseries",
+      "title": "Guardrail Breaches (API)",
+      "targets": [{"expr": "rate(intradyne_guardrail_breaches_total[5m])"}],
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8}
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["intradyne"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Intradyne Overview",
+  "version": 1
+}

@@ -1,0 +1,255 @@
+from __future__ import annotations
+
+from typing import Dict, List, Deque, Tuple, Optional
+from collections import defaultdict, deque
+
+from loguru import logger
+
+from .execution import ExecutionManager
+from .risk import RiskManager
+from .portfolio import Portfolio
+from .strategies.momentum import MomentumStrategy
+from .strategies.meanrev import MeanRevStrategy
+from .strategies.ml import MLStrategy
+from .metrics_ml import ML_SIGNALS
+
+
+class StrategyRouter:
+    def __init__(
+        self,
+        symbols: List[str],
+        risk: RiskManager,
+        execman: ExecutionManager,
+        portfolio: Portfolio,
+        params: Dict[str, Dict[str, float]] | None = None,
+    ) -> None:
+        self.symbols = symbols
+        self.risk = risk
+        self.execman = execman
+        self.portfolio = portfolio
+        self.momo = {s: MomentumStrategy(symbol=s) for s in symbols}
+        self.meanrev = {s: MeanRevStrategy(symbol=s) for s in symbols}
+        self.ml: dict[str, MLStrategy] = {}
+        self.open_symbols: set[str] = set()
+        self.stops: dict[str, tuple[float, float]] = {}  # symbol -> (sl,tp)
+        self.entry_ts: dict[str, float] = {}  # symbol -> first entry ts
+        self.micro_slices: int = 3
+        self.time_stop_s: int = 120
+        self.trail_atr_k: float = 0.0
+        # ATR tracking (per symbol)
+        self._atr_window: int = int(risk.atr_window or 0)
+        self._ohlc: Dict[str, Deque[Tuple[float, float, float]]] = defaultdict(
+            lambda: deque(maxlen=max(2, self._atr_window + 1))
+        )
+        self._entry_high: Dict[str, float] = {}
+        # Apply parameter overrides if provided
+        params = params or {}
+        for s in symbols:
+            m = self.momo[s]
+            for k, v in params.get("momentum", {}).items():
+                if hasattr(m, k):
+                    setattr(m, k, v)  # type: ignore
+            r = self.meanrev[s]
+            for k, v in params.get("meanrev", {}).items():
+                if hasattr(r, k):
+                    setattr(r, k, v)  # type: ignore
+        # ML strategy (optional)
+        ml_params = params.get("ml", {}) if isinstance(params, dict) else {}
+        if ml_params and bool(ml_params.get("enabled", False)):
+            model_path = str(
+                ml_params.get("model_path", "artifacts/models/ml_pipeline.joblib")
+            )
+            prob_cut = float(ml_params.get("prob_cut", 0.6))
+            for s in symbols:
+                self.ml[s] = MLStrategy(
+                    symbol=s, model_path=model_path, prob_cut=prob_cut
+                )
+        # Execution-level knobs
+        ex_params = params.get("execution", {})
+        if isinstance(ex_params, dict):
+            self.micro_slices = int(ex_params.get("micro_slices", self.micro_slices))
+            self.time_stop_s = int(ex_params.get("time_stop_s", self.time_stop_s))
+            self.trail_atr_k = float(ex_params.get("trail_atr_k", self.trail_atr_k))
+
+    async def on_tick(self, l1: Dict[str, object]) -> None:
+        sym = l1["symbol"]
+        last = l1.get("last") or l1.get("bid") or l1.get("ask")
+        if last is None:
+            return
+        last_f = float(last)
+        # Update ATR buffers if window enabled and OHLC present
+        if self._atr_window > 0:
+            try:
+                hi = float(l1.get("high", last_f))
+                lo = float(l1.get("low", last_f))
+                cl = float(l1.get("last", last_f))
+                self._ohlc[sym].append((hi, lo, cl))
+            except Exception:
+                pass
+        # Risk flash crash check
+        halted = self.risk.flash_crash_check(sym, l1["ts"], last_f)
+        if halted:
+            logger.warning(f"Flash-crash shield halted {sym}")
+            return
+
+        pos = self.portfolio.get_position(sym)
+        # Check exits (SL/TP/Time-stop)
+        if pos.base > 0 and sym in self.stops:
+            sl, tp = self.stops[sym]
+            # Update highest since entry and apply trailing stop if configured
+            try:
+                self._entry_high[sym] = max(self._entry_high.get(sym, 0.0), last_f)
+                if self.trail_atr_k > 0:
+                    atr_val: Optional[float] = self._compute_atr(sym)
+                    if atr_val and atr_val > 0:
+                        trail_sl = self._entry_high[sym] - self.trail_atr_k * atr_val
+                        # keep SL below current last
+                        if trail_sl < last_f:
+                            sl = max(sl, trail_sl)
+                            self.stops[sym] = (sl, tp)
+            except Exception:
+                pass
+            timed_out = False
+            ent = self.entry_ts.get(sym)
+            if ent is not None and (l1["ts"] - ent) >= self.time_stop_s:
+                timed_out = True
+            if last_f <= sl or last_f >= tp or timed_out:
+                qty = pos.base
+                reason = (
+                    "sl" if last_f <= sl else ("tp" if last_f >= tp else "time_stop")
+                )
+                features = {"exit_reason": reason}
+                checks = {"whitelist": True, "spot_only": True, "long_only": True}
+                # Micro-sliced exits
+                slice_qty = max(qty / max(1, self.micro_slices), 0.0)
+                remaining = qty
+                for i in range(self.micro_slices):
+                    q = slice_qty if i < self.micro_slices - 1 else remaining
+                    if q <= 0:
+                        break
+                    await self.execman.submit(
+                        sym,
+                        "sell",
+                        "market",
+                        q,
+                        None,
+                        l1,
+                        "stop_exit",
+                        features,
+                        checks,
+                    )
+                    remaining -= q
+                self.stops.pop(sym, None)
+                self.entry_ts.pop(sym, None)
+                self._entry_high.pop(sym, None)
+                return
+
+        open_positions = sum(1 for p in self.portfolio.positions.values() if p.base > 0)
+        if not self.risk.can_open_new_position(open_positions):
+            return
+
+        # Run strategies in priority order
+        strats = [self.momo[sym], self.meanrev[sym]]
+        if sym in self.ml:
+            strats.insert(0, self.ml[sym])
+        for strat in strats:
+            sig = strat.on_tick(l1)
+            if not sig:
+                continue
+            if sig["action"] == "buy":
+                # Metrics + explainability for ML decisions
+                if getattr(strat, "id", "") == "ml":
+                    try:
+                        ML_SIGNALS.labels(sym).inc()
+                        # Write ML signal to ledger (if available)
+                        proba = (
+                            float(sig.get("features", {}).get("proba", 0.0))
+                            if isinstance(sig.get("features"), dict)
+                            else None
+                        )
+                        self.execman.ctx.ledger.append(
+                            {
+                                "ts": l1.get("ts"),
+                                "event": "ml_signal",
+                                "symbol": sym,
+                                "proba": proba,
+                                "mode": "paper"
+                                if not self.execman.ctx.live_enabled
+                                else "live",
+                            }
+                        )
+                    except Exception:
+                        pass
+                qty = self.risk.sizer(self.portfolio.equity({sym: last_f}), last_f)
+                if qty <= 0:
+                    continue
+                atr_val: Optional[float] = self._compute_atr(sym)
+                sl, tp = self.risk.sl_tp_levels(last_f, atr=atr_val)
+                features = sig.get("features", {})
+                features.update({"sl": sl, "tp": tp})
+                checks = {
+                    "whitelist": True,
+                    "spot_only": True,
+                    "long_only": True,
+                }
+                # Micro-sliced entries (scale-in allowed)
+                slice_qty = max(qty / max(1, self.micro_slices), 0.0)
+                remaining = qty
+                for i in range(self.micro_slices):
+                    q = slice_qty if i < self.micro_slices - 1 else remaining
+                    if q <= 0:
+                        break
+                    await self.execman.submit(
+                        sym, "buy", "market", q, None, l1, strat.id, features, checks
+                    )
+                    remaining -= q
+                self.stops[sym] = (sl, tp)
+                # Record entry time if not present
+                self.entry_ts.setdefault(sym, l1["ts"])
+                self._entry_high[sym] = last_f
+                break
+
+    def _compute_atr(self, sym: str) -> Optional[float]:
+        if self._atr_window <= 0:
+            return None
+        dq = self._ohlc.get(sym)
+        if not dq or len(dq) < self._atr_window + 1:
+            return None
+        # Simple SMA of True Range over last N bars
+        it = iter(dq)
+        prev_hi, prev_lo, prev_close = next(it)
+        trs: List[float] = []
+        for hi, lo, cl in it:
+            tr = max(hi - lo, abs(hi - prev_close), abs(lo - prev_close))
+            trs.append(tr)
+            prev_close = cl
+        if len(trs) < self._atr_window:
+            return None
+        return sum(trs[-self._atr_window :]) / float(self._atr_window)
+
+    # Runtime application of parameter overrides
+    def apply_params(self, params: Dict[str, Dict[str, float]] | None) -> None:
+        if not params:
+            return
+        # Strategies
+        for s, m in self.momo.items():
+            for k, v in (params.get("momentum", {}) or {}).items():
+                if hasattr(m, k):
+                    try:
+                        setattr(m, k, type(getattr(m, k))(v))  # type: ignore
+                    except Exception:
+                        setattr(m, k, v)  # best effort
+        for s, r in self.meanrev.items():
+            for k, v in (params.get("meanrev", {}) or {}).items():
+                if hasattr(r, k):
+                    try:
+                        setattr(r, k, type(getattr(r, k))(v))  # type: ignore
+                    except Exception:
+                        setattr(r, k, v)
+        # Execution-level
+        ex_params = params.get("execution", {}) if isinstance(params, dict) else {}
+        if isinstance(ex_params, dict):
+            self.micro_slices = int(ex_params.get("micro_slices", self.micro_slices))
+            self.time_stop_s = int(ex_params.get("time_stop_s", self.time_stop_s))
+            self.trail_atr_k = float(ex_params.get("trail_atr_k", self.trail_atr_k))
+

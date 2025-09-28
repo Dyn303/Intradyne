@@ -75,9 +75,18 @@ class Settings(BaseSettings):  # type: ignore[misc]
         raw = [s.strip() for s in (self.ALLOWED_SYMBOLS or "").split(",") if s.strip()]
         out: List[str] = []
         for s in raw:
+            # Skip quote-only or self-pairs like USDT/USDT
             if "/" in s:
-                out.append(s)
+                try:
+                    base, quote = s.split("/", 1)
+                except ValueError:
+                    continue
+                if base.upper() == quote.upper():
+                    continue
+                out.append(f"{base}/{quote}")
             else:
+                if s.upper() == "USDT":
+                    continue
                 out.append(f"{s}/USDT")
         return out
 

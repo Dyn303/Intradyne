@@ -10,7 +10,7 @@ import orjson
 
 
 class JsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:
         base: Dict[str, Any] = {
             "level": record.levelname,
             "logger": record.name,
@@ -22,9 +22,8 @@ class JsonFormatter(logging.Formatter):
 
 
 def setup_logging(level: str | None = None) -> None:
-    lvl = getattr(
-        logging, (level or os.getenv("LOG_LEVEL", "INFO")).upper(), logging.INFO
-    )
+    lvl_name = (level or os.getenv("LOG_LEVEL") or "INFO").upper()
+    lvl = getattr(logging, lvl_name, logging.INFO)
     h = logging.StreamHandler()
     h.setFormatter(JsonFormatter())
     root = logging.getLogger()
@@ -76,12 +75,12 @@ def redact_secrets(obj: Any) -> Any:
 class RedactingFilter(logging.Filter):
     """Logging filter that redacts secrets in record.msg and record.args if they are structures."""
 
-    def filter(self, record: logging.LogRecord) -> bool:  # type: ignore[override]
+    def filter(self, record: logging.LogRecord) -> bool:
         try:
             if isinstance(record.args, dict):
-                record.args = redact_secrets(record.args)  # type: ignore[assignment]
+                record.args = redact_secrets(record.args)
             if isinstance(record.msg, (dict, list, tuple, set)):
-                record.msg = redact_secrets(copy.deepcopy(record.msg))  # type: ignore[assignment]
+                record.msg = redact_secrets(copy.deepcopy(record.msg))
         except Exception:
             pass
         return True

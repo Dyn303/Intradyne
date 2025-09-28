@@ -1,0 +1,140 @@
+{
+  "name": "Nightly Tuning & Apply",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 1
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron 1AM UTC",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/research/optimize_params",
+        "responseFormat": "json",
+        "queryParameters": {
+          "parameters": [
+            { "name": "days", "value": 30 },
+            { "name": "symbols", "value": "BTC/USDT,ETH/USDT" },
+            { "name": "ma_min", "value": 10 },
+            { "name": "ma_max", "value": 40 },
+            { "name": "trend_min", "value": 20 },
+            { "name": "trend_max", "value": 100 },
+            { "name": "step", "value": 10 },
+            { "name": "sl_min", "value": 0.5 },
+            { "name": "sl_max", "value": 2.0 },
+            { "name": "tp_min", "value": 1.0 },
+            { "name": "tp_max", "value": 3.0 },
+            { "name": "risk_min", "value": 0.004 },
+            { "name": "risk_max", "value": 0.02 },
+            { "name": "risk_step", "value": 0.004 },
+            { "name": "metric", "value": "winrate" },
+            { "name": "save", "value": 1 }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Optimize Params",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/research/profile/best",
+        "responseFormat": "json",
+        "options": { "ignoreResponseCode": true }
+      },
+      "id": "3",
+      "name": "Get Best Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        760,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const opt = $items(\"Optimize Params\", 0, 0)[0]?.json || {};\nconst prev = $items(\"Get Best Profile\", 0, 0)[0]?.json || {};\nconst best = opt.best || {};\nlet newScore = 0;\nif (typeof best.winrate === 'number') newScore = best.winrate;\nelse if (typeof best.avg_return === 'number') newScore = best.avg_return;\nconst prevScore = typeof prev.score === 'number' ? prev.score : 0;\nconst improved = (newScore > prevScore);\nreturn [{ json: { improved, newScore, prevScore } }];"
+      },
+      "id": "5",
+      "name": "Compare Scores",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.improved }}"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "IF Improved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://engine:8000/profile/apply",
+        "responseFormat": "json"
+      },
+      "id": "4",
+      "name": "Apply to Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1360,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron 1AM UTC": {
+      "main": [ [ { "node": "Optimize Params", "type": "main", "index": 0 } ] ]
+    },
+    "Optimize Params": {
+      "main": [ [ { "node": "Get Best Profile", "type": "main", "index": 0 } ] ]
+    },
+    "Get Best Profile": {
+      "main": [ [ { "node": "Compare Scores", "type": "main", "index": 0 } ] ]
+    },
+    "Compare Scores": {
+      "main": [ [ { "node": "IF Improved", "type": "main", "index": 0 } ] ]
+    },
+    "IF Improved": {
+      "main": [ [ { "node": "Apply to Engine", "type": "main", "index": 0 } ], [ ] ]
+    }
+  }
+}

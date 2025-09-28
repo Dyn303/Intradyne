@@ -1,0 +1,168 @@
+{
+  "name": "Guardrails AI Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/risk/metrics",
+        "responseFormat": "json"
+      },
+      "id": "2",
+      "name": "Risk Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        520,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/ai/summarize?n=50",
+        "responseFormat": "json"
+      },
+      "id": "3",
+      "name": "AI Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        520,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const metrics = items[0].json;\nconst summary = items[1].json.summary || {};\nconst counts = metrics.counts || {};\nlet severity = 'info';\nif ((counts.breaches_1h || 0) > 0 || (summary.recommended_actions || []).length > 0) {\n  severity = 'warn';\n}\nconst text = `Guardrails: dd_30d=${metrics.dd_30d} counts=${JSON.stringify(counts)}\nSummary: ${summary.summary || ''}\nActions: ${(summary.recommended_actions || []).join(', ')}`;\nreturn [{ json: { severity, text, summary, counts } }];"
+      },
+      "id": "4",
+      "name": "Decide Alerts",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "5",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        240
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM || 'alerts@example.com' }}",
+        "toEmail": "={{ $env.SMTP_TO || 'ops@example.com' }}",
+        "subject": "={{ 'Guardrails ' + ($json.severity || 'info') }}",
+        "text": "={{ $json.text }}"
+      },
+      "id": "6",
+      "name": "SMTP Send",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        360
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "",
+          "name": "SMTP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "Risk Metrics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Metrics": {
+      "main": [
+        [
+          {
+            "node": "Decide Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Decide Alerts",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Decide Alerts": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SMTP Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+

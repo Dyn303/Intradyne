@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import datetime as dt
 from typing import Any, Dict
+import os as _os
 
-from fastapi import Body, FastAPI, Response
+from fastapi import Body, Depends, FastAPI, Response
 from fastapi.responses import ORJSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
+from intradyne.api.deps import require_api_key
+from intradyne.api.ratelimit import general_rate_limit
+from intradyne.core.logging import setup_logging
 
 from .. import __version__
 
@@ -61,11 +65,28 @@ async def metrics() -> Response:
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 
-# Mount sub-routers
-app.include_router(orders_routes.router)
-app.include_router(risk_routes.router)
-app.include_router(admin_routes.router)
-app.include_router(ai_routes.router)
-app.include_router(data_routes.router)
+# Logging setup and dependencies
+@app.on_event("startup")
+def _startup_logging() -> None:
+    setup_logging(_os.getenv("LOG_LEVEL"))
+
+
+# Optional API key requirement + general rate limit
+_auth_required = (_os.getenv("API_AUTH_REQUIRED") or "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
+deps_auth = [Depends(require_api_key)] if _auth_required else []
+deps_common = deps_auth + [Depends(general_rate_limit)]
+
+
+# Mount sub-routers with dependencies
+app.include_router(orders_routes.router, dependencies=deps_common)
+app.include_router(risk_routes.router, dependencies=deps_common)
+app.include_router(admin_routes.router, dependencies=deps_common)
+app.include_router(ai_routes.router, dependencies=deps_common)
+app.include_router(data_routes.router, dependencies=deps_common)
+# WebSocket routes excluded from HTTP rate limiter dependencies
 app.include_router(ws_routes.router)
-app.include_router(research_routes.router)
+app.include_router(research_routes.router, dependencies=deps_common)
