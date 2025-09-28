@@ -66,6 +66,10 @@ class StrategyRouter:
         self.atr_block_cooldown_s: int = 0
         self._atr_out_count: Dict[str, int] = defaultdict(int)
         self._atr_block_until: Dict[str, float] = defaultdict(float)
+        # Entry hygiene
+        self._max_spread_bps: int = 0
+        self._entry_cooldown_s: int = 0
+        self._cooldown_until: Dict[str, float] = defaultdict(float)
 
         # Apply parameter overrides if provided
         params = params or {}
@@ -259,6 +263,15 @@ class StrategyRouter:
                         checks,
                     )
                     remaining -= q
+                # Cooldown after SL exits
+                if reason == "sl" and self._entry_cooldown_s > 0:
+                    try:
+                        self._cooldown_until[sym] = max(
+                            self._cooldown_until.get(sym, 0.0),
+                            now_ts + float(self._entry_cooldown_s),
+                        )
+                    except Exception:
+                        pass
                 # Log MFE/MAE
                 try:
                     ep = self._entry_price.get(sym, last_f)
@@ -351,6 +364,30 @@ class StrategyRouter:
             sig = strat.on_tick(l1)
             if not sig:
                 continue
+            # Spread filter (skip entries if spread too wide)
+            try:
+                if self._max_spread_bps > 0:
+                    bid = float(l1.get("bid", 0.0) or 0.0)
+                    ask = float(l1.get("ask", 0.0) or 0.0)
+                    mid = (
+                        (bid + ask) / 2.0
+                        if bid and ask
+                        else float(l1.get("last", 0.0) or 0.0)
+                    )
+                    if bid > 0 and ask > 0 and mid > 0:
+                        spread_bps = (ask - bid) / mid * 10_000.0
+                        if spread_bps > float(self._max_spread_bps):
+                            continue
+            except Exception:
+                pass
+            # Entry cooldown gate
+            try:
+                if self._entry_cooldown_s > 0 and now_ts < self._cooldown_until.get(
+                    sym, 0.0
+                ):
+                    continue
+            except Exception:
+                pass
             if sig.get("action") == "buy":
                 if getattr(strat, "id", "") == "ml":
                     try:

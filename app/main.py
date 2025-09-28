@@ -104,6 +104,12 @@ async def run_trader() -> None:
         max_concurrent_pos=settings.risk.max_concurrent_pos,
         kill_switch_breaches=settings.risk.kill_switch_breaches,
     )
+    # Enable ATR-based exits when configured
+    if settings.risk.use_atr:
+        risk.use_atr = True
+        risk.atr_window = int(settings.risk.atr_window)
+        risk.atr_k_sl = float(settings.risk.atr_k_sl)
+        risk.atr_k_tp = float(settings.risk.atr_k_tp)
 
     live_broker = None
     if settings.mode == "live" and settings.live_trading_enabled:
@@ -126,6 +132,13 @@ async def run_trader() -> None:
     )
     execman = ExecutionManager(ctx)
     router = StrategyRouter(symbols, risk, execman, portfolio, params=strategy_params)
+    # Execution filters from settings
+    try:
+        router.time_stop_s = int(max(router.time_stop_s, 0))
+        router._max_spread_bps = int(max(0, settings.max_spread_bps))  # type: ignore[attr-defined]
+        router._entry_cooldown_s = int(max(0, settings.entry_cooldown_s))  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
     # FastAPI app
     def state_provider() -> Dict[str, Any]:

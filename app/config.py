@@ -18,6 +18,11 @@ class RiskConfig(BaseModel):
     flash_crash_drop_1h: float = 0.30
     max_concurrent_pos: int = 5
     kill_switch_breaches: int = 3
+    # ATR-based risk (optional)
+    use_atr: bool = False
+    atr_window: int = 14
+    atr_k_sl: float = 1.5
+    atr_k_tp: float = 2.0
 
 
 class FeesConfig(BaseModel):
@@ -46,6 +51,9 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     artifacts_dir: str = "artifacts"
     optuna_db_url: str = "sqlite:///optuna.db"
+    # Execution filters
+    max_spread_bps: int = 0  # 0 disables; otherwise skip entries if spread>bps
+    entry_cooldown_s: int = 0  # cooldown after SL before re-entry
 
     risk: RiskConfig = RiskConfig()
     fees: FeesConfig = FeesConfig()
@@ -91,11 +99,17 @@ def load_settings() -> Settings:
             flash_crash_drop_1h=float(os.getenv("FLASH_CRASH_DROP_1H", "0.30")),
             max_concurrent_pos=int(os.getenv("MAX_CONCURRENT_POS", "5")),
             kill_switch_breaches=int(os.getenv("KILL_SWITCH_BREACHES", "3")),
+            use_atr=os.getenv("USE_ATR", "false").lower() == "true",
+            atr_window=int(os.getenv("ATR_WINDOW", "14")),
+            atr_k_sl=float(os.getenv("ATR_K_SL", "1.5")),
+            atr_k_tp=float(os.getenv("ATR_K_TP", "2.0")),
         ),
         fees=FeesConfig(
             maker_bps=int(os.getenv("MAKER_BPS", "2")),
             taker_bps=int(os.getenv("TAKER_BPS", "5")),
             slippage_bps=int(os.getenv("SLIPPAGE_BPS", "2")),
         ),
+        max_spread_bps=int(os.getenv("MAX_SPREAD_BPS", "0")),
+        entry_cooldown_s=int(os.getenv("ENTRY_COOLDOWN_S", "0")),
     )
     return s
