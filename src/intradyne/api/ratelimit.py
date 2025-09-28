@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
+import os
 from typing import Deque, Dict, Optional, Tuple
 
 from fastapi import HTTPException, Request, status
@@ -12,6 +13,9 @@ from intradyne.core.config import load_settings
 # In-memory sliding window counters keyed by (ip, route)
 _WINDOWS: Dict[Tuple[str, str], Deque[float]] = defaultdict(deque)
 _REDIS = None  # lazy-initialized async client
+
+# Token-bucket state for WebSocket streaming (in-memory)
+_WS_BUCKETS: Dict[Tuple[str, str], Tuple[float, float]] = {}  # (tokens, last_ts)
 
 
 async def _get_redis(url: Optional[str]):
@@ -87,6 +91,56 @@ async def ai_rate_limit(request: Request) -> None:
             },
         )
     q.append(now)
+
+
+async def ws_rate_limit(websocket, route: str) -> bool:
+    """Token-bucket limiter for WebSocket streaming sends.
+
+    Env:
+      - WS_BUCKET_RATE: tokens per second (default 50)
+      - WS_BUCKET_BURST: max bucket size (default 100)
+      - REDIS_URL (optional): when set, use fixed-window counts per send instead.
+    Returns True if allowed, False if limited.
+    """
+    s = load_settings()
+    now = time.time()
+    try:
+        rate = float(os.getenv("WS_BUCKET_RATE", "50"))
+        burst = float(os.getenv("WS_BUCKET_BURST", "100"))
+    except Exception:
+        rate, burst = 50.0, 100.0
+
+    # Identify client
+    try:
+        ip = websocket.client.host if websocket.client else "unknown"
+    except Exception:
+        ip = "unknown"
+
+    # Prefer Redis fixed-window when configured (best-effort)
+    red = await _get_redis(getattr(s, "REDIS_URL", None))
+    if red is not None:
+        window = 1.0  # 1-second windows for streaming
+        window_key = int(now // window)
+        key = f"rlws:{route}:{ip}:{window_key}"
+        try:
+            cur = await red.incr(key)
+            if cur == 1:
+                await red.expire(key, 2)
+            # Allow up to burst per second under Redis path
+            return int(cur) <= int(max(1, burst))
+        except Exception:
+            pass  # fall back to in-memory bucket
+
+    k = (ip, route)
+    tokens, last = _WS_BUCKETS.get(k, (burst, now))
+    # Refill
+    elapsed = max(0.0, now - last)
+    tokens = min(burst, tokens + rate * elapsed)
+    if tokens < 1.0:
+        _WS_BUCKETS[k] = (tokens, now)
+        return False
+    _WS_BUCKETS[k] = (tokens - 1.0, now)
+    return True
 
 
 async def general_rate_limit(request: Request) -> None:

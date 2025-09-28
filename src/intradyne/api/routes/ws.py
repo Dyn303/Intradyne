@@ -8,6 +8,7 @@ from typing import Dict, List
 import httpx
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from intradyne.api.deps import get_ledger
+from intradyne.api.ratelimit import ws_rate_limit
 
 
 router = APIRouter()
@@ -56,6 +57,11 @@ async def ws_ticks(
                     base = 100.0 + 10.0 * idx
                     px = base + 2.0 * math.sin((i + idx) / 5.0)
                     payload.append({"ts": now, "symbol": s, "last": round(px, 4)})
+                # Enforce WS rate limiter (token bucket)
+                if not await ws_rate_limit(websocket, "/ws/ticks"):
+                    await websocket.send_json({"error": "rate_limited"})
+                    await websocket.close()
+                    return
                 await websocket.send_json({"ticks": payload})
                 i += 1
                 await asyncio.sleep(max(0.05, float(interval)))
@@ -70,6 +76,10 @@ async def ws_ticks(
                             {"ts": now, "symbol": s, "last": prices.get(s, 0.0)}
                             for s in syms
                         ]
+                        if not await ws_rate_limit(websocket, "/ws/ticks"):
+                            await websocket.send_json({"error": "rate_limited"})
+                            await websocket.close()
+                            return
                         await websocket.send_json({"ticks": payload})
                         backoff = 1.0  # reset after success
                     except Exception as e:
@@ -116,6 +126,10 @@ async def ws_ledger(
                     "event": "guardrail_breach" if i % 2 == 0 else "info",
                     "type": "dd_warn" if i % 2 == 0 else "heartbeat",
                 }
+                if not await ws_rate_limit(websocket, "/ws/ledger"):
+                    await websocket.send_json({"error": "rate_limited"})
+                    await websocket.close()
+                    return
                 await websocket.send_json({"record": payload})
                 i += 1
                 await asyncio.sleep(float(interval))
@@ -136,6 +150,10 @@ async def ws_ledger(
                 if not line:
                     continue
                 try:
+                    if not await ws_rate_limit(websocket, "/ws/ledger"):
+                        await websocket.send_json({"error": "rate_limited"})
+                        await websocket.close()
+                        return
                     await websocket.send_json({"record": orjson.loads(line)})
                 except Exception:
                     continue
@@ -161,6 +179,10 @@ async def ws_ledger(
                             if not line.strip():
                                 continue
                             try:
+                                if not await ws_rate_limit(websocket, "/ws/ledger"):
+                                    await websocket.send_json({"error": "rate_limited"})
+                                    await websocket.close()
+                                    return
                                 await websocket.send_json(
                                     {"record": orjson.loads(line)}
                                 )

@@ -18,3 +18,27 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+  api-slim:
+    profiles: ["slim"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: intradyne-api-slim
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - TZ=Asia/Kuching
+      - PYTHONPATH=/app/src
+    ports:
+      - "8080:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz').read(); print('ok')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
