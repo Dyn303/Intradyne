@@ -13,7 +13,12 @@ from intradyne.api.routes.ws import router as ws_router
 from intradyne.api.routes.research import router as research_router
 from fastapi import Response
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
-from intradyne.api.deps import require_api_key
+from intradyne.api.deps import (
+    api_auth_required,
+    configured_api_key,
+    is_prod,
+    require_api_key,
+)
 from intradyne.api.models import FrontendConfig
 from intradyne.api.ratelimit import general_rate_limit
 from intradyne.core.logging import setup_logging
@@ -21,25 +26,39 @@ from intradyne.core.logging import setup_logging
 
 def create_app() -> FastAPI:
     app = FastAPI(title="IntraDyne Lite API")
-    # CORS for frontend readiness
-    origins = [o for o in (_os.getenv("FRONTEND_ORIGINS") or "*").split(",") if o]
+    # CORS for frontend readiness.
+    #
+    # `allow_origins=["*"]` together with `allow_credentials=True` is not a
+    # valid combination: the CORS spec forbids a wildcard on a credentialed
+    # request, so browsers reject every such response. Starlette resolves it by
+    # silently echoing the caller's Origin back, which turns the wildcard into
+    # "trust every site" rather than the intended "public read-only API".
+    origins = [o.strip() for o in (_os.getenv("FRONTEND_ORIGINS") or "*").split(",")]
+    origins = [o for o in origins if o]
+    _wildcard = "*" in origins
+    if _wildcard and is_prod():
+        raise RuntimeError(
+            "FRONTEND_ORIGINS is '*' in production. Set it to an explicit "
+            "comma-separated list of allowed origins."
+        )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=True,
+        # Credentials are only meaningful against an explicit origin list.
+        allow_credentials=not _wildcard,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    # API auth: default-on in production, else env-driven
-    _env = (
-        _os.getenv("APP_ENV") or _os.getenv("ENV") or _os.getenv("ENVIRONMENT") or ""
-    ).lower()
-    _auth_cfg = (_os.getenv("API_AUTH_REQUIRED") or "").strip().lower()
-    _auth_required = (
-        True
-        if _env in {"prod", "production"} and not _auth_cfg
-        else _auth_cfg in {"1", "true", "yes"}
-    )
+    # API auth: default-on in production, else env-driven (see deps.py).
+    _auth_required = api_auth_required()
+    if _auth_required and not configured_api_key():
+        # Fail closed at boot rather than serving unauthenticated traffic or
+        # 503-ing every request once deployed.
+        raise RuntimeError(
+            "API auth is required (APP_ENV=prod or API_AUTH_REQUIRED=1) but "
+            "X_API_KEY is not set. Set X_API_KEY, or explicitly set "
+            "API_AUTH_REQUIRED=0 to run without authentication."
+        )
     deps_auth = [Depends(require_api_key)] if _auth_required else []
     deps_common = deps_auth + [Depends(general_rate_limit)]
 

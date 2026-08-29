@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 from typing import Any, Dict, List
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
+
+from intradyne.core.config import load_settings
 
 try:
     from prometheus_client import Gauge
@@ -21,8 +24,49 @@ except Exception:  # pragma: no cover
 router = APIRouter()
 
 
+# Timeframes the OHLC store is allowed to name. `fetch_ohlc` narrows this
+# further to what Binance is actually asked for.
+_TIMEFRAMES = frozenset({"1m", "5m", "15m", "30m", "1h", "4h", "1d"})
+
+# BASE/QUOTE, uppercase alphanumerics only. Excludes '.', '/', '\' and every
+# other separator, so a validated symbol cannot contribute a path segment.
+_SYMBOL_RE = re.compile(r"^[A-Z0-9]{2,15}/[A-Z0-9]{2,15}$")
+
+
+def _validate(symbol: str, tf: str) -> tuple[str, str]:
+    """Validate user-supplied dataset coordinates before they reach the filesystem.
+
+    Both values are interpolated into a filename. `tf` in particular was
+    previously unchecked on the read path, so `tf=../../etc/passwd` escaped the
+    OHLC directory; `symbol` only had its forward slashes replaced, which left
+    backslash separators intact on Windows.
+    """
+    sym = (symbol or "").strip().upper()
+    if not _SYMBOL_RE.match(sym):
+        raise HTTPException(status_code=400, detail="invalid_symbol")
+    allowed = set(load_settings().allowed_crypto_list())
+    if allowed and sym not in allowed:
+        raise HTTPException(status_code=400, detail=f"symbol_not_allowed: {sym}")
+    timeframe = (tf or "").strip()
+    if timeframe not in _TIMEFRAMES:
+        raise HTTPException(status_code=400, detail="invalid_timeframe")
+    return sym, timeframe
+
+
 def _map_symbol(sym: str) -> str:
     return sym.replace("/", "_")
+
+
+def _dataset_path(root: Path, symbol: str, tf: str) -> Path:
+    """Resolve a dataset path and prove it stays inside `root`.
+
+    Defence in depth: `_validate` already makes traversal unrepresentable, so
+    this containment check should be unreachable.
+    """
+    path = (root / f"{_map_symbol(symbol)}_{tf}.json").resolve()
+    if not path.is_relative_to(root.resolve()):
+        raise HTTPException(status_code=400, detail="invalid_dataset_path")
+    return path
 
 
 def _ohlc_root() -> Path:
@@ -35,8 +79,9 @@ def _ohlc_root() -> Path:
 
 @router.get("/data/ohlc")
 async def get_ohlc(symbol: str, tf: str = "1d") -> Dict[str, Any]:
+    symbol, tf = _validate(symbol, tf)
     filename = f"{_map_symbol(symbol)}_{tf}.json"
-    path = _ohlc_root() / filename
+    path = _dataset_path(_ohlc_root(), symbol, tf)
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"dataset_not_found: {filename}")
     try:
@@ -85,6 +130,7 @@ async def fetch_ohlc(
 
     Timeframe map: supports 1d, 1h, 15m.
     """
+    symbol, tf = _validate(symbol, tf)
     tf_map = {"1d": "1d", "1h": "1h", "15m": "15m"}
     if tf not in tf_map:
         raise HTTPException(status_code=400, detail="unsupported_timeframe")
@@ -105,7 +151,7 @@ async def fetch_ohlc(
             raise HTTPException(status_code=502, detail=f"fetch_failed: {e}")
     root = _ohlc_root()
     root.mkdir(parents=True, exist_ok=True)
-    path = root / f"{_map_symbol(symbol)}_{tf}.json"
+    path = _dataset_path(root, symbol, tf)
     # Store minimal OHLCV
     ohlc = [
         [
