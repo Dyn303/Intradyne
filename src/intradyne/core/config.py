@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from typing import List, Optional
 
 
@@ -136,7 +137,28 @@ class Settings(BaseSettings):  # type: ignore[misc]
     SENTIMENT_SMOOTH_N: int = 12
 
 
+@lru_cache(maxsize=1)
 def load_settings() -> Settings:
+    """Return the process-wide Settings, built once.
+
+    This is called on every request by the rate limiters and by several
+    routes. Uncached, each call re-parsed the .env files and re-ran the
+    production credential validation, so a prod deployment without broker
+    credentials raised on *every* request -- including /healthz -- even
+    though the API places no orders itself.
+
+    Tests that manipulate the environment must call reset_settings_cache();
+    tests/conftest.py does so automatically between tests.
+    """
+    return _build_settings()
+
+
+def reset_settings_cache() -> None:
+    """Drop the cached Settings so the next load re-reads the environment."""
+    load_settings.cache_clear()
+
+
+def _build_settings() -> Settings:
     # Build from pydantic Settings; allow any RuntimeErrors to propagate
     # (e.g., missing creds in production). Only fall back if pydantic isn't available.
     try:
@@ -194,4 +216,4 @@ def load_settings() -> Settings:
     return s
 
 
-__all__ = ["Settings", "load_settings"]
+__all__ = ["Settings", "load_settings", "reset_settings_cache"]
