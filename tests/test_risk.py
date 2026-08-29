@@ -1,4 +1,4 @@
-from app.risk import RiskManager
+from intradyne.engine.risk import RiskManager
 
 
 def test_sizer_respects_max_pos_pct():

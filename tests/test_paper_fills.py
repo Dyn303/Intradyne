@@ -1,5 +1,5 @@
-from app.portfolio import Portfolio
-from app.broker_paper import PaperBroker
+from intradyne.engine.portfolio import Portfolio
+from intradyne.engine.broker_paper import PaperBroker
 
 
 def test_market_buy_and_sell_with_fees_slippage():

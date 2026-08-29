@@ -20,7 +20,7 @@ ping:
 	curl "http://localhost:8080/healthz"
 
 lint:
-	.venv/Scripts/python -m ruff check src app tests
+	.venv/Scripts/python -m ruff check src tests scripts
 
 type:
 	.venv/Scripts/python -m mypy --pretty

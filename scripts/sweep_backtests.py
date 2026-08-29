@@ -27,7 +27,7 @@ def run_bt(
     root = _P(__file__).resolve().parents[1]
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
-    from app.backtest import run as run_backtest
+    from intradyne.engine.backtest import run as run_backtest
     import pandas as pd
 
     start_ms = int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)

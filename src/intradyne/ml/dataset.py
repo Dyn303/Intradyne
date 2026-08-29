@@ -6,7 +6,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from app.data_loader import DataLoader, LoaderConfig
+from intradyne.engine.data_loader import DataLoader, LoaderConfig
 
 
 async def _load_symbol(

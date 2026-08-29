@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app.backtest import run as run_backtest
+from intradyne.engine.backtest import run as run_backtest
 
 
 def _write_csv(

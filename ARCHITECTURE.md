@@ -14,7 +14,8 @@ Structure
 - `src/intradyne/ml/*` – dataset/feature/label/model helpers
 - `src/intradyne/strategies/*` – risk-profile allocation models (see note)
 - `src/intradyne/sor/*` – smart order router
-- `app/` – the trading engine: strategies, execution, paper/live brokers
+- `src/intradyne/engine/*` – the trading engine: strategies, execution,
+  paper/live brokers, data feed, router
 - `tests/` – pytest
 - `deploy/` – compose, helm, monitoring
 - `Dockerfile`, `docker/` – container build
@@ -42,8 +43,8 @@ Dev Tasks
 Notes
 - `src/intradyne/strategies/` holds risk-profile *allocation* models
   (conservative → very aggressive, producing portfolio weights). This is a
-  different concern from `app/strategies/`, which holds tick-level entry
-  signal generators. The four profile subclasses are currently empty and the
+  different concern from `intradyne/engine/strategies/`, which holds
+  tick-level entry signal generators. The four profile subclasses are currently empty and the
   subsystem is not wired into the API or the engine; whether to complete or
   drop it is an open product question.
 
