@@ -37,7 +37,7 @@ jobs:
           pip install ruff mypy
 
       - name: Lint (ruff)
-        run: ruff check intradyne src app tests
+        run: ruff check src app tests
 
       - name: Format check (ruff)
         run: ruff format --check .

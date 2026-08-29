@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from src.strategies.conservative import ConservativeStrategy
-from src.strategies.moderate import ModerateStrategy
-from src.strategies.aggressive import AggressiveStrategy
-from src.strategies.very_aggressive import VeryAggressiveStrategy
-from src.core.utils import ALLOWED_UNIVERSE
+from intradyne.strategies.conservative import ConservativeStrategy
+from intradyne.strategies.moderate import ModerateStrategy
+from intradyne.strategies.aggressive import AggressiveStrategy
+from intradyne.strategies.very_aggressive import VeryAggressiveStrategy
+from intradyne.core.utils import ALLOWED_UNIVERSE
 
 
 def _smoke_strategy(cls) -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List
 
-from src.core.utils import ALLOWED_UNIVERSE, clamp_weights
+from intradyne.core.utils import ALLOWED_UNIVERSE, clamp_weights
 
 
 Signal = Dict[str, str]
@@ -22,7 +22,7 @@ class BaseStrategy:
 
     def allocate_portfolio(
         self, signals: Signal, portfolio
-    ) -> Weights:  # portfolio is src.core.portfolio.Portfolio
+    ) -> Weights:  # portfolio is intradyne.core.portfolio.Portfolio
         raise NotImplementedError
 
     def clamp_weights(self, weights: Weights) -> Weights:

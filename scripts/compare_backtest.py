@@ -18,7 +18,7 @@ def _ensure_src_on_path() -> None:
 
 def run_compare(days: int, symbols: List[str]) -> Dict[str, Any]:
     _ensure_src_on_path()
-    from backtester.engine import run_backtest
+    from intradyne.backtester.engine import run_backtest
 
     # Baseline: simple MA(20) crossover
     base = run_backtest(

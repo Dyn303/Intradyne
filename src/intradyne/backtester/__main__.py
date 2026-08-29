@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 
 from intradyne.core.logging import setup_logging
-from src.backtester.engine import run_backtest_advanced
+from intradyne.backtester.engine import run_backtest_advanced
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -157,8 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
     if args.auto_topk and args.auto_topk > 0:
         # Momentum selector: top-K by 60-day return among allowed whitelist
-        from src.core.config import load_settings
-        from src.backtester.engine import get_candles, _symbol_to_pair
+        from intradyne.core.config import load_settings
+        from intradyne.backtester.engine import get_candles, _symbol_to_pair
 
         s = load_settings()
         wl = s.allowed_crypto_list()
@@ -172,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         scores.sort(reverse=True, key=lambda t: t[0])
         symbols = [sym for _, sym in scores[: int(args.auto_topk)]] or symbols
     if args.mode == "hybrid":
-        from src.backtester.engine import run_backtest_hybrid
+        from intradyne.backtester.engine import run_backtest_hybrid
 
         # Profile overrides for aggressive-sim
         if args.profile == "aggressive-sim":
@@ -270,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
                 tod_end_utc=args.tod_end_utc,
             )
     elif args.mode == "trend1h":
-        from src.backtester.engine import run_backtest_trend1h
+        from intradyne.backtester.engine import run_backtest_trend1h
 
         summary, csv_path, json_path = run_backtest_trend1h(
             days=args.days,

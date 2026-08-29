@@ -61,8 +61,12 @@ async def ledger_tail(n: int = 100) -> List[Dict]:
     return out
 
 
-@router.get("/metrics")
-async def metrics():
+# Namespaced under /risk to match /risk/status. It previously sat on bare
+# "/metrics", where -- being registered with the routers before the
+# app-level Prometheus handler -- it shadowed the scrape endpoint, so
+# Prometheus received this JSON instead of the exposition format.
+@router.get("/risk/metrics")
+async def risk_metrics():
     gr = get_guardrails()
     now = datetime.utcnow()
     counts = {

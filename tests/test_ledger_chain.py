@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict
 
-from src.core.ledger import Ledger
+from intradyne.core.ledger import Ledger
 
 
 def test_ledger_hash_chain(tmp_path: Path) -> None:
@@ -27,7 +27,7 @@ def test_ledger_hash_chain(tmp_path: Path) -> None:
         # Check that hash_prev matches previous hash
         assert rec.get("hash_prev", "") == (prev_hash or "")
         # Recompute hash and compare
-        from src.core.ledger import Ledger as _L
+        from intradyne.core.ledger import Ledger as _L
 
         assert rec["hash"] == _L._hash_record(rec)
         prev_hash = rec["hash"]

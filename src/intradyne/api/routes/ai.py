@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from intradyne.api.deps import get_ledger
-from src.core.ai import (
+from intradyne.core.ai import (
     AIUnavailable,
     ai_configured,
     summarize_guardrails_async,
@@ -13,7 +13,7 @@ from src.core.ai import (
 )
 from intradyne.api.ratelimit import ai_rate_limit
 from intradyne.api.deps import get_guardrails
-from src.risk.guardrails import OrderReq
+from intradyne.risk.guardrails import OrderReq
 
 
 router = APIRouter(dependencies=[Depends(ai_rate_limit)])

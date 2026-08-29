@@ -5,7 +5,7 @@ from typing import Dict, Iterable
 
 import requests
 
-from src.core.utils import safe_log_key
+from intradyne.core.utils import safe_log_key
 
 
 def _map_symbol(sym: str) -> str:

@@ -15,7 +15,7 @@ from .metrics_ml import ML_SIGNALS
 from .metrics import METRICS
 
 try:
-    from src.data.sentiment import get_sentiment_score_cached  # type: ignore
+    from intradyne.data.sentiment import get_sentiment_score_cached  # type: ignore
 except Exception:  # pragma: no cover
 
     def get_sentiment_score_cached(ttl: int = 300) -> float:  # type: ignore

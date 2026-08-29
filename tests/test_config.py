@@ -63,7 +63,7 @@ def test_bitget_env_present_and_mask_key():
 
     # Load Settings to satisfy import/use requirement
     try:
-        from src.config import Settings  # noqa: F401
+        from intradyne.core.config import Settings  # noqa: F401
 
         _ = Settings()
     except Exception:

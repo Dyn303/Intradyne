@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Query
 from prometheus_client import Gauge
 
-from backtester.engine import run_backtest
+from intradyne.backtester.engine import run_backtest
 # metrics available for future use
 
 

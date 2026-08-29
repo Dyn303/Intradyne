@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from src.backtester.engine import run_backtest
+from intradyne.backtester.engine import run_backtest
 
 
 def main():

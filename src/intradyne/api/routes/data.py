@@ -208,7 +208,7 @@ async def get_sentiment(refresh: int = 0) -> Dict[str, Any]:
       else returns cached/last-known score.
     """
     try:
-        from src.data.sentiment import (
+        from intradyne.data.sentiment import (
             get_sentiment_score_cached,
             fetch_fear_greed_async,
         )

@@ -1,6 +1,6 @@
 """Phase 0 hardening: path traversal, CORS, and WebSocket auth.
 
-See tests/test_api_auth.py for why these import via ``src.intradyne``.
+Auth enforcement itself is covered in tests/test_api_auth.py.
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 import pytest
 
-from src.intradyne.api.app import create_app
-from src.intradyne.api.deps import require_ws_api_key
+from intradyne.api.app import create_app
+from intradyne.api.deps import require_ws_api_key
 
 
 _AUTH_VARS = (

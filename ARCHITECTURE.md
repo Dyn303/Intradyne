@@ -1,28 +1,37 @@
 # IntraDyne Lite – Architecture Overview
 
-This repo follows a src-first package layout, with canonical runtime modules under `src/`. The legacy top-level `intradyne/` package is retained as a thin compatibility layer so existing imports keep working while we migrate.
+All runtime Python lives in a single package: `src/intradyne/`. There is one
+module per concern and no compatibility shims.
 
 Structure
-- `src/`: canonical Python packages used in runtime and Docker images
-  - `src/intradyne/api/*`: FastAPI app, routes, and deps
-  - `src/intradyne/core/*`: core config, logging, types, adapters
-  - `src/backtester/*`, `src/engine.py`: backtesting/engine utilities
-- `intradyne/`: compatibility shims for stable imports
-  - Re-exports from `src/intradyne/*` or provide minimal stubs needed by tests
-- `app/`: standalone demo/backtest pipeline (kept for examples/tests)
-- `tests/`: unit tests (pytest)
-- `deploy/`: docker-compose files
-- `docker`, `Dockerfile`: container build
+- `src/intradyne/api/*` – FastAPI app, routes, deps, rate limiting
+- `src/intradyne/core/*` – config, logging, ledger, portfolio, types, AI helpers
+- `src/intradyne/risk/*` – guardrails (pre-trade veto), drawdown, flash crash,
+  kill switch, VaR, Shariah policy
+- `src/intradyne/adapters/*` – venue adapters (Bitget via CCXT)
+- `src/intradyne/backtester/*` – backtest engine and metrics
+- `src/intradyne/data/*` – price feed and sentiment
+- `src/intradyne/ml/*` – dataset/feature/label/model helpers
+- `src/intradyne/strategies/*` – risk-profile allocation models (see note)
+- `src/intradyne/sor/*` – smart order router
+- `app/` – the trading engine: strategies, execution, paper/live brokers
+- `tests/` – pytest
+- `deploy/` – compose, helm, monitoring
+- `Dockerfile`, `docker/` – container build
 
 Imports
-- Prefer `intradyne.*` imports at app level. CI and Docker set `PYTHONPATH=/app/src`, so `intradyne.*` resolves to `src/intradyne/*`.
-- Shims in `intradyne/*` ensure backward compatibility; they can be retired once all callers are updated to the canonical modules.
+- Always `intradyne.*`. CI and Docker set `PYTHONPATH=/app/src`, so
+  `intradyne.*` resolves to `src/intradyne/*`.
+- There is exactly one module per name. Previously the same code was reachable
+  as `intradyne.X`, `src.intradyne.X` and `src.X` through two layers of
+  re-export shims, which let the deployed app and the tested app drift apart.
 
 Build & CI
-- Lint: ruff on `intradyne src app tests`
-- Types: mypy scoped via `mypy.ini` (starts with `src/engine.py` and `src/backtester/`)
-- Tests: pytest
-- Docker: uvicorn serves `intradyne.api.app:app` on port 8000 inside the container (published as 8080 on host in compose)
+- Lint: `ruff check src app tests`
+- Types: `mypy` scoped via `mypy.ini` to `src/intradyne`
+- Tests: `pytest`
+- Docker: uvicorn serves `intradyne.api.app:app` on port 8000 (published as
+  8080 on the host in compose)
 
 Dev Tasks
 - `make lint` / `make type` / `make test` – local quality gates
@@ -30,9 +39,12 @@ Dev Tasks
 - `make docker-logs` – follow container logs
 - `make clean-artifacts` – remove generated backtest artifacts
 
-Migration Plan
-1) Stabilize shims (done) – all tests green with re-exports or minimal stubs
-2) Expand typing coverage module-by-module
-3) Replace wildcard re-exports with explicit re-exports
-4) Retire legacy dirs (`@src`, `@tests`, `intradyne_lite`) under `_prev/legacy/` (kept ignored)
+Notes
+- `src/intradyne/strategies/` holds risk-profile *allocation* models
+  (conservative → very aggressive, producing portfolio weights). This is a
+  different concern from `app/strategies/`, which holds tick-level entry
+  signal generators. The four profile subclasses are currently empty and the
+  subsystem is not wired into the API or the engine; whether to complete or
+  drop it is an open product question.
 
+See `MIGRATION.md` for the consolidation plan and its remaining phases.

@@ -1,9 +1,7 @@
 """Auth enforcement on the shipped API.
 
-These import ``src.intradyne.api.app`` rather than ``intradyne.api.app``: under
-``pytest.ini``'s path order the latter resolves to the root ``intradyne/``
-stub app, which is *not* what the container runs. MIGRATION.md phase 1 deletes
-that stub, after which the plain import is correct here.
+``intradyne.*`` now resolves to the single canonical package under ``src/``;
+the root shim tree that used to shadow it was removed in phase 1.
 
 Requests go through ``httpx.ASGITransport`` instead of ``TestClient`` so the
 suite does not depend on which starlette/httpx pairing is installed.
@@ -18,7 +16,7 @@ from typing import Any, Dict, Optional
 import httpx
 import pytest
 
-from src.intradyne.api.app import create_app
+from intradyne.api.app import create_app
 
 
 _PROD = {
