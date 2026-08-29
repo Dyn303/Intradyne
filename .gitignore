@@ -19,7 +19,11 @@ node_modules/
 # Outputs (runtime)
 /reports/
 /data/
-artifacts/
+# Generated backtest/optimizer output. production_params.json is a runtime
+# *input* (loaded by app/main.py at startup), so it stays tracked. Git
+# cannot re-include a file whose parent dir is excluded, hence the glob.
+artifacts/*
+!artifacts/production_params.json
 optuna.db
 trading_summary.csv
 portfolio_snapshot.json
