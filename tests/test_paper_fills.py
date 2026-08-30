@@ -87,3 +87,70 @@ def test_market_orders_remain_taker():
     assert order.filled_as_maker is False
     # Slippage applied against the taker.
     assert pf.get_position("BTC/USDT").avg_price > 100.0
+
+
+def _maker_ctx(portfolio, broker):
+    import os
+    import tempfile
+
+    from intradyne.core.ledger import Ledger
+    from intradyne.engine.execution import ExecContext
+
+    return ExecContext(
+        portfolio=portfolio,
+        paper=broker,
+        ledger=Ledger(path=os.path.join(tempfile.mkdtemp(), "l.jsonl")),
+        whitelist=["BTC/USDT"],
+        fast_mode=True,
+        execution_mode="maker",
+    )
+
+
+def test_only_one_resting_entry_per_symbol():
+    """The strategy decides to enter from position size, which stays zero
+    while an order rests unfilled, so it re-submits every tick. Those queue
+    and all fill together on the first dip, producing a position many times
+    the intended size -- measured at ~12x the taker run's notional.
+    """
+    import asyncio
+
+    from intradyne.engine.execution import ExecutionManager
+
+    pf = Portfolio()
+    broker = PaperBroker(pf, slippage_bps=0, limit_ttl_s=600)
+    em = ExecutionManager(_maker_ctx(pf, broker))
+    quote = {"symbol": "BTC/USDT", "bid": 99.0, "ask": 100.0, "last": 100.0, "ts": 0.0}
+
+    async def go():
+        a = await em.submit("BTC/USDT", "buy", "market", 1.0, None, quote, "s", {}, {})
+        b = await em.submit("BTC/USDT", "buy", "market", 1.0, None, quote, "s", {}, {})
+        return a, b
+
+    first, second = asyncio.run(go())
+    assert first.get("resting") is True
+    assert second.get("status") == "pending"
+    assert second.get("action") == "resting_order_exists"
+    assert len(broker.open_orders("BTC/USDT")) == 1
+
+
+def test_exits_always_cross_even_in_maker_mode():
+    """A passive stop is not a stop: it rests unfilled exactly when the
+    market is running away, leaving the position open."""
+    import asyncio
+
+    from intradyne.engine.execution import ExecutionManager
+
+    pf = Portfolio()
+    pf.buy("BTC/USDT", qty=1.0, price=100.0)
+    broker = PaperBroker(pf, slippage_bps=0)
+    em = ExecutionManager(_maker_ctx(pf, broker))
+    quote = {"symbol": "BTC/USDT", "bid": 95.0, "ask": 96.0, "last": 95.0, "ts": 0.0}
+
+    async def go():
+        return await em.submit(
+            "BTC/USDT", "sell", "market", 1.0, None, quote, "stop_exit", {}, {}
+        )
+
+    result = asyncio.run(go())
+    assert result.get("status") == "filled", "an exit must not rest"
+    assert pf.get_position("BTC/USDT").base == pytest.approx(0.0)

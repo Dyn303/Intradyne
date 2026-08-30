@@ -245,6 +245,24 @@ class ExecutionManager:
         #
         # Long-only makes this a clean split: entries buy, exits sell.
         if self.ctx.execution_mode == "maker" and type_ == "market" and side == "buy":
+            # One resting entry per symbol at a time.
+            #
+            # The strategy decides to enter from position size, which stays
+            # zero while an order rests unfilled, so it re-submits on every
+            # subsequent tick. Those orders queue and then all fill together
+            # on the first dip, producing a position many times the intended
+            # size -- measured at roughly twelve times the notional of the
+            # equivalent taker run.
+            try:
+                if self.ctx.paper.open_orders(symbol):
+                    return {
+                        "status": "pending",
+                        "action": "resting_order_exists",
+                        "reasons": [],
+                    }
+            except AttributeError:  # pragma: no cover - broker without a book
+                pass
+
             touch = l1.get("bid") if side == "buy" else l1.get("ask")
             touch = touch or l1.get("last")
             if touch:
