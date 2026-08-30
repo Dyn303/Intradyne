@@ -434,7 +434,14 @@ class StrategyRouter:
                         )
                     except Exception:
                         pass
-                qty = self.risk.sizer(self.portfolio.equity({sym: last_f}), last_f)
+                _eq = self.portfolio.equity({sym: last_f})
+                # Size against remaining capacity, not the full per-order
+                # allowance: repeated entries into one symbol otherwise stack
+                # without bound.
+                qty = min(
+                    self.risk.sizer(_eq, last_f),
+                    self.risk.position_capacity(_eq, last_f, pos.base),
+                )
                 if self._sentiment_enabled and qty > 0:
                     try:
                         a = float(self._sentiment_size_min)

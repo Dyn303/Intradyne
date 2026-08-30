@@ -293,6 +293,12 @@ def run(
     exposure = exposure_steps / max(1, total_steps)
 
     round_trips = wins + losses
+    # dd_soft latches and is never reset, so once equity dips below it the
+    # strategy stops opening positions for the remainder of the window. Runs
+    # therefore end at roughly -dd_soft regardless of configuration, which is
+    # why net_pnl looks nearly identical across a sweep and cannot be used to
+    # compare configurations. Expectancy per trade can.
+    halted_early = bool(risk.state.dd_soft_triggered or risk.state.dd_hard_triggered)
     summary = {
         # `trades` counts individual fills; a round trip is typically several
         # (both strategies can enter on one tick, and exits are separate
@@ -320,6 +326,14 @@ def run(
         else (None if wins == 0 else float("inf")),
         "exposure_time": exposure,
         "final_equity": portfolio.equity({}),
+        # True when the drawdown guard stopped new entries before the window
+        # ended: the sample is then truncated, not a full-period result.
+        "halted_early": halted_early,
+        "halt_reason": (
+            "dd_hard"
+            if risk.state.dd_hard_triggered
+            else ("dd_soft" if risk.state.dd_soft_triggered else None)
+        ),
     }
 
     # A win rate means nothing without the breakeven it has to clear. At a

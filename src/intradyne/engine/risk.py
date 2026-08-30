@@ -39,6 +39,24 @@ class RiskManager:
         qty = max_notional / price if price > 0 else 0.0
         return max(qty, 0.0)
 
+    def position_capacity(
+        self, equity: float, price: float, current_base: float = 0.0
+    ) -> float:
+        """Quantity that may still be added without breaching max_pos_pct.
+
+        sizer() caps a single *order*; nothing capped the resulting
+        *position*. The router only refused a new entry when the count of
+        symbols already held reached max_concurrent_pos, so on a single symbol
+        that check never fired and each entry stacked another max_pos_pct of
+        equity onto the same position. Measured on real data, positions
+        reached 32x the intended size, turning a scalper into a large
+        directional bet -- and making the 1.5% cap meaningless live.
+        """
+        if price <= 0:
+            return 0.0
+        room = equity * self.max_pos_pct - current_base * price
+        return max(room / price, 0.0)
+
     def sl_tp_levels(
         self, entry_price: float, atr: Optional[float] = None
     ) -> Tuple[float, float]:

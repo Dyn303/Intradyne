@@ -96,6 +96,7 @@ def _run_one(
         "breakeven": edge.breakeven_win_rate,
         "expectancy_bps": edge.expectancy_pct * 1e4,
         "verdict": edge.verdict,
+        "halted_early": bool(metrics.get("halted_early")),
     }
 
 
@@ -103,7 +104,7 @@ def _table(rows: List[Dict[str, Any]], title: str) -> None:
     print(f"\n{title}")
     header = (
         f"{'tp':>5} {'sl':>5} {'trips':>7} {'win':>7} {'b/e':>7} "
-        f"{'exp bps':>9} {'net pnl':>10}  verdict"
+        f"{'exp bps':>9} {'net pnl':>10} {'cut':>4}  verdict"
     )
     print(header)
     print("-" * len(header))
@@ -112,7 +113,8 @@ def _table(rows: List[Dict[str, Any]], title: str) -> None:
         print(
             f"{r['tp_bps']:5.0f} {r['sl_bps']:5.0f} {r['round_trips']:7d} "
             f"{r['win_rate']:7.1%} {be} {r['expectancy_bps']:9.2f} "
-            f"{r['net_pnl']:10.2f}  {r['verdict']}"
+            f"{r['net_pnl']:10.2f} {'yes' if r['halted_early'] else '  -':>4}  "
+            f"{r['verdict']}"
         )
 
 
@@ -183,6 +185,13 @@ def main(argv: List[str] | None = None) -> int:
         print("no runs produced results")
         return 1
     _table(in_sample, "In sample" if args.holdout else "Results")
+    if any(r["halted_early"] for r in in_sample):
+        print(
+            "\n'cut' marks runs the drawdown guard stopped before the "
+            "window ended. Those rows end near -dd_soft whatever the "
+            "configuration, so net pnl cannot separate them; compare "
+            "expectancy per trade instead."
+        )
 
     if args.holdout <= 0:
         print(
