@@ -28,3 +28,80 @@ groups:
         annotations:
           summary: "Nginx 5xx rate high"
           description: "5xx responses > 0.05 req/s over 5m on Nginx"
+
+  # ---------------------------------------------------------------------
+  # Trading safety state.
+  #
+  # The rules above watch infrastructure only, so nothing paged when the
+  # system halted itself, when drawdown approached the halt threshold, or
+  # when live orders were left unreconciled -- the conditions an operator
+  # most needs to hear about.
+  # ---------------------------------------------------------------------
+  - name: intradyne-safety
+    interval: 1m
+    rules:
+      - alert: Trading_Halted
+        expr: intradyne_halted == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading is halted"
+          description: >-
+            The kill switch or operator halt is engaged. No orders will be
+            accepted until it is cleared. Check /risk/status for the reason.
+
+      - alert: Unreconciled_Live_Orders
+        expr: intradyne_unreconciled_orders > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Live orders left unreconciled"
+          description: >-
+            One or more live submissions were claimed but never completed, so
+            they may or may not exist on the venue. Trading halts until a
+            human confirms. Verify on the exchange before resuming.
+
+      - alert: Drawdown_Approaching_Halt
+        expr: intradyne_drawdown_30d >= 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "30d drawdown at the warning threshold"
+          description: >-
+            Drawdown has reached DD_WARN_PCT. The halt engages at
+            DD_HALT_PCT.
+
+      - alert: Drawdown_Halt_Threshold
+        expr: intradyne_drawdown_30d >= 0.20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "30d drawdown at the halt threshold"
+          description: "Drawdown has reached DD_HALT_PCT; the gate is halting orders."
+
+      - alert: Guardrail_Breach_Rate
+        expr: intradyne_guardrail_breaches_24h >= 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Repeated guardrail breaches"
+          description: >-
+            Breaches in 24h have reached KILL_SWITCH_BREACHES; the kill
+            switch halts trading at this count.
+
+      - alert: Live_Trading_Armed
+        expr: intradyne_live_trading_armed == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Live trading is armed"
+          description: >-
+            The system is configured for live trading with real funds. This
+            fires whenever live mode is on -- it is an awareness alert, not a
+            fault.

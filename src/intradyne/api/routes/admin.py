@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Header, HTTPException
 
-from intradyne.api.deps import get_guardrails, set_halt, is_halted
+from intradyne.api.deps import get_guardrails
+from intradyne.risk.kill_switch import is_halted, set_halt
 
 
 router = APIRouter()
@@ -33,7 +34,7 @@ def halt_set(
     if req and (x_admin_secret or "") != req:
         raise HTTPException(status_code=401, detail="unauthorized")
     enabled = bool(payload.get("enabled"))
-    set_halt(enabled)
+    set_halt(enabled, reason="admin_halt")
     gr = get_guardrails()
     gr.ledger.append("admin_halt", {"enabled": enabled})
     return {"enabled": enabled}

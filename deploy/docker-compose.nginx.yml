@@ -9,6 +9,14 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Container root is read_only; the ledger default resolves to /app and
+      # would fail on first append.
+      - EXPLAIN_LEDGER_PATH=${EXPLAIN_LEDGER_PATH:-/app/data/explainability_ledger.jsonl}
+      - DB_URL=${DB_URL:-sqlite:////app/data/trades.sqlite}
+      # Required in production: the app refuses to boot with a '*'
+      # origin list, and with auth enforced but no key configured.
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:?set an explicit origin list}
+      - X_API_KEY=${X_API_KEY:?set an API key}
     command: uvicorn intradyne.api.app:app --host 0.0.0.0 --port 8000
     volumes:
       - ../data:/app/data

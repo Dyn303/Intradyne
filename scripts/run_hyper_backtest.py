@@ -10,7 +10,7 @@ import pandas as pd
 import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from app.backtest import run as run_backtest
+from intradyne.engine.backtest import run as run_backtest
 
 
 def map_params(strategy: str, best_params_path: Path) -> Dict[str, Any]:

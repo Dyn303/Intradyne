@@ -3,11 +3,9 @@
 build:
 	docker build -t intradyne-lite:1.9.0 .
 build-api:
-	docker build -f docker/Dockerfile.api -t intradyne-lite-api:1.9.0 .
 run:
 	docker run --rm -p 8080:8000 -e CONFIG=/app/config.yaml -v $$PWD/config.yaml.example:/app/config.yaml:ro -v $$PWD/profiles.yaml.example:/app/profiles.yaml:ro -v $$PWD/data:/app/data intradyne-lite:1.9.0
 run-api:
-	docker run --rm -p 8080:8000 intradyne-lite-api:1.9.0
 up:
 	docker compose -f deploy/docker-compose.yml up -d --build
 down:
@@ -20,7 +18,7 @@ ping:
 	curl "http://localhost:8080/healthz"
 
 lint:
-	.venv/Scripts/python -m ruff check intradyne src app tests
+	.venv/Scripts/python -m ruff check src tests scripts
 
 type:
 	.venv/Scripts/python -m mypy --pretty

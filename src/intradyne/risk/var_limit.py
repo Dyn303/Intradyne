@@ -1,2 +1,12 @@
-# ruff: noqa: F401, F403
-from src.risk.var_limit import *  # re-export compatibility shim
+from __future__ import annotations
+
+from typing import List
+
+
+def historical_var(returns: List[float], alpha: float = 0.95) -> float:
+    from intradyne.risk.guardrails import historical_var as _var
+
+    return _var(returns, alpha)
+
+
+__all__ = ["historical_var"]

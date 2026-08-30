@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.ml.dataset import load_ohlcv_many
-from src.ml.features import compute_features
-from src.ml.labels import triple_barrier_labels
-from src.ml.model import train_pipeline
+from intradyne.ml.dataset import load_ohlcv_many
+from intradyne.ml.features import compute_features
+from intradyne.ml.labels import triple_barrier_labels
+from intradyne.ml.model import train_pipeline
 
 
 def build_dataset(

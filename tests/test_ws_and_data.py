@@ -9,14 +9,15 @@ client = TestClient(app)
 
 
 def test_data_ohlc_local_file():
+    """Asserted unconditionally. This previously accepted 200 *or* 404 and
+    only checked the body on 200, so it passed whether the dataset loaded or
+    not -- it could not fail."""
     r = client.get("/data/ohlc", params={"symbol": "ETH/USDT", "tf": "1d"})
-    assert r.status_code in (200, 404)
-    # If sample dataset exists, basic structure must match
-    if r.status_code == 200:
-        body = r.json()
-        assert body["symbol"] == "ETH/USDT"
-        assert body["tf"] == "1d"
-        assert isinstance(body.get("data"), list)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["symbol"] == "ETH/USDT"
+    assert body["tf"] == "1d"
+    assert isinstance(body["data"], list) and body["data"]
 
 
 def test_data_price_usdt_shortcut():

@@ -7,7 +7,7 @@ from typing import Dict, List
 
 import httpx
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-from intradyne.api.deps import get_ledger
+from intradyne.api.deps import get_ledger, require_ws_api_key
 from intradyne.api.ratelimit import ws_rate_limit
 
 
@@ -44,6 +44,8 @@ async def ws_ticks(
     interval: float = Query(1.0, ge=0.1, le=10.0),
     mock: int = Query(0, description="Use synthetic prices when 1 (for tests)"),
 ) -> None:
+    if not await require_ws_api_key(websocket):
+        return
     syms = [s.strip() for s in symbols.split(",") if s.strip()]
     await websocket.accept()
     try:
@@ -115,6 +117,8 @@ async def ws_ledger(
     - mock: when 1, stream synthetic events for testing
     - interval: poll interval when following a file
     """
+    if not await require_ws_api_key(websocket):
+        return
     await websocket.accept()
     try:
         if mock:

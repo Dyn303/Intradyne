@@ -34,7 +34,7 @@ cp .env.example .env
 4) Run the app:
 
 ```
-python -m app.main
+python -m intradyne.engine.main
 ```
 
 5) Endpoints (default container port 8000; published as `localhost:8080`):
@@ -42,7 +42,7 @@ python -m app.main
 - `http://localhost:8080/readyz`
 - `http://localhost:8080/healthz`
 - `http://localhost:8080/metrics`
-- `http://localhost:8080/state`
+- `http://localhost:8080/engine/state`
 
 6) Run tests and linters:
 
@@ -62,7 +62,7 @@ mypy app
 Build and run:
 
 ```
-docker build -t intradyne-lite -f docker/Dockerfile .
+docker build -t intradyne-lite .
 docker run --rm -p 8080:8000 --env-file .env intradyne-lite
 ```
 
@@ -74,32 +74,32 @@ docker run --rm -p 8080:8000 --env-file .env intradyne-lite
 
 ## Backtesting
 
-This lightweight edition focuses on live paper trading against exchange data. For backtesting, hook your historical data reader into `data_ws.py` and drive the router with simulated ticks.
+This lightweight edition focuses on live paper trading against exchange data. For backtesting, hook your historical data reader into `engine/data_ws.py` and drive the router with simulated ticks.
 
 ## Backtesting & Hyperparameter Tuning
 
 - Backtest (historical replay, event-driven):
 
 ```
-python -m app.backtest --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 1m --strategy momentum --params '{"momentum": {"breakout_window": 60, "min_range_bps": 5}, "risk": {"per_trade_sl_pct": 0.003, "tp_pct": 0.002}}'
+python -m intradyne.engine.backtest --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 1m --strategy momentum --params '{"momentum": {"breakout_window": 60, "min_range_bps": 5}, "risk": {"per_trade_sl_pct": 0.003, "tp_pct": 0.002}}'
 ```
 
 - Optimize with Optuna (Hyperoptuna):
 
 ```
-python -m app.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 1m --strategy momentum --trials 50 --jobs 2 --objective sharpe --lambda-dd 0.5
+python -m intradyne.engine.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 1m --strategy momentum --trials 50 --jobs 2 --objective sharpe --lambda-dd 0.5
 ```
 
 - Enforce minimum trade frequency during tuning (e.g., 30/day):
 
 ```
-python -m app.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 5s --strategy momentum --trials 100 --jobs 2 --objective sharpe --lambda-dd 0.5 --min-trades-per-day 30
+python -m intradyne.engine.optimize --symbols BTC/USDT,ETH/USDT --start 2024-01-01 --end 2024-03-01 --timeframe 5s --strategy momentum --trials 100 --jobs 2 --objective sharpe --lambda-dd 0.5 --min-trades-per-day 30
 ```
 
 - Evaluate out-of-sample with saved best params:
 
 ```
-python -m app.eval --symbols BTC/USDT,ETH/USDT --start 2024-03-02 --end 2024-04-01 --timeframe 1m --params-file artifacts/best_params.json
+python -m intradyne.engine.eval --symbols BTC/USDT,ETH/USDT --start 2024-03-02 --end 2024-04-01 --timeframe 1m --params-file artifacts/best_params.json
 ```
 
 Notes:
@@ -114,15 +114,16 @@ Notes:
 
 ```
 export STRATEGY_PARAMS_FILE=artifacts/production_params.json   # Windows: set STRATEGY_PARAMS_FILE=...
-python -m app.main
+python -m intradyne.engine.main
 ```
 
 
 ## Project Layout
 
 ```
-app/
-  main.py            # bootstrap: config, tasks, server
+src/intradyne/engine/
+  main.py            # entrypoint: serves the API with the loop enabled
+  loop.py            # the trading loop, hosted by the API lifespan
   config.py          # Pydantic settings, whitelist integration
   whitelist.json     # Shariah-compliant spot pairs
   compliance.py      # whitelist checks, spot-only, no shorting
@@ -138,7 +139,6 @@ app/
     meanrev.py       # mean-reversion micro-scalper
   router.py          # strategy orchestration and concurrency
   metrics.py         # counters/gauges, EOD summary hooks
-  server.py          # FastAPI with /readyz /healthz /metrics /state
 tests/
   test_compliance.py
   test_risk.py

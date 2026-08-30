@@ -36,13 +36,8 @@ async def _get_redis(url: Optional[str]):
 async def ai_rate_limit(request: Request) -> None:
     s = load_settings()
     # Prefer AI-specific limits if present, else fall back to global
-    try:
-        ai_reqs = int(getattr(s, "AI_RATE_LIMIT_REQS", 0) or 0)
-        ai_win = int(getattr(s, "AI_RATE_LIMIT_WINDOW", 0) or 0)
-    except Exception:  # pragma: no cover - defensive
-        ai_reqs, ai_win = 0, 0
-    max_reqs = ai_reqs or getattr(s, "RATE_LIMIT_REQS", 60)
-    win_s = ai_win or getattr(s, "RATE_LIMIT_WINDOW", 60)
+    max_reqs = s.ai_rate_limit_reqs or s.rate_limit_reqs
+    win_s = s.ai_rate_limit_window or s.rate_limit_window
 
     now = time.time()
     route = request.url.path.split("?")[0]
@@ -51,7 +46,7 @@ async def ai_rate_limit(request: Request) -> None:
     client_host = request.client.host if request.client else ""
     ip = fwd or client_host or "unknown"
     # Prefer Redis fixed-window counter when REDIS_URL is set; else fallback to in-memory sliding window.
-    red = await _get_redis(getattr(s, "REDIS_URL", None))
+    red = await _get_redis(s.redis_url)
     if red is not None:
         # Use fixed window key with TTL
         window_key = int(now // float(win_s))
@@ -117,7 +112,7 @@ async def ws_rate_limit(websocket, route: str) -> bool:
         ip = "unknown"
 
     # Prefer Redis fixed-window when configured (best-effort)
-    red = await _get_redis(getattr(s, "REDIS_URL", None))
+    red = await _get_redis(s.redis_url)
     if red is not None:
         window = 1.0  # 1-second windows for streaming
         window_key = int(now // window)
@@ -151,11 +146,8 @@ async def general_rate_limit(request: Request) -> None:
     overrides.
     """
     s = load_settings()
-    try:
-        max_reqs = int(getattr(s, "RATE_LIMIT_REQS", 60))
-        win_s = int(getattr(s, "RATE_LIMIT_WINDOW", 60))
-    except Exception:  # pragma: no cover
-        max_reqs, win_s = 60, 60
+    max_reqs = s.rate_limit_reqs
+    win_s = s.rate_limit_window
 
     now = time.time()
     route = request.url.path.split("?")[0]
@@ -163,7 +155,7 @@ async def general_rate_limit(request: Request) -> None:
     client_host = request.client.host if request.client else ""
     ip = fwd or client_host or "unknown"
 
-    red = await _get_redis(getattr(s, "REDIS_URL", None))
+    red = await _get_redis(s.redis_url)
     if red is not None:
         window_key = int(now // float(win_s))
         rkey = f"rl:{route}:{ip}:{window_key}"

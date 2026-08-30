@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.backtester.engine import compute_daily_returns, compute_max_drawdown
+from intradyne.backtester.engine import compute_daily_returns, compute_max_drawdown
 
 
 def test_daily_return_pct_formula():

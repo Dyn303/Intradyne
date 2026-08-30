@@ -20,27 +20,29 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          # Kept in step with .python-version so local and CI agree.
+          python-version-file: '.python-version'
 
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff mypy
+          # Pinned toolchain. `pip install ruff mypy` was unpinned, so an
+          # upstream release could turn the lint gate red with no change here.
+          pip install -r requirements-dev.txt
 
       - name: Lint (ruff)
-        run: ruff check intradyne src app tests
+        run: ruff check src tests scripts
 
       - name: Format check (ruff)
-        run: ruff format --check .
+        run: ruff format --check src tests scripts
 
       - name: Typecheck (mypy)
         run: mypy --pretty

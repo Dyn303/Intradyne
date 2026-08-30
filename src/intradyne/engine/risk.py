@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+import time
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Deque, Dict, Optional, Tuple
+
+
+@dataclass
+class RiskState:
+    breaches_24h: Deque[float] = field(default_factory=deque)  # timestamps
+    dd_soft_triggered: bool = False
+    dd_hard_triggered: bool = False
+    kill_switch: bool = False
+    symbol_windows: Dict[str, Deque[tuple[float, float]]] = field(
+        default_factory=dict
+    )  # ts, price for 60m
+
+
+@dataclass
+class RiskManager:
+    max_pos_pct: float
+    per_trade_sl_pct: float
+    tp_pct: float
+    dd_soft: float
+    dd_hard: float
+    flash_crash_drop_1h: float
+    max_concurrent_pos: int
+    kill_switch_breaches: int
+    state: RiskState = field(default_factory=RiskState)
+    # Optional ATR-based exits
+    use_atr: bool = False
+    atr_window: Optional[int] = None
+    atr_k_sl: Optional[float] = None
+    atr_k_tp: Optional[float] = None
+
+    def sizer(self, equity: float, price: float) -> float:
+        max_notional = equity * self.max_pos_pct
+        qty = max_notional / price if price > 0 else 0.0
+        return max(qty, 0.0)
+
+    def position_capacity(
+        self, equity: float, price: float, current_base: float = 0.0
+    ) -> float:
+        """Quantity that may still be added without breaching max_pos_pct.
+
+        sizer() caps a single *order*; nothing capped the resulting
+        *position*. The router only refused a new entry when the count of
+        symbols already held reached max_concurrent_pos, so on a single symbol
+        that check never fired and each entry stacked another max_pos_pct of
+        equity onto the same position. Measured on real data, positions
+        reached 32x the intended size, turning a scalper into a large
+        directional bet -- and making the 1.5% cap meaningless live.
+        """
+        if price <= 0:
+            return 0.0
+        room = equity * self.max_pos_pct - current_base * price
+        return max(room / price, 0.0)
+
+    def sl_tp_levels(
+        self, entry_price: float, atr: Optional[float] = None
+    ) -> Tuple[float, float]:
+        # Prefer ATR-based exits if configured and ATR provided
+        if self.use_atr and atr is not None and atr > 0:
+            k_sl = self.atr_k_sl or 0.0
+            k_tp = self.atr_k_tp or 0.0
+            if k_sl > 0 and k_tp > 0:
+                sl_abs = max(1e-9, entry_price - k_sl * atr)
+                tp_abs = max(1e-9, entry_price + k_tp * atr)
+                return sl_abs, tp_abs
+        # Fallback to percentage-based SL/TP
+        sl = entry_price * (1.0 - self.per_trade_sl_pct)
+        tp = entry_price * (1.0 + self.tp_pct)
+        return sl, tp
+
+    def update_drawdown(self, start_equity: float, current_equity: float) -> None:
+        if start_equity <= 0:
+            return
+        dd = 1.0 - current_equity / start_equity
+        now = time.time()
+        if dd >= self.dd_soft:
+            self.state.dd_soft_triggered = True
+            self._register_breach(now)
+        if dd >= self.dd_hard:
+            self.state.dd_hard_triggered = True
+            self._register_breach(now)
+        self._update_kill_switch(now)
+
+    def flash_crash_check(self, symbol: str, ts: float, price: float) -> bool:
+        win = self.state.symbol_windows.setdefault(symbol, deque())
+        cutoff = ts - 3600.0
+        win.append((ts, price))
+        while win and win[0][0] < cutoff:
+            win.popleft()
+        if not win:
+            return False
+        max_px = max(p for _, p in win)
+        if max_px <= 0:
+            return False
+        drop = (max_px - price) / max_px
+        if drop >= self.flash_crash_drop_1h:
+            self._register_breach(ts)
+            return True
+        return False
+
+    def can_open_new_position(self, open_positions: int) -> bool:
+        if self.state.kill_switch or self.state.dd_hard_triggered:
+            return False
+        return (
+            open_positions < self.max_concurrent_pos
+            and not self.state.dd_soft_triggered
+        )
+
+    def _register_breach(self, ts: float) -> None:
+        self.state.breaches_24h.append(ts)
+
+    def _update_kill_switch(self, ts: float) -> None:
+        cutoff = ts - 86400.0
+        q = self.state.breaches_24h
+        while q and q[0] < cutoff:
+            q.popleft()
+        if len(q) >= self.kill_switch_breaches:
+            self.state.kill_switch = True

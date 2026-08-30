@@ -24,7 +24,7 @@ def test_prod_allows_when_creds_present(monkeypatch: pytest.MonkeyPatch):
     from intradyne.core.config import load_settings
 
     s = load_settings()
-    assert s.BITGET_API_KEY.startswith("bg_")
+    assert s.bitget_api_key.startswith("bg_")
 
 
 def test_ccxt_mapping_fills_bitget_when_exchange_is_bitget(
@@ -39,8 +39,8 @@ def test_ccxt_mapping_fills_bitget_when_exchange_is_bitget(
     from intradyne.core.config import load_settings
 
     s = load_settings()
-    assert s.BITGET_API_KEY == "bg_map1234"
-    assert s.BITGET_API_SECRET == "mapsecret"
+    assert s.bitget_api_key == "bg_map1234"
+    assert s.bitget_api_secret == "mapsecret"
 
 
 def test_redaction_helper():
