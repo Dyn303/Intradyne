@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from .config import load_settings
+from intradyne.core.config import load_settings
 from .backtest import run as run_backtest
 
 

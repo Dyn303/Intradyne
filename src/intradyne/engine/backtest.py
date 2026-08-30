@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import orjson
 
-from .config import load_settings
+from intradyne.core.config import load_settings
 from .data_loader import DataLoader, LoaderConfig, timeframe_to_seconds
 from .portfolio import Portfolio
 from .broker_paper import PaperBroker

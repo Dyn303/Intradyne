@@ -1,82 +1,162 @@
 from __future__ import annotations
 
+import json
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import List, Optional
 
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Try pydantic v2 first, then v1; fall back to object
-BaseSettings = None  # type: ignore
-Field = None  # type: ignore
-try:  # pydantic v2
-    from pydantic_settings import BaseSettings as _BS  # type: ignore
-    from pydantic import Field as _Field  # type: ignore
 
-    class _Base(_BS):
-        model_config = {  # type: ignore[attr-defined]
-            "case_sensitive": False,
-            "env_file": (".env", ".env.txt", ".env.example"),
-            "extra": "ignore",
-        }
+def _env(*names: str, default: str = "") -> str:
+    """First non-empty value among `names`.
 
-    BaseSettings = _Base
-    Field = _Field
-except Exception:  # v1
+    Several settings are reachable under two names because the API and the
+    engine were configured independently before they were merged. The first
+    name listed is canonical.
+    """
+    for n in names:
+        v = os.getenv(n)
+        if v is not None and v.strip() != "":
+            return v
+    return default
+
+
+def _f(*names: str, default: float) -> float:
     try:
-        from pydantic import BaseSettings as _BS  # type: ignore
-        from pydantic import Field as _Field  # type: ignore
-
-        class _Base(_BS):
-            class Config:  # type: ignore[override]
-                case_sensitive = False
-                env_file = (".env", ".env.txt", ".env.example")
-                extra = "ignore"
-
-        BaseSettings = _Base
-        Field = _Field
-    except Exception:
-        BaseSettings = object  # type: ignore
+        return float(_env(*names) or default)
+    except ValueError:
+        return default
 
 
-class Settings(BaseSettings):  # type: ignore[misc]
-    # Risk thresholds
-    DD_WARN_PCT: float = 0.15
-    DD_HALT_PCT: float = 0.20
-    FLASH_CRASH_PCT: float = 0.30
-    VAR_1D_MAX: float = 0.05
-    KILL_SWITCH_BREACHES: int = 3
+def _i(*names: str, default: int) -> int:
+    try:
+        return int(_env(*names) or default)
+    except ValueError:
+        return default
 
-    # Allowed symbols (comma-separated). Accepts either BASE or BASE/QUOTE.
-    # Default Shariah-compliant crypto whitelist (spot-only)
-    # Expand/override via config or env ALLOWED_SYMBOLS (comma-separated)
-    ALLOWED_SYMBOLS: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
 
-    # Infra
-    DB_URL: str = "sqlite:///data/trades.sqlite"
-    REDIS_URL: Optional[str] = None
-    LOG_LEVEL: str = "INFO"
-    EXPLAIN_LEDGER_PATH: str = "explainability_ledger.jsonl"
+def _b(*names: str, default: bool = False) -> bool:
+    raw = _env(*names)
+    if not raw:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
-    # API and rate limits
-    RATE_LIMIT_WINDOW: int = 60
-    RATE_LIMIT_REQS: int = 120
-    # AI endpoints can override rate limits; fallback to global if unset
-    AI_RATE_LIMIT_WINDOW: int | None = None
-    AI_RATE_LIMIT_REQS: int | None = None
 
-    # Broker creds (env only; never commit secrets)
-    BITGET_API_KEY: Optional[str] = None
-    BITGET_API_SECRET: Optional[str] = None
-    BITGET_API_PASSPHRASE: Optional[str] = None
-    CCXT_EXCHANGE_ID: Optional[str] = None
-    CCXT_API_KEY: Optional[str] = None
-    CCXT_SECRET: Optional[str] = None
+class RiskConfig(BaseModel):
+    """Tier 2: position sizing and per-trade exits, applied inside the engine
+    loop by RiskManager."""
+
+    max_pos_pct: float = 0.015
+    per_trade_sl_pct: float = 0.003
+    tp_pct: float = 0.002
+    max_concurrent_pos: int = 5
+    # Session drawdown. Distinct from the 30-day peak-to-trough measure in
+    # GuardrailConfig -- see MIGRATION.md phase 3.
+    dd_soft: float = 0.03
+    dd_hard: float = 0.05
+    flash_crash_drop_1h: float = 0.30
+    kill_switch_breaches: int = 3
+    use_atr: bool = False
+    atr_window: int = 14
+    atr_k_sl: float = 1.5
+    atr_k_tp: float = 2.0
+
+
+class GuardrailConfig(BaseModel):
+    """Tier 1: the pre-trade veto thresholds used by Guardrails.gate_trade."""
+
+    # 30-day peak-to-trough drawdown, not the session drawdown above.
+    dd_warn_pct: float = 0.15
+    dd_halt_pct: float = 0.20
+    flash_crash_pct: float = 0.30
+    var_1d_max: float = 0.05
+    kill_switch_breaches: int = 3
+
+
+class FeesConfig(BaseModel):
+    maker_bps: int = 2
+    taker_bps: int = 5
+    slippage_bps: int = 2
+
+
+class Settings(BaseSettings):
+    """One configuration for the whole system.
+
+    The API and the engine previously had separate Settings classes reading
+    overlapping but differently-named environment variables, so setting
+    FLASH_CRASH_PCT armed the API guardrail while leaving the engine's
+    identical threshold at its default. Shared values are now read once and
+    handed to both tiers.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=(".env", ".env.txt"),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # Mode and venue
+    mode: str = "paper"  # paper | live
+    exchange: str = "bitget"
+    use_testnet: bool = True
+    live_trading_enabled: bool = False
+
+    # Broker credentials. API_KEY / API_SECRET / API_PASSPHRASE are accepted
+    # as legacy aliases. These are the *broker* credentials; the HTTP API key
+    # is X_API_KEY and is deliberately unrelated.
+    bitget_api_key: Optional[str] = None
+    bitget_api_secret: Optional[str] = None
+    bitget_api_passphrase: Optional[str] = None
+    ccxt_exchange_id: Optional[str] = None
+    ccxt_api_key: Optional[str] = None
+    ccxt_secret: Optional[str] = None
+
+    # Paths and infrastructure
+    port: int = 8000
+    log_dir: str = "logs"
+    log_level: str = "INFO"
+    data_dir: str = "data"
+    artifacts_dir: str = "artifacts"
+    optuna_db_url: str = "sqlite:///optuna.db"
+    db_url: str = "sqlite:///data/trades.sqlite"
+    redis_url: Optional[str] = None
+    explain_ledger_path: str = "explainability_ledger.jsonl"
+
+    # Universe. Accepts either BASE or BASE/QUOTE.
+    allowed_symbols: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
+    symbols: List[str] = []
+
+    # HTTP rate limits
+    rate_limit_window: int = 60
+    rate_limit_reqs: int = 120
+    ai_rate_limit_window: Optional[int] = None
+    ai_rate_limit_reqs: Optional[int] = None
+
+    # Execution filters
+    max_spread_bps: int = 0  # 0 disables
+    entry_cooldown_s: int = 0
+
+    # Sentiment
+    sentiment_enabled: bool = False
+    sentiment_long_min: float = 0.0
+    sentiment_size_min: float = 0.8
+    sentiment_size_max: float = 1.2
+    sentiment_smooth_n: int = 12
+
+    risk: RiskConfig = RiskConfig()
+    guardrails: GuardrailConfig = GuardrailConfig()
+    fees: FeesConfig = FeesConfig()
+
+    # ---- derived -------------------------------------------------------
 
     def allowed_crypto_list(self) -> List[str]:
-        raw = [s.strip() for s in (self.ALLOWED_SYMBOLS or "").split(",") if s.strip()]
+        raw = [s.strip() for s in (self.allowed_symbols or "").split(",") if s.strip()]
         out: List[str] = []
         for s in raw:
-            # Skip quote-only or self-pairs like USDT/USDT
             if "/" in s:
                 try:
                     base, quote = s.split("/", 1)
@@ -91,61 +171,108 @@ class Settings(BaseSettings):  # type: ignore[misc]
                 out.append(f"{s}/USDT")
         return out
 
+    def load_symbols(self, markets: Optional[List[str]] = None) -> List[str]:
+        """Load the Shariah whitelist, optionally intersected with the venue's
+        tradable markets."""
+        whitelist_path = (
+            Path(__file__).resolve().parent.parent / "engine" / "whitelist.json"
+        )
+        with open(whitelist_path, "r", encoding="utf-8") as f:
+            wl = json.load(f)
+        syms = wl.get("symbols", [])
+        if markets:
+            syms = [s for s in syms if s in markets]
+        self.symbols = syms
+        return self.symbols
+
+    # ---- validation ----------------------------------------------------
+
     def _map_compat(self) -> None:
-        # Map CCXT_* to BITGET_* if exchange is bitget and bitget vars not set
-        ccxt_exch = (
-            self.CCXT_EXCHANGE_ID or os.getenv("CCXT_EXCHANGE_ID") or ""
-        ).lower()
-        if ccxt_exch == "bitget":
-            ccxt_key = (
-                self.CCXT_API_KEY
-                or os.getenv("CCXT_API_KEY")
-                or os.getenv("CCXT_APIKEY")
-            )
-            ccxt_secret = self.CCXT_SECRET or os.getenv("CCXT_SECRET")
-            if not (self.BITGET_API_KEY or "").strip() and (ccxt_key or "").strip():
-                object.__setattr__(self, "BITGET_API_KEY", ccxt_key)
-            if (
-                not (self.BITGET_API_SECRET or "").strip()
-                and (ccxt_secret or "").strip()
-            ):
-                object.__setattr__(self, "BITGET_API_SECRET", ccxt_secret)
+        """Fill BITGET_* from CCXT_* when the venue is bitget."""
+        if (self.ccxt_exchange_id or "").lower() != "bitget":
+            return
+        if (
+            not (self.bitget_api_key or "").strip()
+            and (self.ccxt_api_key or "").strip()
+        ):
+            self.bitget_api_key = self.ccxt_api_key
+        if (
+            not (self.bitget_api_secret or "").strip()
+            and (self.ccxt_secret or "").strip()
+        ):
+            self.bitget_api_secret = self.ccxt_secret
 
     def _validate_required_in_prod(self) -> None:
-        env = (
-            os.getenv("APP_ENV") or os.getenv("ENV") or os.getenv("ENVIRONMENT") or ""
-        ).lower()
-        is_prod = env in {"prod", "production"}
-        if is_prod:
-            missing: list[str] = []
-            if not (self.BITGET_API_KEY or "").strip():
-                missing.append("BITGET_API_KEY")
-            if not (self.BITGET_API_SECRET or "").strip():
-                missing.append("BITGET_API_SECRET")
-            if not (self.BITGET_API_PASSPHRASE or "").strip():
-                missing.append("BITGET_API_PASSPHRASE")
-            if missing:
-                raise RuntimeError(
-                    f"Missing required credentials in production: {', '.join(missing)}"
-                )
+        env = _env("APP_ENV", "ENV", "ENVIRONMENT").lower()
+        if env not in {"prod", "production"}:
+            return
+        missing = [
+            name
+            for name, val in (
+                ("BITGET_API_KEY", self.bitget_api_key),
+                ("BITGET_API_SECRET", self.bitget_api_secret),
+                ("BITGET_API_PASSPHRASE", self.bitget_api_passphrase),
+            )
+            if not (val or "").strip()
+        ]
+        if missing:
+            raise RuntimeError(
+                f"Missing required credentials in production: {', '.join(missing)}"
+            )
 
-    # Sentiment (optional, disabled by default)
-    SENTIMENT_ENABLE: bool = False
-    SENTIMENT_LONG_MIN: float = 0.0
-    SENTIMENT_SIZE_MIN: float = 0.8
-    SENTIMENT_SIZE_MAX: float = 1.2
-    SENTIMENT_SMOOTH_N: int = 12
+
+def _build_settings() -> Settings:
+    # Shared thresholds are read once here and handed to both tiers, so one
+    # environment variable cannot arm one tier and leave the other at default.
+    flash = _f("FLASH_CRASH_PCT", "FLASH_CRASH_DROP_1H", default=0.30)
+    kill = _i("KILL_SWITCH_BREACHES", default=3)
+
+    s = Settings(
+        bitget_api_key=_env("BITGET_API_KEY", "API_KEY") or None,
+        bitget_api_secret=_env("BITGET_API_SECRET", "API_SECRET") or None,
+        bitget_api_passphrase=_env("BITGET_API_PASSPHRASE", "API_PASSPHRASE") or None,
+        sentiment_enabled=_b("SENTIMENT_ENABLED", "SENTIMENT_ENABLE"),
+        risk=RiskConfig(
+            max_pos_pct=_f("MAX_POS_PCT", default=0.015),
+            per_trade_sl_pct=_f("PER_TRADE_SL_PCT", default=0.003),
+            tp_pct=_f("TP_PCT", default=0.002),
+            max_concurrent_pos=_i("MAX_CONCURRENT_POS", default=5),
+            dd_soft=_f("DD_SOFT", default=0.03),
+            dd_hard=_f("DD_HARD", default=0.05),
+            flash_crash_drop_1h=flash,
+            kill_switch_breaches=kill,
+            use_atr=_b("USE_ATR"),
+            atr_window=_i("ATR_WINDOW", default=14),
+            atr_k_sl=_f("ATR_K_SL", default=1.5),
+            atr_k_tp=_f("ATR_K_TP", default=2.0),
+        ),
+        guardrails=GuardrailConfig(
+            dd_warn_pct=_f("DD_WARN_PCT", default=0.15),
+            dd_halt_pct=_f("DD_HALT_PCT", default=0.20),
+            flash_crash_pct=flash,
+            var_1d_max=_f("VAR_1D_MAX", default=0.05),
+            kill_switch_breaches=kill,
+        ),
+        fees=FeesConfig(
+            maker_bps=_i("MAKER_BPS", default=2),
+            taker_bps=_i("TAKER_BPS", default=5),
+            slippage_bps=_i("SLIPPAGE_BPS", default=2),
+        ),
+    )
+    s._map_compat()
+    s._validate_required_in_prod()
+    return s
 
 
 @lru_cache(maxsize=1)
 def load_settings() -> Settings:
     """Return the process-wide Settings, built once.
 
-    This is called on every request by the rate limiters and by several
-    routes. Uncached, each call re-parsed the .env files and re-ran the
-    production credential validation, so a prod deployment without broker
-    credentials raised on *every* request -- including /healthz -- even
-    though the API places no orders itself.
+    Called on every request by the rate limiters and by several routes.
+    Uncached, each call re-parsed the .env files and re-ran the production
+    credential check, so a prod deployment without broker credentials raised
+    on every request -- /healthz included -- even though the API places no
+    orders itself.
 
     Tests that manipulate the environment must call reset_settings_cache();
     tests/conftest.py does so automatically between tests.
@@ -158,62 +285,11 @@ def reset_settings_cache() -> None:
     load_settings.cache_clear()
 
 
-def _build_settings() -> Settings:
-    # Build from pydantic Settings; allow any RuntimeErrors to propagate
-    # (e.g., missing creds in production). Only fall back if pydantic isn't available.
-    try:
-        s = Settings()  # type: ignore[call-arg]
-    except Exception:
-        # Minimal manual fallback (no .env parsing) if pydantic is unavailable
-        class _Manual(Settings):  # type: ignore[misc]
-            def __init__(self) -> None:  # type: ignore[no-untyped-def]
-                import os
-
-                env = os.environ
-                self.DD_WARN_PCT = float(env.get("DD_WARN_PCT", "0.15"))
-                self.DD_HALT_PCT = float(env.get("DD_HALT_PCT", "0.20"))
-                self.FLASH_CRASH_PCT = float(env.get("FLASH_CRASH_PCT", "0.30"))
-                self.VAR_1D_MAX = float(env.get("VAR_1D_MAX", "0.05"))
-                self.KILL_SWITCH_BREACHES = int(env.get("KILL_SWITCH_BREACHES", "3"))
-                self.ALLOWED_SYMBOLS = env.get(
-                    "ALLOWED_SYMBOLS",
-                    "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT",
-                )
-                self.DB_URL = env.get("DB_URL", "sqlite:///data/trades.sqlite")
-                self.REDIS_URL = env.get("REDIS_URL")
-                self.LOG_LEVEL = env.get("LOG_LEVEL", "INFO")
-                self.EXPLAIN_LEDGER_PATH = env.get(
-                    "EXPLAIN_LEDGER_PATH", "explainability_ledger.jsonl"
-                )
-                self.RATE_LIMIT_WINDOW = int(env.get("RATE_LIMIT_WINDOW", "60"))
-                self.RATE_LIMIT_REQS = int(env.get("RATE_LIMIT_REQS", "120"))
-                self.AI_RATE_LIMIT_WINDOW = (
-                    int(env.get("AI_RATE_LIMIT_WINDOW", "0")) or None
-                )
-                self.AI_RATE_LIMIT_REQS = (
-                    int(env.get("AI_RATE_LIMIT_REQS", "0")) or None
-                )
-                self.BITGET_API_KEY = env.get("BITGET_API_KEY")
-                self.BITGET_API_SECRET = env.get("BITGET_API_SECRET")
-                self.BITGET_API_PASSPHRASE = env.get("BITGET_API_PASSPHRASE")
-                self.CCXT_EXCHANGE_ID = env.get("CCXT_EXCHANGE_ID")
-                self.CCXT_API_KEY = env.get("CCXT_API_KEY")
-                self.CCXT_SECRET = env.get("CCXT_SECRET")
-                self.SENTIMENT_ENABLE = (
-                    env.get("SENTIMENT_ENABLE", "") or ""
-                ).lower() in {"1", "true", "yes"}
-                self.SENTIMENT_LONG_MIN = float(env.get("SENTIMENT_LONG_MIN", "0.0"))
-                self.SENTIMENT_SIZE_MIN = float(env.get("SENTIMENT_SIZE_MIN", "0.8"))
-                self.SENTIMENT_SIZE_MAX = float(env.get("SENTIMENT_SIZE_MAX", "1.2"))
-                self.SENTIMENT_SMOOTH_N = int(env.get("SENTIMENT_SMOOTH_N", "12"))
-
-        s = _Manual()
-        return s
-
-    # Apply compatibility and validations
-    s._map_compat()
-    s._validate_required_in_prod()
-    return s
-
-
-__all__ = ["Settings", "load_settings", "reset_settings_cache"]
+__all__ = [
+    "Settings",
+    "RiskConfig",
+    "GuardrailConfig",
+    "FeesConfig",
+    "load_settings",
+    "reset_settings_cache",
+]

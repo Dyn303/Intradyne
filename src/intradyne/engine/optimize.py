@@ -9,7 +9,7 @@ import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 
-from .config import load_settings
+from intradyne.core.config import load_settings
 from .backtest import run as run_backtest
 
 

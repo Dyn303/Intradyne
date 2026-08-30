@@ -36,14 +36,14 @@ def get_guardrails() -> Guardrails:
         _ENGINE = Guardrails(
             price_feed=_DefaultPriceFeed(),
             risk_data=_DefaultRiskData(),
-            ledger=Ledger(path=settings.EXPLAIN_LEDGER_PATH),
+            ledger=Ledger(path=settings.explain_ledger_path),
             shariah=sh,
             thresholds={
-                "dd_warn": settings.DD_WARN_PCT,
-                "dd_halt": settings.DD_HALT_PCT,
-                "flash": settings.FLASH_CRASH_PCT,
-                "kill_switch": settings.KILL_SWITCH_BREACHES,
-                "var_max": settings.VAR_1D_MAX,
+                "dd_warn": settings.guardrails.dd_warn_pct,
+                "dd_halt": settings.guardrails.dd_halt_pct,
+                "flash": settings.guardrails.flash_crash_pct,
+                "kill_switch": settings.guardrails.kill_switch_breaches,
+                "var_max": settings.guardrails.var_1d_max,
             },
         )
     return _ENGINE

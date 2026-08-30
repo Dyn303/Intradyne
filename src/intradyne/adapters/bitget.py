@@ -11,9 +11,9 @@ class BitgetAdapter(ExchangeAdapter):
 
     def __init__(self) -> None:
         s = load_settings()
-        self.api_key = s.BITGET_API_KEY
-        self.api_secret = s.BITGET_API_SECRET
-        self.passphrase = s.BITGET_API_PASSPHRASE
+        self.api_key = s.bitget_api_key
+        self.api_secret = s.bitget_api_secret
+        self.passphrase = s.bitget_api_passphrase
         # Do not log secrets; validate presence only
         if not (self.api_key and self.api_secret and self.passphrase):
             raise RuntimeError("Missing BITGET credentials in environment")

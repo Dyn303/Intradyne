@@ -28,11 +28,11 @@ async def risk_status():
         "breaches_24h": breaches,
         "dd_30d": dd,
         "thresholds": {
-            "dd_warn": settings.DD_WARN_PCT,
-            "dd_halt": settings.DD_HALT_PCT,
-            "flash": settings.FLASH_CRASH_PCT,
-            "var_max": settings.VAR_1D_MAX,
-            "kill_switch": settings.KILL_SWITCH_BREACHES,
+            "dd_warn": settings.guardrails.dd_warn_pct,
+            "dd_halt": settings.guardrails.dd_halt_pct,
+            "flash": settings.guardrails.flash_crash_pct,
+            "var_max": settings.guardrails.var_1d_max,
+            "kill_switch": settings.guardrails.kill_switch_breaches,
         },
     }
 

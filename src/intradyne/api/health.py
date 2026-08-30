@@ -33,9 +33,9 @@ def readyz():
     redis_ok = False
     # DB check (sqlite only)
     try:
-        if s.DB_URL.startswith("sqlite"):
+        if s.db_url.startswith("sqlite"):
             # parse path
-            path = s.DB_URL.split("sqlite:///")[-1]
+            path = s.db_url.split("sqlite:///")[-1]
             import os as _os
 
             _os.makedirs(_os.path.dirname(path) or ".", exist_ok=True)
@@ -49,8 +49,8 @@ def readyz():
         db_ok = False
     # Redis check (TCP ping if URL given)
     try:
-        if s.REDIS_URL:
-            u = urlparse(s.REDIS_URL)
+        if s.redis_url:
+            u = urlparse(s.redis_url)
             import socket
 
             with socket.create_connection(

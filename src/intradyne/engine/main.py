@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from loguru import logger
 import uvicorn
 
-from .config import load_settings
+from intradyne.core.config import load_settings
 from .data_ws import DataFeed
 from .portfolio import Portfolio
 from .broker_paper import PaperBroker
@@ -115,9 +115,9 @@ async def run_trader() -> None:
     if settings.mode == "live" and settings.live_trading_enabled:
         live_broker = CCXTBroker(
             settings.exchange,
-            settings.api_key,
-            settings.api_secret,
-            settings.api_passphrase,
+            settings.bitget_api_key,
+            settings.bitget_api_secret,
+            settings.bitget_api_passphrase,
             True,
         )
         await live_broker.connect()
