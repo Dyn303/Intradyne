@@ -579,3 +579,86 @@ That consistency is itself informative. The strategy is not marginally
 unprofitable in a way that parameter tuning might rescue; it is losing
 roughly the round-trip cost on every trade, which is what a signal with no
 predictive power does.
+
+## Fifty signals, and why none of them is the answer
+
+Asked for fifty strategies ranked into a top five. Built the fifty
+(`scripts/strategy_search.py`), and the ranking is real, but the top five is
+not a shortlist — it is a demonstration of selection bias, so the screen was
+built to say so rather than to hand over five numbers.
+
+Ranking N strategies and reporting the best is a biased estimator: the maximum
+of N noisy measurements sits above the truth even when every one of them is
+worthless. With fifty candidates it is almost impossible *not* to produce five
+profitable-looking strategies. Three guards were built in.
+
+- **Shared exit mechanics.** `forward_outcomes` computes the net result of
+  entering at every bar once; a strategy is only a boolean mask over that. No
+  strategy can win by accidentally getting a different exit rule, and when a
+  bar spans both target and stop it is scored as the stop, since bar data
+  cannot say which came first.
+- **Held-out days.** Ranked on 26–27 Aug, re-measured on 28–29 Aug.
+- **A null threshold.** Random entry rules with matched trade counts are drawn
+  to build the distribution of *best-of-fifty under no edge*. A strategy has
+  to clear that, not merely clear zero.
+
+Fifty-four signals cleared the 100-trade minimum, spanning momentum, mean
+reversion, breakout, EMA cross, volatility regime, trade intensity, VWAP
+deviation, and order-flow imbalance — the last being the only family tick data
+makes available at all, via the aggressor side of each trade.
+
+| # | strategy | trades | win | train | held out |
+|---|---|---|---|---|---|
+| 1 | revert_300s_k2.5 | 166 | 27.1% | −11.73 | −12.74 |
+| 2 | vwap_dev_300s_k2 | 231 | 24.7% | −11.92 | −13.60 |
+| 3 | revert_300s_k1.5 | 299 | 20.7% | −12.04 | −14.09 |
+| 4 | intensity_30s | 219 | 25.1% | −12.18 | −13.55 |
+| 5 | breakout_120s | 313 | 21.7% | −12.42 | −13.52 |
+
+Entering at random returns −13.30 bps. Best-of-54 under no edge is −10.41 bps.
+Every one of the fifty-four landed between −11.7 and −12.7: **none reached the
+null threshold**, and the spread across fifty-four different ideas is narrower
+than what random selection alone produces. Gross of costs these signals earn
++1.3 to +2.3 bps against a 14 bps round trip.
+
+### It is not the fee schedule, and not the geometry
+
+`scripts/strategy_sweep.py` re-runs the whole library across holding periods,
+payoff geometries, and fee assumptions down to zero.
+
+| geometry | best gross | vs null (no cost) |
+|---|---|---|
+| tp20/sl30, 120s | +1.27 | null +1.76 — below |
+| tp40/sl20, 300s | +2.27 | null +3.77 — below |
+| tp60/sl40, 900s | +4.77 | null +8.57 — below |
+
+The gross edge does grow with holding period, which is the one encouraging
+number here. It never grows faster than the null. **Even at zero fees and zero
+slippage, no signal beats the best of fifty random entry rules.** That is a
+stronger statement than "costs are too high": these signals carry no
+information about the next few minutes of ETH.
+
+### The long-horizon mirage
+
+Stretching the horizon until the move can outrun costs looks like it works,
+until the sample is counted:
+
+| horizon | best gross | trades |
+|---|---|---|
+| 900s | +6.55 | 91 |
+| 1800s | +6.80 | 65 |
+| 3600s | +14.80 | 42 |
+| 7200s | +17.68 | 27 |
+
+At 3600s, +14.80 bps clears the 14 bps taker cost. It is also 42 trades with a
+per-trade standard deviation of 56 bps — a standard error of ±8.6, so the 95%
+interval is [−2.0, +31.6] and straddles zero. Held out it returns −5.51. The
+7200s row is the same story with less data. Non-overlapping trades are the
+binding constraint: two days of ticks contain at most 37 independent hourly
+trades, so the horizons where costs stop dominating are exactly the horizons
+where nothing can be measured.
+
+**The honest top five is an empty list.** More signals will not fix this —
+fifty across eight families produced a tighter cluster than chance. What would
+change the answer is more data (weeks, not days, to make hourly horizons
+measurable) or a different instrument, not another entry rule.
