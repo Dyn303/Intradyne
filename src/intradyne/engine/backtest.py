@@ -140,6 +140,12 @@ def run(
     peak_equity = start_equity
     #: Last realized PnL seen per symbol, so a change identifies a close.
     realized_seen: Dict[str, float] = {}
+    #: Last traded price per symbol, for valuation and the closing liquidation.
+    last_price: Dict[str, float] = {}
+    #: Base held per symbol at the previous tick, to measure notional deployed.
+    prev_base: Dict[str, float] = {}
+    #: Total buy notional, the denominator for realised return.
+    traded_notional = 0.0
 
     async def write_trade(event: Dict[str, Any]) -> None:
         if trades_fp is not None:
@@ -154,7 +160,8 @@ def run(
             trades, \
             exposure_steps, \
             total_steps, \
-            peak_equity
+            peak_equity, \
+            traded_notional
         async for sym, bar in data_loader.multi_symbol_stream(
             symbols, timeframe, start_ms, end_ms
         ):
@@ -164,7 +171,13 @@ def run(
             await router.on_tick(l1)
             # compute equity/metrics
             total_steps += 1
-            last_marks = {s: l1["last"] for s in symbols}
+            # Keep the last *price* per symbol. The closing liquidation below
+            # needs it, and previously used eq_curve[-1] -- the portfolio
+            # equity -- as though it were a price.
+            if l1.get("last"):
+                last_price[sym] = float(l1["last"])
+            last_marks = {s: last_price.get(s, 0.0) for s in symbols}
+            last_marks = {s: v for s, v in last_marks.items() if v > 0}
             eq = portfolio.equity(last_marks)
             eq_curve.append(eq)
             if any(p.base > 0 for p in portfolio.positions.values()):
@@ -188,6 +201,12 @@ def run(
             # profit_factor always inf, whatever the strategy did. Every
             # summary.json ever produced carries those dead values.
             for sym_, pos_ in portfolio.positions.items():
+                # Notional deployed, for realised return per unit of capital.
+                _pb = prev_base.get(sym_, 0.0)
+                if pos_.base > _pb:
+                    traded_notional += (pos_.base - _pb) * last_price.get(sym_, 0.0)
+                prev_base[sym_] = pos_.base
+
                 prev = realized_seen.get(sym_, 0.0)
                 curr = pos_.realized_pnl
                 delta = curr - prev
@@ -212,11 +231,22 @@ def run(
         # After stream end, close any open positions at last price
         for sym, pos in portfolio.positions.items():
             if pos.base > 0:
+                # Liquidate at the instrument's last traded price.
+                #
+                # This used eq_curve[-1], which is portfolio *equity*, not a
+                # price. Every run that ended holding a position therefore
+                # closed it at roughly the account value per unit: on ETH near
+                # $1,875 that is a 5.3x windfall, and it fabricated the entire
+                # reported profit of one run from a single fill. On a
+                # higher-priced instrument it fabricates an equally large loss.
+                mark = last_price.get(sym)
+                if not mark:
+                    continue
                 l1 = {
                     "symbol": sym,
-                    "bid": eq_curve[-1],
-                    "ask": eq_curve[-1],
-                    "last": eq_curve[-1],
+                    "bid": mark,
+                    "ask": mark,
+                    "last": mark,
                     "ts": end_ms / 1000.0,
                 }
                 await execman.submit(
@@ -340,6 +370,17 @@ def run(
     # 20bps take-profit against a 30bps stop, 14bps of round-trip cost implies
     # a ~88% breakeven -- so a 70% win rate looks strong and loses money. The
     # two are reported together so they cannot be read apart.
+    # Realised return per unit of capital deployed. The assessment below
+    # answers "what win rate would this geometry need *if* every win were
+    # exactly tp and every loss exactly sl" -- a target-setting question. It
+    # is not a measurement: exits do not respect those levels (a stop can gap
+    # through, a target may never be touched), so a run can show positive
+    # theoretical expectancy while losing money. Both are reported, and they
+    # disagreeing is the signal that the exits are not honouring the levels.
+    realized_bps = (pnl / traded_notional * 1e4) if traded_notional > 0 else 0.0
+    summary["traded_notional"] = traded_notional
+    summary["realized_return_bps"] = realized_bps
+
     summary["edge"] = assess(
         win_rate=summary["win_rate"],
         tp_pct=risk.tp_pct,
@@ -349,6 +390,17 @@ def run(
         maker_bps=maker_bps,
         trades=round_trips,
     ).to_dict()
+    summary["edge"]["realized_return_bps"] = realized_bps
+    # A theoretical edge that the realised result contradicts is not an edge.
+    if summary["edge"]["verdict"] in {"clears_with_margin", "marginal"} and (
+        realized_bps <= 0
+    ):
+        summary["edge"]["verdict"] = "contradicted_by_realized"
+        summary["edge"]["note"] = (
+            f"geometry implies a positive edge but the run realised "
+            f"{realized_bps:+.2f} bps per unit of capital: exits are not "
+            "honouring the configured levels"
+        )
 
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     return BacktestResult(summary, run_id)

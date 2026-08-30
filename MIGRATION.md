@@ -366,39 +366,51 @@ mismatch: docs say Bitget, `routes/data.py` and `routes/ws.py` hardcode
 
 ---
 
-## Open: PnL does not reconcile with the stated geometry
+## Resolved: PnL now reconciles
 
-**Do not treat any backtest result as evidence of an edge until this is
-resolved.**
+The ~12x gap had two causes, and my framing of it was itself wrong.
 
-After capping cumulative position size, a run on real ETH 1m data reports:
+**My framing was wrong.** I divided total profit by an aggregated win count
+and compared it against a single-position take-profit. But the position turns
+over constantly -- 1,206 buys and 328 sells in the window -- so "average win
+per round trip" was never comparable to "take-profit on one position".
+Reconstructing cash flow independently from the fills matched
+`Portfolio.realized_pnl` **to the cent**: the accounting was never broken.
 
-| quantity          | value                                   |
-| ----------------- | --------------------------------------- |
-| peak position     | $150 (correct: 1.5% of a 10k book)      |
-| take-profit       | 80 bps                                  |
-| max win per trade | ~$1.20 (0.8% of $150)                   |
-| **observed average win** | **$15.07**                       |
-| net pnl           | +$630 over 110 round trips              |
+**Bug 1 -- the closing liquidation used equity as a price.** The end-of-window
+liquidation priced the position at `eq_curve[-1]`, which is portfolio
+*equity*, not a price. One ETH fill sold at `$9,980` while the market was
+`$1,875`, realising `$647.76` -- essentially the entire `+$646` reported
+profit of that run, from a single fabricated fill. On a higher-priced
+instrument it fabricates an equally large loss. Now priced at the last traded
+price, with a regression test asserting no fill lands outside the
+instrument's price band.
 
-A winner cannot be worth $15 when the target caps it near $1.20 on a $150
-position. The arithmetic is out by roughly 12x, so at least one of these is
-wrong: the realised-PnL attribution, the exit price actually taken, or the
-position size at the moment of exit.
+That one fix moved the run from **+$629.75 to -$17.76**.
 
-Two candidate explanations, neither verified:
+**Bug 2 -- expectancy was theory, not measurement.** `assess()` answers "what
+win rate would this geometry need *if* every win were exactly `tp` and every
+loss exactly `sl`". That is a target-setting question, not a measurement.
+Exits do not respect those levels: only 4% of them reached the +80bps target
+while 46% breached the -20bps stop, down to -85bps, because a stop gaps
+through between bars and a target may never be touched. So a run could report
+`clears_with_margin` while losing money.
 
-1. **Slice aggregation.** Exits are micro-sliced and partial take-profits
-   close half a position at a time. Round trips are counted from per-tick
-   changes in `realized_pnl`, so several slices closing on one tick collapse
-   into a single "win". That would inflate the average win and depress the
-   trade count, but should not change total PnL.
-2. **Exits above the take-profit.** If positions exit well beyond the target
-   the realised gain per trade exceeds what the geometry allows, which would
-   mean the take-profit is not binding even after the time-stop fix.
+Summaries now carry `realized_return_bps`, measured from actual PnL over
+capital deployed, and a verdict of `clears_with_margin` or `marginal` is
+overridden to **`contradicted_by_realized`** when the realised return is not
+positive. The two disagreeing is now the signal that exits are not honouring
+the configured levels.
 
-Until it reconciles, `expectancy_pct` cannot be trusted, and a
-`clears_with_margin` verdict means nothing. The next step is to run with
-`fast_mode=False` and read `trades.jsonl` directly: entry price, exit price,
-quantity and exit reason per round trip, checked by hand against the
-configured levels.
+The run that prompted all of this now reports honestly:
+
+| quantity              | value                                   |
+| --------------------- | --------------------------------------- |
+| net pnl               | **-$17.76** (was reported +$3,503)      |
+| realised return       | **-10.76 bps** per unit of capital      |
+| theoretical expectancy| +6.00 bps (assumed geometry)            |
+| verdict               | **`contradicted_by_realized`**          |
+
+**Still true: no edge is established.** The measurement is now trustworthy,
+and what it says is that this configuration loses money.
+
