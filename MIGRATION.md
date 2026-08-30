@@ -454,3 +454,30 @@ moves the viable holding period from ~31 minutes to ~2.6, which is the horizon
 the strategy was built for. That requires posting resting limit orders and
 accepting non-fills, which the execution path does not currently do — it
 submits market orders throughout.
+
+### Stop overshoot: verified as discretization, not a defect
+
+After anchoring the stop to average cost, exits still land past it. Measured
+over 94 stop-triggered exits on real ETH 1m data:
+
+| measure                              | value                    |
+| ------------------------------------ | ------------------------ |
+| bars between stop breach and fill    | **0** (100% of exits)    |
+| median overshoot past the stop       | +5.9 bps (**0.9 sigma**) |
+| p90 / max overshoot                  | +15.6 / +28.4 bps        |
+
+Every exit fills on the bar the stop is breached -- there is no queuing or
+lag defect. The overshoot is the unavoidable consequence of evaluating stops
+on bar closes: a mid-bar crossing fills at the close, roughly one standard
+deviation past on average. The worst case reconciles exactly: -20 bps stop
+plus -28.4 bps overshoot = the -48.4 bps observed.
+
+**Implication for the cost model, and it is not favourable.** The *effective*
+stop is the configured distance plus ~6 bps, so a "20 bps" stop realises
+about -26 bps. Breakeven should be computed from realised win/loss rather
+than configured `tp`/`sl`; `realized_return_bps` already measures the outcome
+directly, which is why it is the field to trust.
+
+Live this will be less severe than in a 1m backtest -- a real venue fills on
+tick data, not bar closes -- but it will not be zero, and it is one more
+reason the taker cost structure does not survive a 2-minute holding period.
