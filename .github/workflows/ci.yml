@@ -58,6 +58,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # checkout defaults to a depth of 1. Gitleaks cannot walk history in
+          # a shallow clone, so it silently fell back to scanning the working
+          # directory -- meaning this job has only ever looked at the tip
+          # commit, and a credential committed and then removed would have
+          # sailed through. It also changes the fingerprint format, so
+          # .gitleaksignore entries never matched.
+          fetch-depth: 0
 
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2

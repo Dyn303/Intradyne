@@ -23,3 +23,9 @@ cb2f05d54f30c6d81c862924514b64c6491f7fa1:tests/test_settings_prod.py:generic-api
 # rewriting published history, which is not worth doing for a placeholder.
 b45923e9975570006258da405f72888a18d6c26d:.env.example:generic-api-key:29
 b45923e9975570006258da405f72888a18d6c26d:.env.example:generic-api-key:30
+
+# The same two placeholders again, in the directory-scan fingerprint format
+# (no commit prefix). Gitleaks emits these instead of the commit-scoped form
+# whenever it scans a working tree rather than history -- which is what
+# happens in a shallow clone. Listed so the ignore file holds in both modes.
+tests/test_settings_prod.py:generic-api-key:50
