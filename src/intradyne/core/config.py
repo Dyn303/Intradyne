@@ -75,6 +75,16 @@ class GuardrailConfig(BaseModel):
     var_1d_max: float = 0.05
     kill_switch_breaches: int = 3
 
+    # Exposure caps, in quote currency. 0 disables a cap.
+    #
+    # The risk guardrails bound drawdown and volatility but nothing bounded
+    # how much the system could transact: a strategy looping on a bad signal
+    # can place unlimited orders that are each individually small enough to
+    # pass every threshold. These bound the total.
+    max_order_notional: float = 0.0
+    max_symbol_notional_24h: float = 0.0
+    max_daily_notional: float = 0.0
+
 
 class FeesConfig(BaseModel):
     maker_bps: int = 2
@@ -280,6 +290,9 @@ def _build_settings() -> Settings:
             flash_crash_pct=flash,
             var_1d_max=_f("VAR_1D_MAX", default=0.05),
             kill_switch_breaches=kill,
+            max_order_notional=_f("MAX_ORDER_NOTIONAL", default=0.0),
+            max_symbol_notional_24h=_f("MAX_SYMBOL_NOTIONAL_24H", default=0.0),
+            max_daily_notional=_f("MAX_DAILY_NOTIONAL", default=0.0),
         ),
         fees=FeesConfig(
             maker_bps=_i("MAKER_BPS", default=2),

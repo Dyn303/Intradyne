@@ -25,6 +25,7 @@ from loguru import logger
 from intradyne.core.config import Settings
 from .data_ws import DataFeed
 from .execution import ExecutionManager
+from .reconcile import reconcile_on_start
 from .risk import RiskManager
 from .router import StrategyRouter
 
@@ -195,6 +196,13 @@ async def run_once(
     if not syms:
         logger.warning("engine: no tradable symbols resolved; loop not started")
         return
+
+    # Before any order can be raised, refuse to trade if a previous run left
+    # live submissions unaccounted for.
+    reconcile_on_start(
+        getattr(execution.ctx, "order_keys", None),
+        live=bool(settings.mode == "live" and settings.live_trading_enabled),
+    )
 
     params = load_strategy_params(settings)
     router = build_router(settings, execution, syms, params=params)

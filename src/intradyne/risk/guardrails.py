@@ -35,6 +35,14 @@ class OrderReq:
     #: Base-asset inventory held. Required for a sell: without it the order
     #: cannot be shown to be covered, and the gate fails closed.
     base_inventory: Optional[float] = None
+    #: Mark or limit price, so the gate can compute notional for the caps.
+    price: Optional[float] = None
+
+    @property
+    def notional(self) -> Optional[float]:
+        if self.price is None:
+            return None
+        return abs(float(self.qty)) * float(self.price)
 
     def step_down(self, factor: float = 0.5) -> "OrderReq":
         return replace(self, qty=max(self.qty * factor, 0.0))
@@ -100,17 +108,23 @@ class Guardrails:
         ledger: Optional[Ledger] = None,
         shariah: Optional[ShariahPolicy] = None,
         thresholds: Optional[Dict[str, Any]] = None,
+        limits: Optional[Any] = None,
     ) -> None:
         self.price = price_feed
         self.risk = risk_data
         self.ledger = ledger or Ledger()
         self.shariah = shariah or ShariahPolicy()
+        #: NotionalTracker, or None to leave the exposure caps unenforced.
+        self.limits = limits
         self.th = {
             "dd_warn": DD_WARN_PCT,
             "dd_halt": DD_HALT_PCT,
             "flash": FLASH_CRASH_PCT,
             "kill_switch": KILL_SWITCH_BREACHES,
             "var_max": VAR_1D_MAX,
+            "max_order_notional": 0.0,
+            "max_symbol_notional_24h": 0.0,
+            "max_daily_notional": 0.0,
         }
         if thresholds:
             self.th.update(thresholds)
@@ -133,6 +147,49 @@ class Guardrails:
             for r in self.ledger.iter_recent(since)
             if r.get("event") == "guardrail_breach"
         )
+
+    def _check_exposure(self, req: OrderReq) -> Tuple[bool, str]:
+        """Enforce the notional caps. Returns (ok, reason)."""
+        per_order = float(self.th.get("max_order_notional") or 0.0)
+        per_symbol = float(self.th.get("max_symbol_notional_24h") or 0.0)
+        per_day = float(self.th.get("max_daily_notional") or 0.0)
+        if not (per_order or per_symbol or per_day):
+            return True, "ok"
+
+        notional = req.notional
+        if notional is None:
+            # A cap is configured but this order carries no price, so the cap
+            # cannot be evaluated. Fail closed: an unmeasurable order is
+            # exactly what a cap exists to stop.
+            return False, "cannot verify notional cap: order has no price"
+
+        if per_order and notional > per_order:
+            return False, f"order notional {notional:.2f} exceeds cap {per_order:.2f}"
+
+        if self.limits is None:
+            # Per-order cap still applied above; the cumulative caps need the
+            # tracker, so say so rather than appearing to enforce them.
+            if per_symbol or per_day:
+                return False, "cumulative notional caps configured but no tracker"
+            return True, "ok"
+
+        if per_symbol:
+            used = self.limits.symbol_notional(req.symbol, hours=24.0)
+            if used + notional > per_symbol:
+                return (
+                    False,
+                    f"24h notional for {req.symbol} would reach "
+                    f"{used + notional:.2f}, over cap {per_symbol:.2f}",
+                )
+        if per_day:
+            used = self.limits.total_notional(hours=24.0)
+            if used + notional > per_day:
+                return (
+                    False,
+                    f"24h total notional would reach {used + notional:.2f}, "
+                    f"over cap {per_day:.2f}",
+                )
+        return True, "ok"
 
     def gate_trade(self, req: OrderReq) -> Tuple[str, List[str], OrderReq]:
         reasons: List[str] = []
@@ -167,7 +224,18 @@ class Guardrails:
             self._breach("kill_switch", action="halt")
             return "halt", ["kill_switch"], req
 
-        # 3) Risk metrics
+        # 3) Exposure caps. Checked before the metric guardrails because a
+        # breached cap is a hard stop on this order regardless of how healthy
+        # drawdown and volatility look -- which is exactly the case a runaway
+        # strategy presents.
+        capped, cap_reason = self._check_exposure(req)
+        if not capped:
+            self._breach(
+                "notional_cap", symbol=req.symbol, reason=cap_reason, action="block"
+            )
+            return "block", [cap_reason], req
+
+        # 4) Risk metrics
         eq = self.risk.equity_series_30d()
         dd = dd_30d(eq)
         if dd >= self.th["dd_halt"]:
@@ -187,7 +255,7 @@ class Guardrails:
             )
             reasons.append(f"dd_warn {dd:.3f}")
 
-        # 4) Flash crash check (1h drop > threshold)
+        # 5) Flash crash check (1h drop > threshold)
         now = datetime.utcnow()
         p_now = self.price.get_price(req.symbol, now)
         p_1h = self.price.get_price(req.symbol, now - timedelta(hours=1))
@@ -207,7 +275,7 @@ class Guardrails:
                     req,
                 )
 
-        # 5) VaR step-down
+        # 6) VaR step-down
         rets = self.risk.equity_daily_returns_30d()
         var = historical_var(rets, alpha=0.95)
         if var > self.th["var_max"]:

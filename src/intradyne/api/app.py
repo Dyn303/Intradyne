@@ -119,6 +119,11 @@ app = create_app()
 
 @app.get("/metrics")
 def metrics() -> Response:
+    # Refresh the safety gauges here so they cannot go stale through some code
+    # path forgetting to update them.
+    from intradyne.api import safety_metrics
+
+    safety_metrics.refresh()
     data = generate_latest(REGISTRY)
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 

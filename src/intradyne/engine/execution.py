@@ -15,6 +15,8 @@ from intradyne.risk.shariah import (
 )
 from intradyne.core.equity import EquityHistory
 from intradyne.core.ledger import ExplainabilityLedger
+from intradyne.core.idempotency import DuplicateOrder, OrderKeyStore, make_key
+from intradyne.core.limits import NotionalTracker
 from intradyne.core.marks import MarkStore
 from .portfolio import Portfolio
 from .metrics_ml import ML_EXEC_BUYS
@@ -38,6 +40,10 @@ class ExecContext:
     marks: Optional[MarkStore] = None
     #: Durable equity series, feeding the drawdown and VaR guardrails.
     equity: Optional[EquityHistory] = None
+    #: Durable traded-notional record, feeding the exposure caps.
+    limits: Optional[NotionalTracker] = None
+    #: Idempotency claims for live submission. Paper does not need it.
+    order_keys: Optional[OrderKeyStore] = None
 
 
 class ExecutionManager:
@@ -52,7 +58,12 @@ class ExecutionManager:
         self.ctx = ctx
 
     def _gate(
-        self, symbol: str, side: str, qty: float, params: Optional[Dict[str, Any]]
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        params: Optional[Dict[str, Any]],
+        price: Optional[float] = None,
     ) -> tuple[str, list[str], float]:
         """Run the pre-trade veto. Returns (action, reasons, approved_qty)."""
         base_inv = self.ctx.portfolio.get_position(symbol).base
@@ -72,6 +83,7 @@ class ExecutionManager:
                 qty=qty,
                 params=params,
                 base_inventory=base_inv,
+                price=price,
             )
         )
         # Honour a VaR step-down: the gate may approve a smaller size than was
@@ -86,6 +98,11 @@ class ExecutionManager:
         mark = l1.get("last") or l1.get("bid") or l1.get("ask") or price
         if mark:
             self.ctx.marks.record(symbol, float(mark), ts=l1.get("ts"))
+
+    def _record_notional(self, symbol: str, qty: float, px: Optional[float]) -> None:
+        if self.ctx.limits is None or not px:
+            return
+        self.ctx.limits.record(symbol, abs(float(qty)) * float(px))
 
     def record_equity(self) -> Optional[float]:
         """Snapshot portfolio equity into the durable history.
@@ -118,7 +135,12 @@ class ExecutionManager:
         # the gate runs on it.
         self._record_mark(symbol, price, l1)
 
-        action, reasons, qty = self._gate(symbol, side, qty, params)
+        # The mark just recorded is what the exposure caps are measured
+        # against, so resolve it before gating.
+        mark = price or l1.get("last") or l1.get("bid") or l1.get("ask")
+        action, reasons, qty = self._gate(
+            symbol, side, qty, params, price=float(mark) if mark else None
+        )
         if action != "allow":
             # Record the refusal. A blocked order previously left no trace at
             # all on this path, which defeats the point of an audit ledger.
@@ -150,9 +172,35 @@ class ExecutionManager:
         gate_record = {"action": action, "reasons": reasons}
 
         if self.ctx.live_enabled and self.ctx.live_broker is not None:
-            res = await self.ctx.live_broker.place_order(
-                symbol, side, type_, qty, price, params
-            )
+            # Claim an idempotency key before the venue is contacted, so a
+            # crash mid-flight cannot become a second real order on restart.
+            key = make_key(symbol, side, qty, strategy_id)
+            if self.ctx.order_keys is not None:
+                try:
+                    self.ctx.order_keys.reserve(key, symbol, side, qty)
+                except DuplicateOrder as exc:
+                    self.ctx.ledger.append(
+                        "order_duplicate_suppressed",
+                        {"symbol": symbol, "side": side, "qty": qty, "key": key},
+                    )
+                    logger.bind(event="exec_duplicate").warning(str(exc))
+                    return {
+                        "status": "blocked",
+                        "action": "duplicate",
+                        "reasons": [str(exc)],
+                    }
+            try:
+                res = await self.ctx.live_broker.place_order(
+                    symbol, side, type_, qty, price, params, client_order_id=key
+                )
+            except Exception:
+                # Keep the claim: the venue may have received it, so the key
+                # must not be freed for silent reuse.
+                if self.ctx.order_keys is not None:
+                    self.ctx.order_keys.fail(key)
+                raise
+            if self.ctx.order_keys is not None:
+                self.ctx.order_keys.complete(key, res.get("id"))
             px = res.get("price") or price
             if not self.ctx.fast_mode:
                 self.ctx.ledger.append(
@@ -169,11 +217,13 @@ class ExecutionManager:
                         "features": features,
                         "strategy_checks": checks_passed,
                         "gate": gate_record,
+                        "idempotency_key": key,
                         "mode": "live",
                     }
                 )
             # The live path returned before reaching the paper path's equity
             # snapshot, so live fills were invisible to the drawdown guardrail.
+            self._record_notional(symbol, qty, px)
             self.record_equity()
             return res
 
@@ -216,6 +266,7 @@ class ExecutionManager:
         )
         if order.status == "filled":
             self.ctx.trades += 1
+            self._record_notional(symbol, qty, px)
         # Equity moved, so the drawdown guardrail needs the new point.
         self.record_equity()
         return {"id": order.id, "status": order.status}

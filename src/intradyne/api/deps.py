@@ -9,6 +9,8 @@ from fastapi import Header, HTTPException
 from intradyne.core.config import load_settings
 from intradyne.core.equity import EquityHistory
 from intradyne.core.ledger import Ledger
+from intradyne.core.idempotency import OrderKeyStore
+from intradyne.core.limits import NotionalTracker
 from intradyne.core.marks import MarkStore
 from intradyne.risk.guardrails import Guardrails, ShariahPolicy, PriceFeed, RiskData
 
@@ -51,6 +53,7 @@ _ENGINE: Optional[Guardrails] = None
 _EXECUTION: Optional["ExecutionManager"] = None
 _MARKS: Optional[MarkStore] = None
 _EQUITY: Optional[EquityHistory] = None
+_LIMITS: Optional[NotionalTracker] = None
 
 
 def get_mark_store() -> MarkStore:
@@ -69,6 +72,14 @@ def get_equity_history() -> EquityHistory:
     return _EQUITY
 
 
+def get_notional_tracker() -> NotionalTracker:
+    """Durable traded-notional record backing the exposure caps."""
+    global _LIMITS
+    if _LIMITS is None:
+        _LIMITS = NotionalTracker(load_settings().db_url)
+    return _LIMITS
+
+
 def get_guardrails() -> Guardrails:
     global _ENGINE
     if _ENGINE is None:
@@ -85,7 +96,11 @@ def get_guardrails() -> Guardrails:
                 "flash": settings.guardrails.flash_crash_pct,
                 "kill_switch": settings.guardrails.kill_switch_breaches,
                 "var_max": settings.guardrails.var_1d_max,
+                "max_order_notional": settings.guardrails.max_order_notional,
+                "max_symbol_notional_24h": settings.guardrails.max_symbol_notional_24h,
+                "max_daily_notional": settings.guardrails.max_daily_notional,
             },
+            limits=get_notional_tracker(),
         )
     return _ENGINE
 
@@ -219,6 +234,8 @@ def get_execution_manager() -> "ExecutionManager":
                 guardrails=guardrails,
                 marks=get_mark_store(),
                 equity=get_equity_history(),
+                limits=get_notional_tracker(),
+                order_keys=OrderKeyStore(settings.db_url),
             )
         )
     return _EXECUTION
@@ -230,8 +247,9 @@ def get_portfolio():
 
 def reset_execution_manager() -> None:
     """Drop the cached order path and its risk inputs. For tests."""
-    global _EXECUTION, _ENGINE, _MARKS, _EQUITY
+    global _EXECUTION, _ENGINE, _MARKS, _EQUITY, _LIMITS
     _EXECUTION = None
     _ENGINE = None
     _MARKS = None
     _EQUITY = None
+    _LIMITS = None

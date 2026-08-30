@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
+from intradyne.risk.kill_switch import halt_reason, is_halted
 from intradyne.risk.shariah import ComplianceError, enforce_spot_only
 
 
@@ -55,15 +56,28 @@ class CCXTBroker:
         qty: float,
         price: Optional[float],
         params: Optional[Dict[str, Any]] = None,
+        client_order_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        # The third leg of the live gate. gate_trade already refuses while
+        # halted, but the halt must also hold at the boundary that actually
+        # spends money -- any future caller reaching the broker directly is
+        # then still covered.
+        if is_halted():
+            raise ComplianceError(f"trading halted: {halt_reason() or 'admin_halt'}")
         if not self.live_enabled:
             raise ComplianceError(
                 "Live trading disabled: set MODE=live and LIVE_TRADING_ENABLED=true"
             )
         enforce_spot_only(params)
         assert self.exchange is not None
+
+        venue_params = dict(params or {})
+        if client_order_id:
+            # Let the venue reject a duplicate as well as our local claim.
+            venue_params.setdefault("clientOrderId", client_order_id)
+
         order = await self.exchange.create_order(
-            symbol, type_, side, qty, price, params or {}
+            symbol, type_, side, qty, price, venue_params
         )
         logger.bind(event="live_order").info(order)
         return order

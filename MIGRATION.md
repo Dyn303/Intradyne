@@ -3,8 +3,9 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phases 0-4 complete, plus a 2.5 pass closing four defects the
-phase reviews missed. Phase 5 (live readiness) remains closed by design.
+**Status:** Phases 0-5 complete. The live-trading gate is deliberately still
+shut -- the controls exist, but opening it needs a testnet soak and verified
+alert delivery, neither of which can be done from a development machine.
 
 ---
 
@@ -302,16 +303,41 @@ that avoided them.
 unreachable from the container, so symbol resolution fell back to the
 unfiltered whitelist as designed.
 
-### Phase 5 — Live readiness (deferred; defined now)
+### Phase 5 — Live readiness (controls built; gate still shut)
 
-Not this phase, but built toward, so enabling it is a config change plus a
-checklist rather than a refactor.
+28. [x] **Triple gate:** `MODE=live` AND `LIVE_TRADING_ENABLED=true` AND
+    `not is_halted()`. The halt is now enforced at the live broker boundary as
+    well as in the gate, so any caller reaching the broker directly is covered.
+29. [x] **Idempotency keys.** Deterministic client order ids, claimed locally
+    *before* the venue is contacted and sent as `clientOrderId`. A crash
+    mid-submit cannot become a second real order, and a failed submission
+    keeps its claim rather than freeing the key -- the venue may have received
+    it.
+30. [x] **Restart reconciliation.** Unresolved claims halt trading. It
+    deliberately does not guess: re-sending risks doubling a position,
+    discarding risks trading against an unknown one. A human checks the venue.
+31. [x] **Exposure caps.** Per-order, per-symbol 24h, and total 24h notional,
+    durable across restarts. The risk guardrails bound volatility but nothing
+    bounded transacted volume: a strategy looping on a bad signal could place
+    unlimited orders each small enough to pass every threshold. An order whose
+    notional cannot be evaluated is refused.
+32. [x] **Safety alerting.** Seven Prometheus gauges refreshed at scrape time,
+    and a new `intradyne-safety` alert group. The existing rules watched
+    infrastructure only, so nothing would have paged when the system halted
+    itself or left live orders unreconciled.
+33. [ ] **Testnet soak.** Cannot be done from a development machine. See
+    RUNBOOK section 8.
 
-28. **Triple gate:** `MODE=live` AND `LIVE_TRADING_ENABLED=true` AND
-    `not is_halted()`.
-29. Idempotency keys on submission; reconciliation against exchange state on
-    restart; testnet soak; per-symbol and daily notional caps; alerting on
-    halt/kill-switch through the existing Grafana contact points.
+**Exit:** the controls are built and tested (163 tests). The gate stays shut.
+`LIVE_TRADING_GATE_OPEN` is a code constant, not an environment variable, so
+opening it leaves a reviewable commit -- and a test asserts it is still
+`False`.
+
+**Before opening it** (RUNBOOK section 8): testnet soak; confirm an alert
+actually reaches a human; set the caps, which default to disabled; rehearse
+the halt; establish from honest backtests that the strategy has an edge after
+fees; and obtain a scholarly ruling on whether high-frequency scalping is
+itself acceptable, which no code can decide.
 
 ---
 
