@@ -172,6 +172,9 @@ class ExecutionManager:
                         "mode": "live",
                     }
                 )
+            # The live path returned before reaching the paper path's equity
+            # snapshot, so live fills were invisible to the drawdown guardrail.
+            self.record_equity()
             return res
 
         order = self.ctx.paper.place_order(symbol, side, type_, qty, price, l1)

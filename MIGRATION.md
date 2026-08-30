@@ -3,7 +3,8 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phases 0-4 complete. Phase 5 (live readiness) remains closed by design.
+**Status:** Phases 0-4 complete, plus a 2.5 pass closing four defects the
+phase reviews missed. Phase 5 (live readiness) remains closed by design.
 
 ---
 
@@ -271,6 +272,35 @@ Found and fixed here, all of it invisible while the gates were unreliable:
     repeated `create_app()` works, nothing re-imports modules, so there is
     still no consumer. Closing rather than deferring again -- doing the churn
     would not make any gate more trustworthy.
+
+### Phase 2.5 — defects found reviewing my own work
+
+Four problems the phase exits did not catch, because the tests exercised paths
+that avoided them.
+
+28. [x] **The hosted loop ignored tuned parameters.** `build_router` was called
+    with no `params`, so `STRATEGY_PARAMS_FILE` / `production_params.json` and
+    their risk overrides were silently dropped and the engine always ran
+    strategy defaults -- while the README documented the opposite.
+29. [x] **Equity was recorded only on a paper fill.** With no orders the series
+    never grew, unrealised losses were invisible, and the live path returned
+    before recording at all. A book down 30% without trading showed zero
+    drawdown -- exactly when the halt is needed. Now sampled on a timer on the
+    tick path, seeded at loop start, and recorded on live fills.
+30. [x] **`engine/main.py` still built a parallel stack** -- its own portfolio,
+    paper broker, ledger, execution manager and FastAPI app -- so
+    `python -m intradyne.engine.main` ran a second system with separate state.
+    It is now a thin entrypoint serving the one canonical app with the loop
+    enabled. `engine/server.py` is deleted and its `/state` and `/profile/*`
+    capability moved to `/engine/*` on the API, acting on the *running* router.
+31. [x] **The real tick path had never executed.** Every engine test
+    monkeypatched `run_once`. It is now driven by an injectable scripted feed,
+    which is what would have caught 28 and 29.
+
+**Verified in the image:** `/engine/status` reports `running: true`, and
+`/risk/status` shows equity recorded with no order placed. The venue was
+unreachable from the container, so symbol resolution fell back to the
+unfiltered whitelist as designed.
 
 ### Phase 5 — Live readiness (deferred; defined now)
 

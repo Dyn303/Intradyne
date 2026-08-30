@@ -42,7 +42,7 @@ python -m intradyne.engine.main
 - `http://localhost:8080/readyz`
 - `http://localhost:8080/healthz`
 - `http://localhost:8080/metrics`
-- `http://localhost:8080/state`
+- `http://localhost:8080/engine/state`
 
 6) Run tests and linters:
 
@@ -122,7 +122,8 @@ python -m intradyne.engine.main
 
 ```
 src/intradyne/engine/
-  main.py            # bootstrap: config, tasks, server
+  main.py            # entrypoint: serves the API with the loop enabled
+  loop.py            # the trading loop, hosted by the API lifespan
   config.py          # Pydantic settings, whitelist integration
   whitelist.json     # Shariah-compliant spot pairs
   compliance.py      # whitelist checks, spot-only, no shorting
@@ -138,7 +139,6 @@ src/intradyne/engine/
     meanrev.py       # mean-reversion micro-scalper
   router.py          # strategy orchestration and concurrency
   metrics.py         # counters/gauges, EOD summary hooks
-  server.py          # FastAPI with /readyz /healthz /metrics /state
 tests/
   test_compliance.py
   test_risk.py

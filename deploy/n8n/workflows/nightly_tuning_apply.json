@@ -107,7 +107,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://engine:8000/profile/apply",
+        "url": "http://api:8000/engine/params/apply",
         "responseFormat": "json"
       },
       "id": "4",

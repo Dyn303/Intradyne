@@ -14,7 +14,11 @@ place, and enabling it is a separate, deliberate step.
 from __future__ import annotations
 
 import asyncio
-from typing import List, Optional
+import json
+import os
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -50,6 +54,53 @@ async def resolve_symbols(settings: Settings) -> List[str]:
         return settings.load_symbols()
 
 
+def load_strategy_params(settings: Settings) -> Optional[Dict[str, Any]]:
+    """Load tuned strategy parameters and apply any risk overrides.
+
+    The hosted loop previously constructed the router with no params at all,
+    so STRATEGY_PARAMS_FILE / artifacts/production_params.json were silently
+    ignored and the engine ran strategy defaults while the documentation said
+    otherwise. Mutates `settings.risk` in place, matching the standalone
+    entrypoint's behaviour.
+    """
+    path = os.getenv(
+        "STRATEGY_PARAMS_FILE",
+        str(Path(settings.artifacts_dir) / "production_params.json"),
+    )
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"could not read strategy params from {path}: {exc}")
+        return None
+    if not isinstance(raw, dict):
+        logger.warning(f"strategy params in {path} are not an object; ignoring")
+        return None
+
+    params = {
+        k: raw[k] for k in ("momentum", "meanrev") if isinstance(raw.get(k), dict)
+    }
+
+    overrides = raw.get("risk") or {}
+    if isinstance(overrides, dict):
+        for field in (
+            "max_pos_pct",
+            "per_trade_sl_pct",
+            "tp_pct",
+            "dd_soft",
+            "dd_hard",
+        ):
+            if field in overrides:
+                try:
+                    setattr(settings.risk, field, float(overrides[field]))
+                except (TypeError, ValueError):
+                    logger.warning(f"ignoring non-numeric risk override {field}")
+    logger.info(f"loaded strategy params from {path}")
+    return params or None
+
+
 def build_risk_manager(settings: Settings) -> RiskManager:
     risk = RiskManager(
         max_pos_pct=settings.risk.max_pos_pct,
@@ -73,12 +124,14 @@ def build_router(
     settings: Settings,
     execution: ExecutionManager,
     symbols: List[str],
+    params: Optional[Dict[str, Any]] = None,
 ) -> StrategyRouter:
     router = StrategyRouter(
         symbols,
         build_risk_manager(settings),
         execution,
         execution.ctx.portfolio,
+        params=params,
     )
     router._max_spread_bps = int(max(0, settings.max_spread_bps))
     router._entry_cooldown_s = int(max(0, settings.entry_cooldown_s))
@@ -89,33 +142,102 @@ def build_router(
     return router
 
 
+#: How often to snapshot equity while the loop runs.
+EQUITY_SAMPLE_SECONDS = 60.0
+
+#: The router currently driving ticks, or None when the loop is not running.
+#: Exposed so the API can reconfigure the *live* engine, which previously
+#: required the separate engine process and its own FastAPI app.
+_ACTIVE_ROUTER: Optional[StrategyRouter] = None
+
+
+def get_active_router() -> Optional[StrategyRouter]:
+    return _ACTIVE_ROUTER
+
+
+def apply_params(runtime: Dict[str, Any]) -> Dict[str, Any]:
+    """Reconfigure the running router and risk manager in place.
+
+    Returns what was applied. Raises RuntimeError when no loop is running,
+    so a caller is told plainly rather than silently changing nothing.
+    """
+    router = _ACTIVE_ROUTER
+    if router is None:
+        raise RuntimeError("engine is not running")
+    router.apply_params(runtime)
+    overrides = runtime.get("risk") or {}
+    applied: Dict[str, Any] = {}
+    for field in ("max_pos_pct", "per_trade_sl_pct", "tp_pct"):
+        if field in overrides:
+            try:
+                setattr(router.risk, field, float(overrides[field]))
+                applied[field] = float(overrides[field])
+            except (TypeError, ValueError):
+                logger.warning(f"ignoring non-numeric risk override {field}")
+    return {"strategies": sorted(k for k in runtime if k != "risk"), "risk": applied}
+
+
 async def run_once(
     settings: Settings,
     execution: ExecutionManager,
     symbols: Optional[List[str]] = None,
+    feed: Optional[Any] = None,
 ) -> None:
     """Drive ticks into the router until the feed ends or the task is
-    cancelled."""
+    cancelled.
+
+    `feed` is injectable so the tick path can be driven without a venue
+    connection.
+    """
+    global _ACTIVE_ROUTER
+
     syms = symbols if symbols is not None else await resolve_symbols(settings)
     if not syms:
         logger.warning("engine: no tradable symbols resolved; loop not started")
         return
-    router = build_router(settings, execution, syms)
-    feed = DataFeed(settings.exchange, use_testnet=settings.use_testnet)
+
+    params = load_strategy_params(settings)
+    router = build_router(settings, execution, syms, params=params)
+    source = feed or DataFeed(settings.exchange, use_testnet=settings.use_testnet)
     logger.bind(event="engine_start").info(
-        {"symbols": syms, "mode": settings.mode, "venue": settings.exchange}
+        {
+            "symbols": syms,
+            "mode": settings.mode,
+            "venue": settings.exchange,
+            "tuned_params": sorted(params) if params else [],
+        }
     )
+
     marks = execution.ctx.marks
-    async for l1 in feed.start(syms):
-        # Every tick feeds the flash-crash window, not only ticks that happen
-        # to produce an order -- otherwise the hour-ago sample is missing on a
-        # quiet market and the guardrail declines to fire.
-        if marks is not None:
-            price = l1.get("last") or l1.get("bid") or l1.get("ask")
-            symbol = l1.get("symbol")
-            if symbol and price:
-                marks.record(str(symbol), float(price), ts=l1.get("ts"))
-        await router.on_tick(l1)
+    # Seed the series so a drawdown has a starting point even before the first
+    # sampling interval elapses.
+    execution.record_equity()
+    last_sample = time.monotonic()
+
+    _ACTIVE_ROUTER = router
+    try:
+        async for l1 in source.start(syms):
+            # Every tick feeds the flash-crash window, not only ticks that
+            # produce an order -- otherwise the hour-ago sample is missing on
+            # a quiet market and the guardrail declines to fire.
+            if marks is not None:
+                price = l1.get("last") or l1.get("bid") or l1.get("ask")
+                symbol = l1.get("symbol")
+                if symbol and price:
+                    marks.record(str(symbol), float(price), ts=l1.get("ts"))
+            await router.on_tick(l1)
+
+            # Sample equity on a timer, not only when a fill happens.
+            # Recording solely on fills left the drawdown guardrail blind to
+            # unrealised losses: a book that fell 30% without trading showed
+            # no drawdown at all, which is precisely when the halt most needs
+            # to engage.
+            now = time.monotonic()
+            if now - last_sample >= EQUITY_SAMPLE_SECONDS:
+                execution.record_equity()
+                last_sample = now
+    finally:
+        _ACTIVE_ROUTER = None
 
 
 async def supervise(
@@ -152,7 +274,10 @@ async def supervise(
 
 
 __all__ = [
+    "apply_params",
     "build_risk_manager",
+    "get_active_router",
+    "load_strategy_params",
     "build_router",
     "resolve_symbols",
     "run_once",

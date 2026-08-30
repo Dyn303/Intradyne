@@ -13,6 +13,7 @@ from intradyne.api.routes.risk import router as risk_router
 from intradyne.api.routes.admin import router as admin_router
 from intradyne.api.routes.ai import router as ai_router
 from intradyne.api.routes.data import router as data_router
+from intradyne.api.routes.engine import router as engine_router
 from intradyne.api.routes.ws import router as ws_router
 from intradyne.api.routes.research import router as research_router
 from fastapi import Response
@@ -106,6 +107,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_router, dependencies=deps_common, tags=["Admin"])
     app.include_router(ai_router, dependencies=deps_common, tags=["AI"])
     app.include_router(data_router, dependencies=deps_common, tags=["Data"])
+    app.include_router(engine_router, dependencies=deps_common, tags=["Engine"])
     app.include_router(ws_router, tags=["WebSocket"])
     app.include_router(research_router, dependencies=deps_common, tags=["Research"])
 
