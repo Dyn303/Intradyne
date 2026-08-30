@@ -555,7 +555,27 @@ is entirely about what happens between the bid and the ask, and the bar data
 has no bid or ask to reason with. A model that cannot represent the spread
 cannot answer a question about the spread.
 
-**It is still not enough.** -10.56 bps is a loss. Breakeven at tp=20/sl=30
-needs an 88% win rate against 32.7% achieved. Maker execution closes about a
-third of the gap to zero; it does not close the gap to profit. And 55 round
-trips is too small a sample to conclude from on its own.
+Confirmed on a larger sample. Four hours, 140,533 quotes, median spread 0.48
+bps, both runs past the 100-round-trip threshold:
+
+| window | mode  | trips | win rate | realised   |
+| ------ | ----- | ----- | -------- | ---------- |
+| 2h     | taker | 55    | 21.8%    | -15.41 bps |
+| 2h     | maker | 55    | 32.7%    | -10.56 bps |
+| 4h     | taker | 105   | 19.0%    | -16.52 bps |
+| 4h     | maker | 106   | 29.2%    | -11.47 bps |
+
+The maker gain is 4.85 bps at two hours and 5.05 at four -- stable, and
+matching the 5 bps the entry leg saves. The effect is real and reproducible.
+
+**It is still nowhere near enough.** -11.47 bps is a loss, and breakeven at
+tp=20/sl=30 needs an 88% win rate against 29.2% achieved. Maker execution
+closes about a third of the gap to zero and none of the gap to profit. Every
+configuration tested -- across bars and ticks, both execution modes, five
+payoff geometries, two timescales -- loses money, and the losses cluster
+tightly between -10 and -17 bps per unit of capital.
+
+That consistency is itself informative. The strategy is not marginally
+unprofitable in a way that parameter tuning might rescue; it is losing
+roughly the round-trip cost on every trade, which is what a signal with no
+predictive power does.
