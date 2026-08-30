@@ -3,13 +3,14 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phase 0 complete. Phase 1 next.
+**Status:** Phases 0 and 1 complete. Phase 2 next.
 
 ---
 
 ## Why
 
-The repo currently contains two unrelated systems:
+*(Historical, as of phase 0. Phase 1 has since collapsed this.)* The repo
+contained two unrelated systems:
 
 - `app/` — the real trading engine: momentum/mean-reversion strategies, CCXT
   Bitget adapter, paper broker, stateful risk manager. **Never deployed.**
@@ -19,14 +20,15 @@ The repo currently contains two unrelated systems:
 
 Every document in the repo describes one or the other, never both, and
 `RUNBOOK.md` documents a third system that no longer exists (the archived
-`_prev/legacy/intradyne_lite/`). The plan below collapses this to a single
-service.
+`_prev/legacy/intradyne_lite/`, removed in phase 1; the RUNBOOK itself is
+still stale). The plan below collapses this to a single service.
 
 ---
 
 ## The two-tier risk model
 
-`Guardrails` (in `src/risk/guardrails.py`) and `RiskManager` (in `app/risk.py`)
+`Guardrails` (`intradyne/risk/guardrails.py`) and `RiskManager`
+(`intradyne/engine/risk.py`)
 read as duplicates but are not — they do different jobs, and each is missing
 what the other has:
 
@@ -76,7 +78,7 @@ executes, and the engine path executes but never gates.
 ## Canonical choices
 
 For each duplicated concern, one survives — chosen on "which one actually
-works", not "which one is newer".
+works", not "which one is newer". Paths below are pre-phase-1.
 
 | Concern         | Canonical                              | Deleted                                              | Why |
 | --------------- | -------------------------------------- | ---------------------------------------------------- | --- |
@@ -87,14 +89,15 @@ works", not "which one is newer".
 | Risk veto       | `Guardrails`                           | —                                                    | Keep, but feed it real data |
 | Risk sizing     | `RiskManager`                          | —                                                    | Keep as Tier 2 |
 | Compliance      | fold into `ShariahPolicy`              | `app/compliance.py`                                  | The gate must include spot-only/long-only |
-| Strategies      | `app/strategies/`                      | `src/strategies/`                                    | The latter are all `pass` — non-functional |
+| Strategies      | `app/strategies/`                      | *(kept — see phase 1 note)*                          | Different concerns, not duplicates |
 | Engine entry    | `app/main.py` -> lifespan task         | `src/engine.py`                                      | The latter is a synthetic random-walk stub |
 | Whitelist       | `app/whitelist.json`                   | `ALLOWED_SYMBOLS` default                            | One source; env becomes an override |
 
-> **Ledger format conflict.** `Ledger` writes `hash_prev`; `ExplainabilityLedger`
-> writes `prev_hash`, and they hash different byte ranges. Pick one schema and
-> write a one-shot converter for the existing chains. Do not silently append
-> records the old verifier cannot follow.
+> **Ledger format conflict — resolved in phase 1.** `Ledger` wrote `hash_prev`,
+> `ExplainabilityLedger` wrote `prev_hash`, and they hashed different byte
+> ranges. Unified on the `hash_prev` schema because that is what the existing
+> on-disk ledgers contain; `verify_chain()` confirms they validate unchanged,
+> so no converter was needed.
 
 ---
 
@@ -133,30 +136,38 @@ tree; ledger writes survive production.
 
 ### Phase 1 — One package, one config, one ledger (size M)
 
-8. Move `app/*` -> `src/intradyne/engine/*`. Delete the top-level `intradyne/`
+8. [x] Move `app/*` -> `src/intradyne/engine/*`. Delete the top-level `intradyne/`
    shims and the `src/{risk,core,api,sor,adapters}` duplicates.
-9. Merge the two `Settings` classes into `src/intradyne/config.py`. **One
+9. [x] Merge the two `Settings` classes into `src/intradyne/config.py`. **One
    `.env.example`**, documenting the currently-undocumented `API_AUTH_REQUIRED`,
    `X_API_KEY`, `ADMIN_SECRET`, `FRONTEND_ORIGINS`, `OPENAI_API_KEY`.
-10. Merge the two ledgers; add `verify_chain()` — the chain is written today but
+10. [x] Merge the two ledgers; add `verify_chain()` — the chain is written today but
     nothing ever checks it. Add `fsync` on append and a file lock.
-11. Delete `_prev/`, the `@`-prefixed parallel tree, and `constraints.txt`
+11. [x] Delete `_prev/`, the `@`-prefixed parallel tree, and `constraints.txt`
     (stale, unused, contradicts `requirements.txt`).
-12. **Cache `load_settings()`** (`functools.lru_cache`). It is currently called
+12. [x] **Cache `load_settings()`** (`functools.lru_cache`). It is currently called
     *per request* by `general_rate_limit` and `ai_rate_limit`, re-parsing `.env`
     and re-running validation every time. In production that validation raises
     when broker credentials are absent, so a credential-less deployment returns
     500 on **every** request — including `/healthz` — even though the API places
     no orders. Found while testing the Phase 0 auth fix.
-13. **Move Prometheus metric registration into a factory.** `routes/research.py`,
-    `routes/data.py` and `risk/guardrails.py` register collectors at module
-    scope, so importing the app twice in one process raises
-    `DuplicateTimeseries`. This blocks per-test app construction in Phase 4, and
-    the obvious workaround (clearing the default `REGISTRY`) is global state
-    that breaks `tests/test_metrics_endpoint.py`.
+13. [deferred to phase 4] **Prometheus metric registration in a factory.**
+    Deferred after measuring: repeated `create_app()` already works, because
+    the collectors register at module *import*, which happens once.
+    `DuplicateTimeseries` only fires on module re-import, which neither
+    production nor the test suite does. There is no production impact and the
+    only consumer is test infrastructure, so it belongs with the Phase 4 test
+    work rather than being churn now.
 
-**Exit:** `grep -rn "from src\." src/` returns nothing; one `Settings`; one
-ledger with a verifier.
+**Exit (met):** `grep -rn "from src\." src/` returns nothing; one `Settings`;
+one ledger with a verifier. Tracked files 488 -> 161; suite 34 -> 78 passing.
+
+Two findings corrected the plan as written. `src/strategies` was slated for
+deletion as "all `pass`" -- in fact only the four profile subclasses are empty
+and the subsystem is portfolio-weight allocation, a different concern from the
+tick-level signal generators, so it was preserved (see ARCHITECTURE.md). And
+the two drawdown settings turned out to measure different things, so they were
+deliberately kept separate rather than merged.
 
 ### Phase 2 — Merge the engine into the service (size L)
 
