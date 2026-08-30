@@ -76,6 +76,14 @@ class StrategyRouter:
         # Entry hygiene
         self._max_spread_bps: int = 0
         self._entry_cooldown_s: int = 0
+        # Sentiment gating. Declared here rather than attached from
+        # outside: callers set these after construction, and reaching
+        # them through hasattr/getattr hid typos and left the class
+        # with no discoverable contract.
+        self._sentiment_enabled: bool = False
+        self._sentiment_long_min: float = 0.0
+        self._sentiment_size_min: float = 0.8
+        self._sentiment_size_max: float = 1.2
         self._cooldown_until: Dict[str, float] = defaultdict(float)
 
         # Apply parameter overrides if provided
@@ -398,12 +406,10 @@ class StrategyRouter:
             if sig.get("action") == "buy":
                 # Sentiment gate and sizing throttle (optional)
                 s_score = 0.0
-                if hasattr(self, "_sentiment_enabled") and self._sentiment_enabled:
+                if self._sentiment_enabled:
                     try:
                         s_score = float(get_sentiment_score_cached())
-                        if s_score < float(
-                            getattr(self, "_sentiment_long_min", 0.0) or 0.0
-                        ):
+                        if s_score < float(self._sentiment_long_min or 0.0):
                             continue
                     except Exception:
                         s_score = 0.0
@@ -429,14 +435,10 @@ class StrategyRouter:
                     except Exception:
                         pass
                 qty = self.risk.sizer(self.portfolio.equity({sym: last_f}), last_f)
-                if (
-                    hasattr(self, "_sentiment_enabled")
-                    and self._sentiment_enabled
-                    and qty > 0
-                ):
+                if self._sentiment_enabled and qty > 0:
                     try:
-                        a = float(getattr(self, "_sentiment_size_min", 0.8))
-                        b = float(getattr(self, "_sentiment_size_max", 1.2))
+                        a = float(self._sentiment_size_min)
+                        b = float(self._sentiment_size_max)
                         f = a + (b - a) * (s_score + 1.0) / 2.0
                         qty *= max(0.0, f)
                     except Exception:

@@ -78,15 +78,23 @@ def test_lifespan_starts_and_stops_the_engine_task(monkeypatch):
 
 def test_supervisor_restarts_the_loop_after_a_crash(monkeypatch):
     """A dropped feed must not silently stop trading for the process
-    lifetime, which is what an unsupervised task would do."""
+    lifetime, which is what an unsupervised task would do.
+
+    Waits on an event rather than sleeping a fixed interval: the previous
+    version raced against however long loguru took to render a traceback and
+    failed intermittently under load.
+    """
     from intradyne.engine import loop as loop_mod
 
+    target_restarts = 3
     calls = {"n": 0}
+    reached = asyncio.Event()
 
     async def _boom(settings, execution, symbols=None):
         calls["n"] += 1
-        if calls["n"] < 3:
-            raise RuntimeError("feed dropped")
+        if calls["n"] >= target_restarts:
+            reached.set()
+        raise RuntimeError("feed dropped")
 
     monkeypatch.setattr(loop_mod, "run_once", _boom)
 
@@ -94,15 +102,17 @@ def test_supervisor_restarts_the_loop_after_a_crash(monkeypatch):
         task = asyncio.create_task(
             loop_mod.supervise(load_settings(), object(), restart_delay=0.001)
         )
-        await asyncio.sleep(0.5)
-        task.cancel()
         try:
-            await task
-        except asyncio.CancelledError:
-            pass
+            await asyncio.wait_for(reached.wait(), timeout=10)
+        finally:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     asyncio.run(go())
-    assert calls["n"] >= 2, "supervisor should have restarted the loop"
+    assert calls["n"] >= target_restarts
 
 
 def test_supervisor_exits_cleanly_on_cancel(monkeypatch):

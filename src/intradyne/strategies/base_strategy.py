@@ -22,7 +22,7 @@ class BaseStrategy:
 
     def allocate_portfolio(
         self, signals: Signal, portfolio
-    ) -> Weights:  # portfolio is intradyne.core.portfolio.Portfolio
+    ) -> Weights:  # portfolio is intradyne.strategies.portfolio.Portfolio
         raise NotImplementedError
 
     def clamp_weights(self, weights: Weights) -> Weights:

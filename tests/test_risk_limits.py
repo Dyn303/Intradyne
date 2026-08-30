@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from intradyne.core.portfolio import Portfolio
+from intradyne.strategies.portfolio import Portfolio
 
 
 def test_kill_switch_triggers_on_drawdown():

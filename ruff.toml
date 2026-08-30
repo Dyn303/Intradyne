@@ -1,0 +1,24 @@
+# Pin the lint surface explicitly.
+#
+# There was no ruff config, so `ruff check` used whatever the installed ruff
+# version happened to default to -- and CI installed ruff unpinned. Ruff has
+# since widened its defaults, which turns the CI lint gate red on an upstream
+# release with no change to this repository. Selecting rules here makes the
+# gate depend on the code, not on release timing.
+target-version = "py311"
+
+[lint]
+# Ruff's historical default set, which this codebase satisfies.
+select = ["E4", "E7", "E9", "F"]
+
+# Not yet enabled, each a deliberate future cleanup rather than an oversight:
+#   UP006/UP035/UP045  typing.Dict -> dict, Optional[X] -> X | None  (~500)
+#   I001               import sorting                                (~54)
+#   S110/S112          try/except/pass -- the silent-failure pattern  (~46)
+#   DTZ003             datetime.utcnow() is deprecated in 3.12+       (~21)
+#   ASYNC230           blocking file IO inside async handlers         (~13)
+# ASYNC230 and S110 are the two worth doing on merit rather than tidiness.
+
+[format]
+# Match the pre-existing formatting of the tree.
+quote-style = "double"

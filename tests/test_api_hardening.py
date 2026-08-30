@@ -50,14 +50,14 @@ def _get(
 # `tf` was interpolated into the filename with no validation whatsoever.
 TRAVERSAL_TFS = [
     "../../../etc/passwd",
-    "..\..\..\windows\win.ini",
+    r"..\..\..\windows\win.ini",  # raw: backslash traversal, Windows form
     "1d/../../../secret",
     "....//....//etc/passwd",
 ]
 
 TRAVERSAL_SYMBOLS = [
     "../../etc/passwd",
-    "..\..\secret",
+    r"..\..\secret",
     "BTC/../../../etc/passwd",
     "BTC/USDT/../../..",
 ]

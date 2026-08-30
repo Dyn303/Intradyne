@@ -3,7 +3,7 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phases 0-3 complete. Phase 4 next (test and CI credibility).
+**Status:** Phases 0-4 complete. Phase 5 (live readiness) remains closed by design.
 
 ---
 
@@ -228,19 +228,49 @@ database is now untracked and every test runs against a temporary one.
 
 ### Phase 4 — Test and CI credibility (size M)
 
-24. Point tests at the shipped app. `test_readyz_sqlite_ok` asserts against a
+24. [x] Point tests at the shipped app. `test_readyz_sqlite_ok` asserts against a
     hardcoded `return {"ready": True}`; `test_admin_halt_toggle_sequence`
     exercises a global that order gating never reads. Both pass and prove
     nothing. **Until Phase 0 added `intradyne/api/models.py`, the shipped
     `src/intradyne/api/app.py` could not be imported under `pytest.ini`'s path
     order at all** — the deployed app had literally zero coverage.
-25. Add the tests that matter: guardrail activation, gate-before-broker
+25. [x] Add the tests that matter: guardrail activation, gate-before-broker
     ordering, auth fails closed, traversal rejected, ledger chain verification,
     live-mode gating.
-26. Pin the toolchain. Local Python 3.14 cannot collect the suite (`starlette`
+26. [x] Pin the toolchain. Local Python 3.14 cannot collect the suite (`starlette`
     needs `httpx2`); CI runs 3.11.
-27. Widen mypy past the four modules it checks today. `app/router.py` (615
+27. [x] Widen mypy past the four modules it checks today. `app/router.py` (615
     lines, the actual trading logic) is entirely unchecked.
+    Now checks 45 source files and passes. `intradyne/engine/` stays excluded
+    with an explicit TODO: 75 of its errors are in `router.py` alone and need
+    an annotation pass, which is its own task rather than a rushed one here.
+
+**Exit (met):** every CI gate passes -- ruff check, ruff format, mypy, pytest
+(133) -- and the suite is green for the first time. CI itself was previously
+**red on every run**: `test_config.py` asserted that `BITGET_API_*` were set
+in the environment, which CI never provides.
+
+Found and fixed here, all of it invisible while the gates were unreliable:
+
+- `/readyz` called `os.makedirs()` and opened the database in create mode, so
+  the readiness probe *provisioned the dependency it was reporting on* and
+  could never fail. It also wrote to the filesystem on an unauthenticated GET,
+  which would break under the `read_only` container root.
+- `test_config.py` mutated `os.environ` globally with no cleanup, leaking
+  values out of `.env` files into every later test.
+- `intradyne/data/api_feed.py` and `intradyne/backtester/__main__.py` could not
+  be imported at all -- they referenced six functions that do not exist in this
+  tree. Nothing imported them, so nothing noticed. Both deleted.
+- A test asserting `status_code in (200, 404)` could not fail.
+- The supervisor restart test was timing-based and intermittently failed; it
+  now waits on an event.
+- `StrategyRouter`'s sentiment knobs were attached from outside and read back
+  through `hasattr`/`getattr`, hiding typos. Declared properly.
+
+13. [closed, not done] **Prometheus registration in a factory.** Re-measured:
+    repeated `create_app()` works, nothing re-imports modules, so there is
+    still no consumer. Closing rather than deferring again -- doing the churn
+    would not make any gate more trustworthy.
 
 ### Phase 5 — Live readiness (deferred; defined now)
 

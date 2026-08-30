@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 import sqlite3
 from urllib.parse import urlparse
+
+from intradyne.core.equity import sqlite_path_from_url
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
@@ -34,15 +36,27 @@ def readyz():
     # DB check (sqlite only)
     try:
         if s.db_url.startswith("sqlite"):
-            # parse path
-            path = s.db_url.split("sqlite:///")[-1]
-            import os as _os
-
-            _os.makedirs(_os.path.dirname(path) or ".", exist_ok=True)
-            conn = sqlite3.connect(path)
-            conn.execute("SELECT 1")
-            conn.close()
-            db_ok = True
+            # A readiness probe must observe, never provision. This used to
+            # call os.makedirs() and open the database in create mode, so it
+            # manufactured the dependency it was reporting on and could not
+            # fail -- and an unauthenticated GET wrote to the filesystem,
+            # which also breaks under a read_only container root.
+            path = sqlite_path_from_url(s.db_url)
+            parent = os.path.dirname(path) or "."
+            if not os.path.isdir(parent):
+                db_ok = False
+            elif os.path.exists(path):
+                # mode=rw opens without creating, so a missing or unreadable
+                # file is reported rather than silently conjured.
+                conn = sqlite3.connect(f"file:{path}?mode=rw", uri=True)
+                try:
+                    conn.execute("SELECT 1")
+                finally:
+                    conn.close()
+                db_ok = True
+            else:
+                # Not created yet; ready if we could create it on first write.
+                db_ok = os.access(parent, os.W_OK)
         else:
             db_ok = True  # skip for non-sqlite in this minimal build
     except Exception:
