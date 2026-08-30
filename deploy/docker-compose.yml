@@ -1,42 +1,32 @@
-version: "3.9"
 services:
-  engine:
+  api:
     build:
       context: ..
       dockerfile: Dockerfile
-    container_name: intradyne-engine
-    restart: unless-stopped
-    env_file:
-      - ../.env
-    environment:
-      - TZ=Asia/Kuching
-    volumes:
-      - ../reports:/app/reports
-      - ../data:/app/data
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-  api-slim:
-    profiles: ["slim"]
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.api
-    container_name: intradyne-api-slim
+    image: intradyne-lite:1.9.0
+    container_name: intradyne
     restart: unless-stopped
     env_file:
       - ../.env
     environment:
       - TZ=Asia/Kuching
       - PYTHONPATH=/app/src
+      # The container root is read-only in the prod compose; keep the ledger
+      # and database on the writable mount here too so the two agree.
+      - EXPLAIN_LEDGER_PATH=${EXPLAIN_LEDGER_PATH:-/app/data/explainability_ledger.jsonl}
+      - DB_URL=${DB_URL:-sqlite:////app/data/trades.sqlite}
+      # The trading loop runs inside this service when enabled.
+      - ENGINE_ENABLED=${ENGINE_ENABLED:-false}
     ports:
       - "8080:8000"
+    volumes:
+      - ../reports:/app/reports
+      - ../data:/app/data
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz').read(); print('ok')"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     logging:
       driver: "json-file"
       options:

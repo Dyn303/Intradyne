@@ -3,7 +3,7 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phases 0 and 1 complete. Phase 2 next.
+**Status:** Phases 0-2 complete. Phase 3 next (activate the risk engine).
 
 ---
 
@@ -171,21 +171,32 @@ deliberately kept separate rather than merged.
 
 ### Phase 2 — Merge the engine into the service (size L)
 
-14. Replace the deprecated `@app.on_event("startup")` with a **lifespan** owning
+14. [x] Replace the deprecated `@app.on_event("startup")` with a **lifespan** owning
     the trading loop as a supervised task with restart-on-crash.
-15. **Route every order through Tier 1.** `ExecutionManager.submit()` calls
+15. [x] **Route every order through Tier 1.** `ExecutionManager.submit()` calls
     `gate_trade` before touching a broker. `POST /orders` stops fabricating
     UUIDs and submits to the same `ExecutionManager`.
-16. Fold `assert_whitelisted` / `enforce_spot_only` / `forbid_shorting` into
+16. [x] Fold `assert_whitelisted` / `enforce_spot_only` / `forbid_shorting` into
     `ShariahPolicy.check()`.
-17. Unify the halt: one `is_halted()`, checked in `gate_trade`, reachable from
+17. [x] Unify the halt: one `is_halted()`, checked in `gate_trade`, reachable from
     `POST /admin/halt`. Delete the shadow `_halt_enabled` global.
-18. Single `Dockerfile`. Keep `read_only: true` — it is a good control.
-19. **Startup assertion refusing to boot with live trading enabled** (see
+18. [x] Single `Dockerfile`. Keep `read_only: true` — it is a good control.
+19. [x] **Startup assertion refusing to boot with live trading enabled** (see
     Phase 5). Lands here, not in Phase 5.
 
-**Exit:** one container trades in paper mode and serves the API; an order
-rejected by guardrails never reaches a broker.
+**Exit (met):** one image serves the API and hosts the trading loop; an order
+rejected by the gate provably never reaches a broker, and both the refusal and
+the fill are recorded in one hash-chained ledger. The loop ships behind
+`ENGINE_ENABLED=false` -- the machinery is in place, switching it on is a
+separate step. Suite 78 -> 112 passing.
+
+Three defects surfaced while wiring this up and were fixed here: the long-only
+rule permitted selling more than was held (only the paper broker's silent
+clamp hid it, and the live path would have shorted the difference); the ledger
+recorded a hardcoded `{"whitelist": True, ...}` as though it were the outcome
+of the compliance checks; and loguru's default `diagnose=True` renders local
+variable *values* in tracebacks, so one engine crash would have written the
+broker credentials into `app.log`.
 
 ### Phase 3 — Activate the risk engine (size M)
 

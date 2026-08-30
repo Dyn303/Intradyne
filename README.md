@@ -62,7 +62,7 @@ mypy app
 Build and run:
 
 ```
-docker build -t intradyne-lite -f docker/Dockerfile .
+docker build -t intradyne-lite .
 docker run --rm -p 8080:8000 --env-file .env intradyne-lite
 ```
 
