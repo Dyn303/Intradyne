@@ -363,3 +363,42 @@ mismatch: docs say Bitget, `routes/data.py` and `routes/ws.py` hardcode
   guardrails re-break on every restart in a way that looks fine in tests.
 - **Scope drift toward live.** Phase 5 stays closed; item 17 is what enforces
   that.
+
+---
+
+## Open: PnL does not reconcile with the stated geometry
+
+**Do not treat any backtest result as evidence of an edge until this is
+resolved.**
+
+After capping cumulative position size, a run on real ETH 1m data reports:
+
+| quantity          | value                                   |
+| ----------------- | --------------------------------------- |
+| peak position     | $150 (correct: 1.5% of a 10k book)      |
+| take-profit       | 80 bps                                  |
+| max win per trade | ~$1.20 (0.8% of $150)                   |
+| **observed average win** | **$15.07**                       |
+| net pnl           | +$630 over 110 round trips              |
+
+A winner cannot be worth $15 when the target caps it near $1.20 on a $150
+position. The arithmetic is out by roughly 12x, so at least one of these is
+wrong: the realised-PnL attribution, the exit price actually taken, or the
+position size at the moment of exit.
+
+Two candidate explanations, neither verified:
+
+1. **Slice aggregation.** Exits are micro-sliced and partial take-profits
+   close half a position at a time. Round trips are counted from per-tick
+   changes in `realized_pnl`, so several slices closing on one tick collapse
+   into a single "win". That would inflate the average win and depress the
+   trade count, but should not change total PnL.
+2. **Exits above the take-profit.** If positions exit well beyond the target
+   the realised gain per trade exceeds what the geometry allows, which would
+   mean the take-profit is not binding even after the time-stop fix.
+
+Until it reconciles, `expectancy_pct` cannot be trusted, and a
+`clears_with_margin` verdict means nothing. The next step is to run with
+`fast_mode=False` and read `trades.jsonl` directly: entry price, exit price,
+quantity and exit reason per round trip, checked by hand against the
+configured levels.
