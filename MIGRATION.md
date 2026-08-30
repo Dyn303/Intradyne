@@ -482,7 +482,7 @@ Live this will be less severe than in a 1m backtest -- a real venue fills on
 tick data, not bar closes -- but it will not be zero, and it is one more
 reason the taker cost structure does not survive a 2-minute holding period.
 
-### Maker execution: implemented, and it did not help
+### Maker execution: the bar backtest said no, tick data says yes
 
 I recommended maker fills as "the single highest-leverage change". Measured,
 that was wrong for this strategy on this data.
@@ -524,3 +524,38 @@ downtick. That is a reasonable proxy but it likely *overstates* adverse
 selection, since a real resting order sits inside a spread and is filled by
 someone crossing it. Settling whether maker execution helps needs order-book
 or tick data, not OHLCV bars.
+
+### Corrected on tick data: maker execution does help
+
+The conclusion above was drawn from bar data and is wrong. Repeating it
+against real trade ticks reverses it.
+
+OHLCV carries no bid/ask, so the bar backtest had `bid = ask = last` -- a
+zero spread -- and a resting order was filled by any downtick whatsoever.
+That is the worst possible case for a passive order and it overstated adverse
+selection badly. Binance aggTrades carries `was_buyer_maker`, giving the
+aggressor side of every trade, from which a genuine L1 quote can be
+reconstructed. On 2026-08-28 ETHUSDT that yields **985,369 trades and a median
+spread of 0.52 bps**.
+
+Same strategy, same parameters, 2 hours of ETH ticks:
+
+| mode  | trips | win rate | realised | maker fills | taker fills |
+| ----- | ----- | -------- | -------- | ----------- | ----------- |
+| taker | 55    | 21.8%    | -15.41 bps | 0         | 6,777       |
+| maker | 55    | **32.7%** | **-10.56 bps** | 313  | 303         |
+
+**Maker execution improves realised return by 4.85 bps**, and the theoretical
+saving on the entry leg is 5 bps (taker 5 + slippage 2, against maker 2). The
+agreement is close enough to be convincing. The fill split is exactly the
+intended design: 313 maker fills are the entries, 303 taker fills the exits.
+
+**Which measurement to trust.** The tick run, without hesitation. The question
+is entirely about what happens between the bid and the ask, and the bar data
+has no bid or ask to reason with. A model that cannot represent the spread
+cannot answer a question about the spread.
+
+**It is still not enough.** -10.56 bps is a loss. Breakeven at tp=20/sl=30
+needs an 88% win rate against 32.7% achieved. Maker execution closes about a
+third of the gap to zero; it does not close the gap to profit. And 55 round
+trips is too small a sample to conclude from on its own.
