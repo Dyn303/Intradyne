@@ -25,6 +25,7 @@ from typing import Any, Dict, List
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from intradyne.backtester.costs import assess, breakeven_win_rate  # noqa: E402
+from intradyne.backtester.costs import frontier as _frontier  # noqa: E402
 from intradyne.backtester.costs import round_trip_cost_pct  # noqa: E402
 
 
@@ -67,6 +68,40 @@ def _print_breakeven(args: argparse.Namespace) -> None:
         else:
             print(f"  breakeven win rate {be:8.1%}")
         print()
+
+
+def _print_frontier(args: argparse.Namespace) -> None:
+    """Show how much of the required win rate is set by geometry, not signal."""
+    tps = [20, 30, 40, 60, 100]
+    sls = [20, 30, 40, 60]
+    taker = round_trip_cost_pct(args.taker_bps, args.slippage_bps)
+    maker = round_trip_cost_pct(
+        args.taker_bps, args.slippage_bps, args.maker_bps, True, True
+    )
+    print("Breakeven win rate by payoff geometry")
+    print("(the bar a strategy must clear, before any signal quality)\n")
+    for label, cost in (
+        (f"taker exits  ({taker * 1e4:.0f}bps round trip)", taker),
+        (f"maker exits  ({maker * 1e4:.0f}bps round trip)", maker),
+    ):
+        print(label)
+        print(r"     TP\SL " + "".join(f"{s:>8}" for s in sls) + "    (stop, bps)")
+        for tp, row in _frontier(tps, sls, cost):
+            cells = "".join(f"{be:>8.0%}" if be else "     n/a" for be in row)
+            print(f"   {tp:6}  {cells}")
+        print()
+    cur = breakeven_win_rate(args.tp_pct, args.sl_pct, taker)
+    print(
+        f"Current configuration: TP {args.tp_pct * 1e4:.0f}bps / SL "
+        f"{args.sl_pct * 1e4:.0f}bps, taker exits -> breakeven "
+        f"{cur:.0%}"
+        if cur
+        else "impossible"
+    )
+    print(
+        "Lowering the bar by widening the target or earning maker fees is "
+        "usually worth more\nthan any achievable gain in entry accuracy."
+    )
 
 
 def _print_runs(args: argparse.Namespace) -> int:
@@ -133,6 +168,11 @@ def main(argv: List[str] | None = None) -> int:
         action="store_true",
         help="Print the breakeven win rate for the configuration and exit",
     )
+    p.add_argument(
+        "--frontier",
+        action="store_true",
+        help="Show breakeven win rate across take-profit / stop-loss pairs",
+    )
     p.add_argument("--tp-pct", dest="tp_pct", type=float, default=0.002)
     p.add_argument("--sl-pct", dest="sl_pct", type=float, default=0.003)
     p.add_argument("--taker-bps", dest="taker_bps", type=float, default=5.0)
@@ -140,6 +180,9 @@ def main(argv: List[str] | None = None) -> int:
     p.add_argument("--slippage-bps", dest="slippage_bps", type=float, default=2.0)
     args = p.parse_args(argv)
 
+    if args.frontier:
+        _print_frontier(args)
+        return 0
     if args.breakeven or not args.runs:
         _print_breakeven(args)
         if not args.runs:

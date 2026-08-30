@@ -24,6 +24,24 @@ def _score(
     sharpe = float(metrics.get("sharpe", 0.0))
     net = float(metrics.get("net_pnl", 0.0))
     max_dd = float(metrics.get("max_dd", 0.0))
+
+    if objective == "expectancy":
+        # Per-trade expected return after fees and slippage, which is the
+        # quantity that decides whether the strategy makes money.
+        #
+        # Sharpe and net PnL both reward a configuration that happens to catch
+        # a favourable stretch; neither notices that the payoff geometry
+        # requires a win rate the signal cannot reach. Optimising expectancy
+        # searches the geometry and the signal together.
+        edge = metrics.get("edge") or {}
+        exp = float(edge.get("expectancy_pct") or 0.0)
+        trips = int(metrics.get("round_trips") or 0)
+        if trips < 100:
+            # Too few round trips to distinguish edge from noise. Return a
+            # penalty rather than a flattering number from a tiny sample.
+            return -1.0
+        return exp - lam_dd * max_dd / 100.0
+
     if objective == "sharpe":
         return sharpe - lam_dd * max_dd
     elif objective == "pnl":
@@ -217,8 +235,8 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--objective",
         type=str,
-        choices=["sharpe", "pnl", "combo", "daily"],
-        default="sharpe",
+        choices=["expectancy", "sharpe", "pnl", "combo", "daily"],
+        default="expectancy",
         help="Optimization objective",
     )
     p.add_argument("--lambda-dd", dest="lambda_dd", type=float, default=0.5)

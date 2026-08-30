@@ -170,8 +170,50 @@ def assess(
     )
 
 
+def profit_factor(
+    win_rate: float, tp_pct: float, sl_pct: float, cost_pct: float
+) -> Optional[float]:
+    """Profit factor implied by a win rate and payoff geometry.
+
+    Gross profit over gross loss. This is the same statement as expectancy:
+    PF > 1 exactly when expectancy > 0, and PF == 1 at breakeven. Raising it
+    means either winning more often or changing the geometry -- there is no
+    third lever.
+    """
+    net_win = tp_pct - cost_pct
+    net_loss = sl_pct + cost_pct
+    losses = (1.0 - win_rate) * net_loss
+    if losses <= 0:
+        return None
+    return (win_rate * net_win) / losses
+
+
+def frontier(
+    tp_grid_bps,
+    sl_grid_bps,
+    cost_pct: float,
+):
+    """Breakeven win rate for each (take-profit, stop-loss) pair.
+
+    The point of looking at this: at a 20bps target against a 30bps stop with
+    taker exits, breakeven is 88% -- a win rate essentially no entry signal
+    reaches. Widening the target to 60bps drops it to 49%. The bar is set by
+    the geometry far more than by signal quality, so tuning entries against an
+    unreachable bar is wasted effort.
+    """
+    rows = []
+    for tp in tp_grid_bps:
+        row = []
+        for sl in sl_grid_bps:
+            row.append(breakeven_win_rate(tp / 1e4, sl / 1e4, cost_pct))
+        rows.append((tp, row))
+    return rows
+
+
 __all__ = [
     "DEFAULT_REQUIRED_MARGIN",
+    "frontier",
+    "profit_factor",
     "EdgeAssessment",
     "assess",
     "breakeven_win_rate",

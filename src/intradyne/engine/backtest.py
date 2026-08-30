@@ -16,6 +16,8 @@ import orjson
 from intradyne.core.config import load_settings
 from .data_loader import DataLoader, LoaderConfig, timeframe_to_seconds
 from .portfolio import Portfolio
+from loguru import logger
+
 from intradyne.backtester.costs import assess
 from .broker_paper import PaperBroker
 from intradyne.core.ledger import ExplainabilityLedger
@@ -102,6 +104,21 @@ def run(
     router_params = params or {}
     execman = ExecutionManager(ctx)
     router = StrategyRouter(symbols, risk, execman, portfolio, params=router_params)
+
+    # The exit horizon must be long enough for the take-profit and stop-loss to
+    # be reachable. The strategies were written for 1-second bars, where the
+    # 120s default is 120 bars; on 1m bars it is two, and ~95% of positions
+    # then close on the time stop before either level is touched. That
+    # silently makes the whole tp/sl design inert, and a parameter sweep then
+    # returns near-identical results for every configuration.
+    _stop_bars = float(router.time_stop_s) / max(1, timeframe_to_seconds(timeframe))
+    if _stop_bars < 3:
+        logger.warning(
+            f"time_stop_s={router.time_stop_s} is only {_stop_bars:.1f} bars at "
+            f"{timeframe}: positions will close on the time stop before the "
+            "take-profit or stop-loss is reached, and results will be "
+            "insensitive to them"
+        )
 
     # Prepare artifacts dirs
     run_id = f"{strategy}_{int(time.time())}_{seed}"

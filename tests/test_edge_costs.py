@@ -133,3 +133,44 @@ def test_assessment_serialises_for_the_backtest_summary():
         "note",
     ):
         assert key in body
+
+
+# ---- profit factor -------------------------------------------------------
+
+
+def test_profit_factor_is_one_at_breakeven():
+    """PF and expectancy are the same statement: PF > 1 exactly when
+    expectancy > 0."""
+    from intradyne.backtester.costs import profit_factor
+
+    cost = round_trip_cost_pct(TAKER, SLIP)
+    be = breakeven_win_rate(TP, SL, cost)
+    assert profit_factor(be, TP, SL, cost) == pytest.approx(1.0, abs=1e-9)
+
+
+def test_profit_factor_below_one_when_losing():
+    from intradyne.backtester.costs import profit_factor
+
+    cost = round_trip_cost_pct(TAKER, SLIP)
+    assert profit_factor(0.70, TP, SL, cost) < 1.0
+
+
+def test_a_higher_win_rate_can_have_a_worse_profit_factor():
+    """The result that matters: a tight target wins more often and earns less.
+    Chasing win rate without the geometry is chasing the wrong number."""
+    from intradyne.backtester.costs import profit_factor
+
+    cost = round_trip_cost_pct(TAKER, SLIP)
+    tight = profit_factor(0.56, tp_pct=0.0020, sl_pct=0.0060, cost_pct=cost)
+    wide = profit_factor(0.28, tp_pct=0.0060, sl_pct=0.0020, cost_pct=cost)
+    assert tight < wide
+
+
+def test_frontier_shows_geometry_dominates_the_bar():
+    """Widening the target from 20bps to 100bps moves the required win rate
+    by more than 50 points, which no entry-signal work will match."""
+    from intradyne.backtester.costs import frontier
+
+    cost = round_trip_cost_pct(TAKER, SLIP)
+    rows = dict(frontier([20, 100], [30], cost))
+    assert rows[20][0] - rows[100][0] > 0.50
