@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from intradyne.core.ledger import Ledger
 from intradyne.risk.kill_switch import halt_reason, is_halted
+from intradyne.risk.shariah import ShariahPolicy
 from prometheus_client import Counter
 
 
@@ -29,6 +30,11 @@ class OrderReq:
     side: str
     qty: float
     meta: Optional[Dict[str, Any]] = None
+    #: Venue parameters, screened for margin/derivative keys (spot-only).
+    params: Optional[Dict[str, Any]] = None
+    #: Base-asset inventory held. Required for a sell: without it the order
+    #: cannot be shown to be covered, and the gate fails closed.
+    base_inventory: Optional[float] = None
 
     def step_down(self, factor: float = 0.5) -> "OrderReq":
         return replace(self, qty=max(self.qty * factor, 0.0))
@@ -86,34 +92,6 @@ def dd_30d(equity_series: List[Tuple[datetime, float]]) -> float:
     return dd
 
 
-def is_crypto_symbol(symbol: str) -> bool:
-    return "/" in (symbol or "")
-
-
-class ShariahPolicy:
-    def __init__(
-        self,
-        allowed_crypto: Optional[Iterable[str]] = None,
-        blocked_tags: Optional[Iterable[str]] = None,
-    ):
-        self.allowed_crypto = set(allowed_crypto or [])
-        self.blocked_tags = set(
-            blocked_tags or ["gambling", "riba", "porn"]
-        )  # extensible
-
-    def check(
-        self, symbol: str, meta: Optional[Dict[str, Any]] = None
-    ) -> Tuple[bool, str]:
-        if is_crypto_symbol(symbol):
-            if self.allowed_crypto and symbol not in self.allowed_crypto:
-                return False, f"Crypto {symbol} not in allowed list"
-            if meta and any(tag in self.blocked_tags for tag in meta.get("tags", [])):
-                return False, "Crypto token has blocked tags"
-            return True, "ok"
-        # For non-crypto, allow by default unless whitelists are introduced here
-        return True, "ok"
-
-
 class Guardrails:
     def __init__(
         self,
@@ -166,8 +144,15 @@ class Guardrails:
             self._breach("admin_halt", symbol=req.symbol, reason=reason, action="halt")
             return "halt", [reason], req
 
-        # 1) Shariah / whitelist
-        ok, reason = self.shariah.check(req.symbol, req.meta or {})
+        # 1) Shariah: whitelist, blocked tags, spot-only, long-only
+        ok, reason = self.shariah.check(
+            req.symbol,
+            side=req.side,
+            meta=req.meta,
+            params=req.params,
+            base_inventory=req.base_inventory,
+            qty=req.qty,
+        )
         if not ok:
             self._breach("compliance", symbol=req.symbol, reason=reason, action="block")
             return "block", [reason], req
@@ -231,3 +216,16 @@ class Guardrails:
             reasons.append(f"var {var:.3f} > {self.th['var_max']:.3f}")
 
         return "allow", reasons, req
+
+
+# ShariahPolicy is re-exported: it moved to risk.shariah but is widely
+# imported from here.
+__all__ = [
+    "Guardrails",
+    "OrderReq",
+    "PriceFeed",
+    "RiskData",
+    "ShariahPolicy",
+    "dd_30d",
+    "historical_var",
+]

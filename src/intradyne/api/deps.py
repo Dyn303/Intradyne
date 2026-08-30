@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import secrets
 from datetime import datetime
-from typing import Optional, List, Tuple
+from typing import TYPE_CHECKING, Optional, List, Tuple
 
 from fastapi import Header, HTTPException
 
 from intradyne.core.config import load_settings
 from intradyne.core.ledger import Ledger
 from intradyne.risk.guardrails import Guardrails, ShariahPolicy, PriceFeed, RiskData
+
+if TYPE_CHECKING:  # pragma: no cover
+    from intradyne.engine.execution import ExecutionManager
 
 
 class _DefaultPriceFeed(PriceFeed):
@@ -25,6 +28,7 @@ class _DefaultRiskData(RiskData):
 
 
 _ENGINE: Optional[Guardrails] = None
+_EXECUTION: Optional["ExecutionManager"] = None
 
 
 def get_guardrails() -> Guardrails:
@@ -142,3 +146,50 @@ async def require_ws_api_key(websocket) -> bool:
         await websocket.close(code=1008, reason="invalid_api_key")
         return False
     return True
+
+
+def get_execution_manager() -> "ExecutionManager":
+    """The process-wide order path.
+
+    Both POST /orders and the engine loop submit through this one instance, so
+    there is a single portfolio, a single ledger, and exactly one place where
+    the Tier 1 gate runs. The live broker is deliberately absent: live trading
+    is barred until MIGRATION.md phase 5.
+    """
+    global _EXECUTION
+    if _EXECUTION is None:
+        from intradyne.engine.broker_paper import PaperBroker
+        from intradyne.engine.execution import ExecContext, ExecutionManager
+        from intradyne.engine.portfolio import Portfolio
+
+        settings = load_settings()
+        guardrails = get_guardrails()
+        portfolio = Portfolio(
+            maker_bps=settings.fees.maker_bps,
+            taker_bps=settings.fees.taker_bps,
+        )
+        _EXECUTION = ExecutionManager(
+            ExecContext(
+                portfolio=portfolio,
+                paper=PaperBroker(portfolio, slippage_bps=settings.fees.slippage_bps),
+                # Same ledger the guardrails write to, so refusals and fills
+                # land in one chain.
+                ledger=guardrails.ledger,
+                whitelist=settings.allowed_crypto_list(),
+                live_broker=None,
+                live_enabled=False,
+                guardrails=guardrails,
+            )
+        )
+    return _EXECUTION
+
+
+def get_portfolio():
+    return get_execution_manager().ctx.portfolio
+
+
+def reset_execution_manager() -> None:
+    """Drop the cached order path. For tests."""
+    global _EXECUTION, _ENGINE
+    _EXECUTION = None
+    _ENGINE = None

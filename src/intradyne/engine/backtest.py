@@ -21,7 +21,7 @@ from intradyne.core.ledger import ExplainabilityLedger
 from .risk import RiskManager
 from .execution import ExecContext, ExecutionManager
 from .router import StrategyRouter
-from .compliance import assert_whitelisted
+from intradyne.risk.shariah import assert_whitelisted
 
 
 @dataclass

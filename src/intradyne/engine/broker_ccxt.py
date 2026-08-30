@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-import ccxt.async_support as ccxt
 from loguru import logger
 
-from .compliance import ComplianceError, enforce_spot_only
+from intradyne.risk.shariah import ComplianceError, enforce_spot_only
 
 
 class CCXTBroker:
@@ -22,9 +21,13 @@ class CCXTBroker:
         self.api_secret = api_secret
         self.api_passphrase = api_passphrase
         self.live_enabled = live_enabled
-        self.exchange: Optional[ccxt.Exchange] = None
+        self.exchange: Optional[Any] = None
 
     async def connect(self) -> None:
+        # Imported lazily: ccxt is only needed to trade live, and the API
+        # image runs paper-only, so it must not be an import-time dependency.
+        import ccxt.async_support as ccxt
+
         ex_class = getattr(ccxt, self.exchange_id)
         self.exchange = ex_class(
             {

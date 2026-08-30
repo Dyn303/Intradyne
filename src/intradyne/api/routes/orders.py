@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import uuid
-from typing import Callable, Dict, Tuple
+import time
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from intradyne.risk.guardrails import Guardrails, OrderReq
-from intradyne.api.deps import get_guardrails
+from intradyne.api.deps import get_execution_manager, get_guardrails
 
 
 router = APIRouter()
@@ -16,7 +16,12 @@ router = APIRouter()
 class OrderIn(BaseModel):
     symbol: str
     side: str
-    qty: float
+    qty: float = Field(gt=0)
+    #: Limit price, or the mark to fill a market order against. Required
+    #: while the engine loop is not running, since there is then no live mark
+    #: to price a market order from.
+    price: Optional[float] = Field(default=None, gt=0)
+    type: str = "market"
 
 
 def submit_order(
@@ -24,8 +29,12 @@ def submit_order(
     order: OrderReq,
     executor: Callable[[OrderReq], Dict],
 ) -> Tuple[bool, Dict]:
-    # The operator halt is enforced inside gate_trade, so it covers every
-    # caller rather than only this route.
+    """Gate an order, then hand the approved form to `executor`.
+
+    Retained for callers that supply their own executor. The operator halt is
+    enforced inside gate_trade, so it covers every caller rather than only
+    this route.
+    """
     action, reasons, adj = guardrails.gate_trade(order)
     if action != "allow":
         guardrails.ledger.append(
@@ -57,19 +66,72 @@ def submit_order(
 
 
 @router.post("/orders")
-def create_order(inp: OrderIn):
-    gr = get_guardrails()
+async def create_order(inp: OrderIn) -> Dict[str, Any]:
+    """Submit an order.
 
-    def _exec(o: OrderReq) -> Dict:
-        return {
-            "trade_id": str(uuid.uuid4()),
-            "order_id": str(uuid.uuid4()),
-            "status": "accepted",
-        }
+    This used to gate the order and then fabricate a UUID, returning
+    {"status": "accepted"} without any broker having been contacted and
+    without the portfolio moving. It now goes through the same
+    ExecutionManager the engine uses, so the order is really filled against
+    the paper broker, the portfolio really moves, and both the decision and
+    the fill land in the explainability ledger.
+    """
+    side = inp.side.strip().lower()
+    if side not in {"buy", "sell"}:
+        raise HTTPException(status_code=400, detail="side must be buy or sell")
+    type_ = inp.type.strip().lower()
+    if type_ not in {"market", "limit"}:
+        raise HTTPException(status_code=400, detail="type must be market or limit")
+    if inp.price is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "price_required: no live mark is available to fill against. "
+                "Supply the limit price, or the mark for a market order."
+            ),
+        )
 
-    ok, payload = submit_order(
-        gr, OrderReq(symbol=inp.symbol, side=inp.side, qty=inp.qty), _exec
+    execution = get_execution_manager()
+    mark = float(inp.price)
+    l1 = {"bid": mark, "ask": mark, "last": mark, "ts": time.time()}
+
+    result = await execution.submit(
+        symbol=inp.symbol,
+        side=side,
+        type_=type_,
+        qty=inp.qty,
+        price=mark if type_ == "limit" else None,
+        l1=l1,
+        strategy_id="api",
+        features={},
+        checks_passed={},
     )
-    if not ok:
-        raise HTTPException(status_code=400, detail=payload)
-    return payload
+
+    if result.get("status") == "blocked":
+        raise HTTPException(
+            status_code=400,
+            detail={"error": result.get("action"), "reasons": result.get("reasons")},
+        )
+    return dict(result)
+
+
+@router.get("/portfolio")
+def get_portfolio_state() -> Dict[str, Any]:
+    """Balances and open positions, from the same portfolio orders move."""
+    portfolio = get_execution_manager().ctx.portfolio
+    return {
+        "quote_ccy": portfolio.quote_ccy,
+        "balances": dict(portfolio.balances),
+        "positions": {
+            symbol: {
+                "base": pos.base,
+                "avg_price": pos.avg_price,
+                "realized_pnl": pos.realized_pnl,
+            }
+            for symbol, pos in portfolio.positions.items()
+            if pos.base > 0 or pos.realized_pnl
+        },
+    }
+
+
+__all__ = ["router", "submit_order", "get_guardrails"]

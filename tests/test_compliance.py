@@ -1,4 +1,4 @@
-from intradyne.engine.compliance import (
+from intradyne.risk.shariah import (
     assert_whitelisted,
     enforce_spot_only,
     forbid_shorting,
