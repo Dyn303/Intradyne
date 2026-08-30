@@ -489,6 +489,20 @@ class StrategyRouter:
                         checks,
                     )
                     remaining -= q
+                # Anchor the stop to what is actually held.
+                #
+                # sl/tp above are derived from this entry's price and used to
+                # overwrite any existing stop. Averaging down therefore walked
+                # the stop down with every additional buy: it protected the
+                # most recent entry rather than the position, so a stop set
+                # 20bps wide realised losses several times that against
+                # average cost. Recomputing from avg_price makes the configured
+                # distance mean what it says.
+                _pos_after = self.portfolio.get_position(sym)
+                if _pos_after.base > 0 and _pos_after.avg_price > 0:
+                    sl, tp = self.risk.sl_tp_levels(
+                        _pos_after.avg_price, atr=atr_val if atr_val else None
+                    )
                 self.stops[sym] = (sl, tp)
                 self.entry_ts.setdefault(sym, now_ts)
                 self._entry_high[sym] = last_f

@@ -27,6 +27,7 @@ BASE_URL = "https://data-api.binance.vision/api/v3/klines"
 MAX_LIMIT = 1000  # per request, imposed by the venue
 
 TF_MS = {
+    "1s": 1_000,
     "1m": 60_000,
     "3m": 180_000,
     "5m": 300_000,

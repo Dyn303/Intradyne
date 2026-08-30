@@ -414,3 +414,43 @@ The run that prompted all of this now reports honestly:
 **Still true: no edge is established.** The measurement is now trustworthy,
 and what it says is that this configuration loses money.
 
+---
+
+## Why it loses: holding period vs cost, not signal quality
+
+With the stop anchored to average cost, the liquidation priced correctly and
+expectancy measured from realised outcomes, the measurement is trustworthy.
+What it shows is not a weak entry signal but an incompatible cost structure.
+
+ETH/USDT realised volatility is **0.32 bps per second**. Over a holding period
+the expected absolute move scales with the square root of time:
+
+| hold                       | expected move |
+| -------------------------- | ------------- |
+| 1 min                      | 2.5 bps       |
+| **2 min** (shipped time stop) | **3.5 bps** |
+| 10 min                     | 7.9 bps       |
+| 30 min                     | 13.7 bps      |
+| 1 hour                     | 19.4 bps      |
+
+Round-trip cost is **14 bps** taker. The instrument moves 3.5 bps over the
+intended holding period, so the fee is **four times the entire expected move**.
+No entry signal overcomes that: you are paying 14 bps to capture something
+whose expected magnitude is 3.5.
+
+Breakeven holding period, purely from volatility against cost:
+
+- **taker both legs (14 bps): ~31 minutes** — not scalping
+- **maker both legs (4 bps): ~2.6 minutes** — the intended horizon
+
+Confirming this, at the designed 1s timescale the take-profit is unreachable:
+20 bps is a 62-sigma one-bar move, and `tp=20/sl=30` and `tp=80/sl=20` produce
+near-identical results (-14.96 vs -14.99 bps realised, 422 vs 420 round trips)
+because neither level is ever touched and everything exits on the time stop.
+
+**So the binding constraint is fee structure, not strategy.** The single
+highest-leverage change is earning maker fees rather than paying taker: it
+moves the viable holding period from ~31 minutes to ~2.6, which is the horizon
+the strategy was built for. That requires posting resting limit orders and
+accepting non-fills, which the execution path does not currently do — it
+submits market orders throughout.
