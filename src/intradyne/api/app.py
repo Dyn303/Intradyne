@@ -21,10 +21,14 @@ from intradyne.api.deps import (
 )
 from intradyne.api.models import FrontendConfig
 from intradyne.api.ratelimit import general_rate_limit
+from intradyne.core.config import assert_live_trading_gate, load_settings
 from intradyne.core.logging import setup_logging
 
 
 def create_app() -> FastAPI:
+    # Refuse to start with live trading armed before phase 5 (MIGRATION.md).
+    assert_live_trading_gate(load_settings())
+
     app = FastAPI(title="IntraDyne Lite API")
     # CORS for frontend readiness.
     #

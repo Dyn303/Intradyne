@@ -221,6 +221,30 @@ class Settings(BaseSettings):
             )
 
 
+# Phase 5 of MIGRATION.md opens live trading. Until the controls listed in
+# assert_live_trading_gate() exist, the system refuses to start in live mode.
+LIVE_TRADING_GATE_OPEN = False
+
+
+def assert_live_trading_gate(settings: "Settings") -> None:
+    """Refuse to start with live trading armed before phase 5 is done.
+
+    Deliberately not overridable by an environment variable: an env override
+    is exactly how this would get flipped by accident. Opening it is a code
+    change to LIVE_TRADING_GATE_OPEN, which leaves a reviewable commit.
+    """
+    if LIVE_TRADING_GATE_OPEN:
+        return
+    if settings.mode == "live" and settings.live_trading_enabled:
+        raise RuntimeError(
+            "Live trading is armed (MODE=live and LIVE_TRADING_ENABLED=true) but "
+            "the live-readiness work is not done. Still missing: idempotency keys "
+            "on order submission, reconciliation against exchange state on "
+            "restart, per-symbol and daily notional caps, and alerting on "
+            "halt/kill-switch. See MIGRATION.md phase 5. Run with MODE=paper."
+        )
+
+
 def _build_settings() -> Settings:
     # Shared thresholds are read once here and handed to both tiers, so one
     # environment variable cannot arm one tier and leave the other at default.
@@ -287,6 +311,8 @@ def reset_settings_cache() -> None:
 
 __all__ = [
     "Settings",
+    "assert_live_trading_gate",
+    "LIVE_TRADING_GATE_OPEN",
     "RiskConfig",
     "GuardrailConfig",
     "FeesConfig",

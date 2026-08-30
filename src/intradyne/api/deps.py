@@ -25,7 +25,6 @@ class _DefaultRiskData(RiskData):
 
 
 _ENGINE: Optional[Guardrails] = None
-_HALT_ENABLED: bool = False
 
 
 def get_guardrails() -> Guardrails:
@@ -55,15 +54,6 @@ def get_settings():
 
 def get_ledger():
     return get_guardrails().ledger
-
-
-def set_halt(enabled: bool) -> None:
-    global _HALT_ENABLED
-    _HALT_ENABLED = bool(enabled)
-
-
-def is_halted() -> bool:
-    return _HALT_ENABLED
 
 
 def is_prod() -> bool:

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from loguru import logger
 import uvicorn
 
-from intradyne.core.config import load_settings
+from intradyne.core.config import assert_live_trading_gate, load_settings
 from .data_ws import DataFeed
 from .portfolio import Portfolio
 from .broker_paper import PaperBroker
@@ -38,6 +38,7 @@ def setup_logging(log_dir: str, level: str) -> None:
 async def run_trader() -> None:
     load_dotenv()
     settings = load_settings()
+    assert_live_trading_gate(settings)
     setup_logging(settings.log_dir, settings.log_level)
 
     # Portfolio & brokers

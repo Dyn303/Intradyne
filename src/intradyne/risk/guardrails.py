@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from intradyne.core.ledger import Ledger
+from intradyne.risk.kill_switch import halt_reason, is_halted
 from prometheus_client import Counter
 
 
@@ -157,6 +158,13 @@ class Guardrails:
 
     def gate_trade(self, req: OrderReq) -> Tuple[str, List[str], OrderReq]:
         reasons: List[str] = []
+
+        # 0) Operator halt. Checked here rather than in the route so that it
+        # also stops strategy-generated orders, not just API-submitted ones.
+        if is_halted():
+            reason = halt_reason() or "admin_halt"
+            self._breach("admin_halt", symbol=req.symbol, reason=reason, action="halt")
+            return "halt", [reason], req
 
         # 1) Shariah / whitelist
         ok, reason = self.shariah.check(req.symbol, req.meta or {})
