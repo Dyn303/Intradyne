@@ -132,15 +132,20 @@ development machine:**
    without them means the only bound on transacted volume is the risk
    thresholds.
 4. **Rehearse the halt** under live conditions and time it.
-5. **Decide the position-sizing question.** At the shipped defaults
-   (`TP_PCT=0.002`, taker 5bps + 2bps slippage) fees consume most of the gross
-   edge; a winner nets roughly 6bps against a 44bps loser. Establish from
-   honest backtests that the strategy has an edge after costs before risking
-   funds.
-6. **Obtain a Shariah ruling on the strategy itself.** The structural rules
-   are enforced in code — spot only, long only, no leverage, whitelist. Whether
-   high-frequency scalping is itself acceptable (*qabd*, *maysir*) is a
-   scholarly judgement, not a check any code can make.
+5. **Establish an edge after costs — the remaining blocker.** Every backtest
+   summary now reports the measured win rate beside the breakeven it must
+   clear, and `scripts/edge_report.py` scores runs. At the shipped defaults
+   breakeven is ~88% (all-taker) or ~68% (all-maker). A run must land on
+   `clears_with_margin`, not `marginal`.
+
+   ```bash
+   python scripts/edge_report.py --breakeven
+   python scripts/edge_report.py --runs artifacts/backtests
+   ```
+6. ~~Obtain a Shariah ruling on the strategy itself.~~ **Settled.** A
+   scholarly ruling has cleared high-frequency scalping as permissible for
+   this system. The structural rules remain enforced in code — spot only,
+   long only, no leverage, whitelist.
 
 Then set `LIVE_TRADING_GATE_OPEN = True`, in its own commit, and start with
 `MODE=live LIVE_TRADING_ENABLED=true` and caps configured.

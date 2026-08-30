@@ -16,6 +16,7 @@ import orjson
 from intradyne.core.config import load_settings
 from .data_loader import DataLoader, LoaderConfig, timeframe_to_seconds
 from .portfolio import Portfolio
+from intradyne.backtester.costs import assess
 from .broker_paper import PaperBroker
 from intradyne.core.ledger import ExplainabilityLedger
 from .risk import RiskManager
@@ -120,6 +121,8 @@ def run(
     total_steps = 0
     start_equity = portfolio.equity()
     peak_equity = start_equity
+    #: Last realized PnL seen per symbol, so a change identifies a close.
+    realized_seen: Dict[str, float] = {}
 
     async def write_trade(event: Dict[str, Any]) -> None:
         if trades_fp is not None:
@@ -161,8 +164,34 @@ def run(
                     target_so_far = early_target_trades_per_day * elapsed
                     if ctx.trades < target_so_far * 0.5:  # behind pace
                         raise RuntimeError("EARLY_PRUNE_TRADES")
-            # capture realized pnl changes via portfolio positions updates
-            # We infer fills via ledger writes (paper fills). Not strictly needed for metrics here.
+            # Count closed trades from realized-PnL movement.
+            #
+            # wins/losses were declared and marked nonlocal but never
+            # incremented, so win_rate was always exactly 0.0 and
+            # profit_factor always inf, whatever the strategy did. Every
+            # summary.json ever produced carries those dead values.
+            for sym_, pos_ in portfolio.positions.items():
+                prev = realized_seen.get(sym_, 0.0)
+                curr = pos_.realized_pnl
+                delta = curr - prev
+                if delta == 0.0:
+                    continue
+                realized_seen[sym_] = curr
+                if delta > 0:
+                    wins += 1
+                    gross_profit += delta
+                else:
+                    losses += 1
+                    gross_loss += delta
+                await write_trade(
+                    {
+                        "ts": bar.get("ts"),
+                        "symbol": sym_,
+                        "realized_pnl": delta,
+                        "outcome": "win" if delta > 0 else "loss",
+                        "equity": eq,
+                    }
+                )
         # After stream end, close any open positions at last price
         for sym, pos in portfolio.positions.items():
             if pos.base > 0:
@@ -184,6 +213,18 @@ def run(
                     {},
                     {"whitelist": True, "spot_only": True, "long_only": True},
                 )
+        # The end-of-stream liquidation closes trades too; count them.
+        for sym_, pos_ in portfolio.positions.items():
+            delta = pos_.realized_pnl - realized_seen.get(sym_, 0.0)
+            if delta == 0.0:
+                continue
+            realized_seen[sym_] = pos_.realized_pnl
+            if delta > 0:
+                wins += 1
+                gross_profit += delta
+            else:
+                losses += 1
+                gross_loss += delta
 
     # Run event loop
     import asyncio
@@ -234,9 +275,16 @@ def run(
             max_dd = max(max_dd, (peak - v) / peak)
     exposure = exposure_steps / max(1, total_steps)
 
+    round_trips = wins + losses
     summary = {
-        "trades": ctx.trades,
-        "win_rate": wins / max(1, wins + losses),
+        # `trades` counts individual fills; a round trip is typically several
+        # (both strategies can enter on one tick, and exits are separate
+        # orders). They were reported side by side as though comparable, so
+        # the sample size read several times larger than it was.
+        "fills": ctx.trades,
+        "trades": round_trips,
+        "round_trips": round_trips,
+        "win_rate": wins / max(1, round_trips),
         "gross_pnl": portfolio.get_position(symbols[0]).realized_pnl
         if symbols
         else 0.0,
@@ -244,12 +292,33 @@ def run(
         "max_dd": max_dd,
         "sharpe": sharpe,
         "sortino": sortino,
+        "wins": wins,
+        "losses": losses,
+        "gross_profit": gross_profit,
+        "gross_loss": gross_loss,
+        # None rather than inf when there were no losses: infinity here has
+        # always meant "no data", not "flawless strategy".
         "profit_factor": (gross_profit / abs(gross_loss))
         if gross_loss < 0
-        else float("inf"),
+        else (None if wins == 0 else float("inf")),
         "exposure_time": exposure,
         "final_equity": portfolio.equity({}),
     }
+
+    # A win rate means nothing without the breakeven it has to clear. At a
+    # 20bps take-profit against a 30bps stop, 14bps of round-trip cost implies
+    # a ~88% breakeven -- so a 70% win rate looks strong and loses money. The
+    # two are reported together so they cannot be read apart.
+    summary["edge"] = assess(
+        win_rate=summary["win_rate"],
+        tp_pct=risk.tp_pct,
+        sl_pct=risk.per_trade_sl_pct,
+        taker_bps=taker_bps,
+        slippage_bps=slippage_bps,
+        maker_bps=maker_bps,
+        trades=round_trips,
+    ).to_dict()
+
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     return BacktestResult(summary, run_id)
 
