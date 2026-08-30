@@ -15,7 +15,13 @@ from intradyne.core.config import load_settings, reset_settings_cache
 
 @pytest.fixture(autouse=True)
 def _clean(monkeypatch: pytest.MonkeyPatch):
-    for k in ("APP_ENV", "API_AUTH_REQUIRED", "X_API_KEY", "ENGINE_ENABLED"):
+    for k in (
+        "APP_ENV",
+        "API_AUTH_REQUIRED",
+        "X_API_KEY",
+        "ENGINE_ENABLED",
+        "ACKNOWLEDGE_NO_EDGE",
+    ):
         monkeypatch.delenv(k, raising=False)
     reset_settings_cache()
     yield
@@ -57,6 +63,11 @@ def test_lifespan_starts_no_task_when_disabled():
 def test_lifespan_starts_and_stops_the_engine_task(monkeypatch):
     """With the engine on, a supervised task runs and is cancelled on exit."""
     monkeypatch.setenv("ENGINE_ENABLED", "true")
+    # The strategy has no demonstrated edge, so the boot gate blocks the
+    # loop by default. This test is about lifespan mechanics, not about
+    # whether the strategy is worth running, so it acknowledges and moves
+    # on -- see test_strategy_edge_gate.py for the gate itself.
+    monkeypatch.setenv("ACKNOWLEDGE_NO_EDGE", "true")
     reset_settings_cache()
 
     started = asyncio.Event()

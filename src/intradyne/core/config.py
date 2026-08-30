@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
+from loguru import logger
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -271,6 +272,51 @@ def assert_live_trading_gate(settings: "Settings") -> None:
         )
 
 
+# Measured across 50 signals, 8 families, 943 days and two instruments: the
+# best entry signal is worth ~0.5bps against a round-trip cost of 4-14bps.
+# See the "Fifty signals" and "Months of data" sections of MIGRATION.md.
+#
+# Flipping this to True is a claim that an edge has been demonstrated, and
+# should come with the measurement that demonstrates it.
+STRATEGY_EDGE_DEMONSTRATED = False
+
+#: Env var that lets research proceed anyway, knowingly.
+ACKNOWLEDGE_NO_EDGE = "ACKNOWLEDGE_NO_EDGE"
+
+
+def assert_strategy_edge_gate(settings: "Settings") -> None:
+    """Refuse to start the trading loop on a strategy known to lose money.
+
+    The engine would otherwise happily paper-trade the shipped strategy,
+    which measurement puts at roughly -13bps per round trip. A result that
+    lives only in a markdown file is one `git pull` away from being
+    forgotten, so it is enforced here instead.
+
+    Unlike the live gate this *is* overridable, because paper trading is how
+    a replacement strategy would be validated -- refusing outright would
+    block the only legitimate path forward. The override is deliberately
+    explicit and noisy rather than a quiet default.
+    """
+    if STRATEGY_EDGE_DEMONSTRATED or not settings.engine_enabled:
+        return
+    if _b(ACKNOWLEDGE_NO_EDGE):
+        logger.bind(event="no_edge_acknowledged").warning(
+            "Trading loop started on a strategy with no demonstrated edge "
+            f"({ACKNOWLEDGE_NO_EDGE} is set). Measured at roughly -13bps per "
+            "round trip. Paper mode only unless you know exactly why."
+        )
+        return
+    raise RuntimeError(
+        "Refusing to start the trading loop: no edge has been demonstrated. "
+        "The best of 50 signals measured over 943 days and two instruments is "
+        "worth ~0.5bps against a 4-14bps round trip, so this strategy loses "
+        f"roughly 13bps per trade. Set {ACKNOWLEDGE_NO_EDGE}=true to run it "
+        "anyway for research, set ENGINE_ENABLED=false to run the API without "
+        "the loop, or demonstrate an edge and flip "
+        "STRATEGY_EDGE_DEMONSTRATED. See MIGRATION.md."
+    )
+
+
 def _build_settings() -> Settings:
     # Shared thresholds are read once here and handed to both tiers, so one
     # environment variable cannot arm one tier and leave the other at default.
@@ -341,6 +387,7 @@ def reset_settings_cache() -> None:
 __all__ = [
     "Settings",
     "assert_live_trading_gate",
+    "assert_strategy_edge_gate",
     "LIVE_TRADING_GATE_OPEN",
     "RiskConfig",
     "GuardrailConfig",

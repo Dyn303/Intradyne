@@ -27,7 +27,11 @@ from intradyne.api.deps import (
 from intradyne.api.deps import get_execution_manager
 from intradyne.api.models import FrontendConfig
 from intradyne.api.ratelimit import general_rate_limit
-from intradyne.core.config import assert_live_trading_gate, load_settings
+from intradyne.core.config import (
+    assert_live_trading_gate,
+    assert_strategy_edge_gate,
+    load_settings,
+)
 from intradyne.core.logging import setup_logging
 
 
@@ -42,6 +46,10 @@ async def _lifespan(app: FastAPI):
     """
     setup_logging(_os.getenv("LOG_LEVEL"))
     settings = load_settings()
+
+    # Checked before the task is created, so a strategy with no demonstrated
+    # edge fails the service at boot rather than quietly trading.
+    assert_strategy_edge_gate(settings)
 
     task: "asyncio.Task | None" = None
     if settings.engine_enabled:

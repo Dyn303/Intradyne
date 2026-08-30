@@ -160,3 +160,40 @@ Then set `LIVE_TRADING_GATE_OPEN = True`, in its own commit, and start with
 | Orders refused, `inventory unknown`  | A sell with no known position — long-only fails closed |
 | `/engine/status` shows `running: false` with `enabled: true` | Loop crashed; supervisor restarts it, check logs |
 | Loop logs `could not load ... markets` | Venue unreachable; falls back to the unfiltered whitelist |
+
+## The engine refuses to start: "no edge has been demonstrated"
+
+This is intentional, not a misconfiguration.
+
+Measurement across 50 signals, 8 families, 943 days and two instruments puts
+the best entry signal at roughly **0.5 bps** against a round-trip cost of
+**4-14 bps**. The shipped strategy loses about 13 bps per round trip, so the
+loop is gated shut at boot rather than quietly trading it. Full working in the
+"Fifty signals" and "Months of data" sections of MIGRATION.md.
+
+Three ways forward, depending on what you actually want:
+
+**Run the API without the trading loop** — the normal choice for serving
+endpoints, metrics and the ledger:
+
+```bash
+ENGINE_ENABLED=false
+```
+
+**Run the loop anyway, for research** — paper mode only. This is how a
+replacement strategy gets validated, so it is deliberately permitted; it logs
+a warning on every start:
+
+```bash
+ENGINE_ENABLED=true ACKNOWLEDGE_NO_EDGE=true MODE=paper
+```
+
+**Declare an edge** — flip `STRATEGY_EDGE_DEMONSTRATED` in
+`src/intradyne/core/config.py`. Like the live-trading gate this is a code
+change rather than an environment variable, so opening it leaves a reviewable
+commit. Do not flip it without the measurement that justifies it: a win rate
+on its own is not evidence, and `scripts/strategy_months.py` exists to produce
+the walk-forward number that is.
+
+Note that acknowledging the lack of edge does **not** open live trading.
+`LIVE_TRADING_GATE_OPEN` is a separate, non-overridable check.
