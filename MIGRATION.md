@@ -634,9 +634,13 @@ payoff geometries, and fee assumptions down to zero.
 
 The gross edge does grow with holding period, which is the one encouraging
 number here. It never grows faster than the null. **Even at zero fees and zero
-slippage, no signal beats the best of fifty random entry rules.** That is a
-stronger statement than "costs are too high": these signals carry no
-information about the next few minutes of ETH.
+slippage, no signal beats the best of fifty random entry rules** on this
+sample.
+
+(Superseded in part — see "The edge is real, and far too small" below. Four
+days is not enough data to detect an effect this size, and with a month of 1s
+bars several of these signals do clear the null. The economic conclusion is
+unchanged; the claim that they carry *no* information was too strong.)
 
 ### The long-horizon mirage
 
@@ -729,3 +733,40 @@ more than its own error bar, and nothing comes within half of round-trip
 costs.** The remaining hypotheses worth anything are structural — a different
 market, a different instrument class, or a genuine informational input the
 price series does not contain — not another entry rule on ETH or BTC.
+
+
+## The edge is real, and far too small
+
+Re-running the screen on **one month of 1s bars (2.68M bars)** rather than four
+days changes one conclusion above and confirms the rest. At a two-minute
+horizon, five signals clear the best-of-fifty null threshold, and the
+walk-forward excess over drift is **+0.48 bps, positive in 4 of 4 folds**.
+
+That is not a fold-agreement artifact. Per-trade dispersion at this horizon is
+only ~9 bps, so the standard errors are genuinely small:
+
+| signal | trades | excess over drift | significance |
+|---|---|---|---|
+| breakout_300s | 6,391 | +0.49 bps | 4.3 sigma |
+| mom_5s_k1 | 18,479 | +0.39 bps | 6.0 sigma |
+
+**So momentum and breakout do carry information about the next two minutes of
+ETH.** The earlier "no information" reading was a power problem, not a
+finding: detecting a 0.5bps effect against 9bps noise needs on the order of
+1,300 trades, and four days of ticks supplied 50-300. A month supplies 6,000
+to 18,000, and the effect resolves.
+
+It does not help.
+
+- Round-trip taker cost is **28-35x the excess** (+0.49 vs 14 bps).
+- All-maker fills at 4 bps are still **8-10x** the excess.
+- Breaking even requires round-trip costs below **~0.5 bps**, about a tenth of
+  the best maker-only economics available to a retail account -- and the
+  maker-execution work earlier in this file showed maker fills are not free
+  in any case, because adverse selection fills you exactly when the move is
+  against you.
+
+This is the most precise statement the whole effort supports: **the signal is
+real, it is roughly half a basis point, and the cheapest way to trade it costs
+several basis points.** The gap is not a tuning problem or a fee-negotiation
+problem. It is an order of magnitude.
