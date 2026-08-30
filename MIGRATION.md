@@ -662,3 +662,70 @@ where nothing can be measured.
 fifty across eight families produced a tighter cluster than chance. What would
 change the answer is more data (weeks, not days, to make hourly horizons
 measurable) or a different instrument, not another entry rule.
+
+## Months of data: the long-horizon door closes too
+
+The fifty-signal screen left one thing genuinely open. Gross edge grew with
+holding period, but the long horizons had 27-42 non-overlapping trades, so the
+standard error swamped the estimate. That is a sample-size problem, and sample
+size is fixable.
+
+`scripts/fetch_klines_archive.py` pulls whole months from the Binance archive
+rather than paginating the REST endpoint 1000 bars at a time. 1m bars cost
+~2MB a month, so **31 months of ETH and BTC (943 days, 1.36M bars each)** is a
+smaller download than one day of aggTrades. Klines carry
+`taker_buy_base_volume`, the same aggressor split the tick loader
+reconstructs, so the order-flow signals survive the move from ticks to bars.
+
+Two things had to change with a longer sample.
+
+**Drift becomes the thing to beat.** Over months, a long-only rule at an
+hour-plus horizon earns whatever the asset did, and that dwarfs costs. Beating
+zero proves nothing. Every result below is therefore *excess over random
+entry* on the same bars — the unconditional mean, carrying identical drift.
+The check that this works: random entry earns +0.11, −0.32, −0.41, +0.35 bps
+gross across the four ETH horizons. Essentially zero, on an instrument that
+fell 18% over the period. The drift control holds.
+
+**One split becomes walk-forward.** Ranking on a train set and reporting the
+winner's test score still flatters, because the winner was chosen by looking.
+`scripts/strategy_months.py` instead picks the best strategy on each fold and
+trades it on the *next* fold — the number a live deployment would actually
+experience.
+
+| instrument | horizon | walk-forward excess over drift | folds positive |
+|---|---|---|---|
+| ETH | 15 min | −0.09 ± 0.59 | 3/5 |
+| ETH | 1 h | −2.70 ± 2.61 | 2/5 |
+| ETH | 4 h | −0.17 ± 2.84 | 2/5 |
+| ETH | 8 h | **+5.92 ± 2.77** | 4/5 |
+| BTC | 1 h | −0.68 ± 1.07 | 2/5 |
+| BTC | 4 h | −2.42 ± 1.95 | 2/5 |
+| BTC | 8 h | −1.58 ± 1.50 | 2/5 |
+
+The ETH 8-hour row is the only result in this whole effort that did not look
+like noise on sight. It does not survive being pushed on.
+
+- **Fold boundaries.** Re-cut into 10 folds it falls to +4.59 ± 4.27, positive
+  in 5 of 9 — a coin flip.
+- **One fold carries it.** Leave-one-out across those nine folds ranges +1.02
+  to +6.21. Dropping the single best fold leaves **+1.02 ± 2.65**.
+- **It does not replicate.** BTC is negative at all three long horizons, over
+  the same 943 days, having *risen* 49% — so a falling-market excuse is not
+  available.
+- **It never cleared costs anyway.** Taking the most favourable number in the
+  table at face value, +5.92 bps gross against a 14 bps round trip is
+  **−8.08 bps net per trade**.
+
+On the full sample, at every horizon on both instruments, every strategy came
+in below the best-of-fifty null threshold. Not one "clears null".
+
+### What months of data actually settled
+
+The four-day result could be dismissed as too small a sample. It cannot now.
+Across 943 days, two instruments, four holding periods from 15 minutes to 8
+hours, and fifty signals in eight families, **nothing beats random entry by
+more than its own error bar, and nothing comes within half of round-trip
+costs.** The remaining hypotheses worth anything are structural — a different
+market, a different instrument class, or a genuine informational input the
+price series does not contain — not another entry rule on ETH or BTC.
