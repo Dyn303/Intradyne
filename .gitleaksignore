@@ -1,0 +1,31 @@
+# Reviewed false positives from the secrets scan.
+#
+# Every entry here was inspected against the commit it appears in and is a
+# placeholder, not a credential. Fingerprints are commit-scoped and precise --
+# file, rule and line -- deliberately, so that nothing else in these files is
+# suppressed. Do not add a path-wide allowlist: `.env.example` and the tests
+# are exactly where a real key would plausibly be pasted by accident, so they
+# need to keep being scanned.
+#
+# Adding an entry means someone has confirmed the match is not a live secret.
+# If a credential ever does land in history, the fix is to rotate it at the
+# venue first -- an ignore entry hides the alert, it does not unpublish the
+# value.
+
+# A dummy in the test for `redact_secrets`. The test asserts the helper masks
+# the value while keeping the "bg_a" prefix, so the literal has to be
+# key-shaped for the test to mean anything. Never a real Bitget key.
+cb2f05d54f30c6d81c862924514b64c6491f7fa1:tests/test_settings_prod.py:generic-api-key:50
+
+# Placeholders in an older .env.example, from when the template still carried
+# CCXT_API_KEY/CCXT_SECRET lines. The current template ships these empty. The
+# finding is in the historical commit and cannot be edited away without
+# rewriting published history, which is not worth doing for a placeholder.
+b45923e9975570006258da405f72888a18d6c26d:.env.example:generic-api-key:29
+b45923e9975570006258da405f72888a18d6c26d:.env.example:generic-api-key:30
+
+# The same two placeholders again, in the directory-scan fingerprint format
+# (no commit prefix). Gitleaks emits these instead of the commit-scoped form
+# whenever it scans a working tree rather than history -- which is what
+# happens in a shallow clone. Listed so the ignore file holds in both modes.
+tests/test_settings_prod.py:generic-api-key:50

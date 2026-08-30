@@ -271,9 +271,13 @@ async def tuning_baseline() -> Dict[str, Any]:
 
     try:
         with open(tuned_path, "rb") as f:
-            tuned = orjson.loads(f.read())
-            m = tuned.get("metric")
-            s = tuned.get("score")
+            raw = orjson.loads(f.read())
+            # A malformed file decodes to a list or a scalar just as happily
+            # as to an object, and .get would then raise. The `applied` block
+            # below already guards this; this one did not.
+            tuned = raw if isinstance(raw, dict) else None
+            m = (tuned or {}).get("metric")
+            s = (tuned or {}).get("score")
             if isinstance(m, str) and isinstance(s, (int, float)):
                 try:
                     _TUNING_LAST_SCORE.labels(m).set(float(s))
