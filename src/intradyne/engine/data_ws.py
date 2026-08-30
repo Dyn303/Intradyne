@@ -4,7 +4,6 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Dict, List, Optional
 
-import ccxt.async_support as ccxt
 from loguru import logger
 
 
@@ -18,11 +17,15 @@ class DataFeed:
     def __init__(self, exchange_id: str = "bitget", use_testnet: bool = True) -> None:
         self.exchange_id = exchange_id
         self.use_testnet = use_testnet
-        self.exchange: Optional[ccxt.Exchange] = None
+        self.exchange: Optional[Any] = None
         self._running = False
 
     async def start(self, symbols: List[str]) -> AsyncIterator[Dict[str, Any]]:
         self._running = True
+        # Imported lazily: ccxt is only needed once the feed actually starts,
+        # so the paper-only API image does not require it at import time.
+        import ccxt.async_support as ccxt
+
         ex = getattr(ccxt, self.exchange_id)()
         if self.exchange_id == "bitget" and self.use_testnet:
             # Bitget testnet support is limited in ccxt; left as a flag for future use.

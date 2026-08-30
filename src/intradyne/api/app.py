@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends
 import os as _os
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,17 +23,46 @@ from intradyne.api.deps import (
     is_prod,
     require_api_key,
 )
+from intradyne.api.deps import get_execution_manager
 from intradyne.api.models import FrontendConfig
 from intradyne.api.ratelimit import general_rate_limit
 from intradyne.core.config import assert_live_trading_gate, load_settings
 from intradyne.core.logging import setup_logging
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Own the trading loop for the lifetime of the service.
+
+    Replaces the deprecated on_event("startup") hook, and gives the engine a
+    supervised task with a clean shutdown path. The loop shares the process
+    ExecutionManager, so orders it raises pass the same Tier 1 gate, move the
+    same portfolio and land in the same ledger as API-submitted ones.
+    """
+    setup_logging(_os.getenv("LOG_LEVEL"))
+    settings = load_settings()
+
+    task: "asyncio.Task | None" = None
+    if settings.engine_enabled:
+        from intradyne.engine.loop import supervise
+
+        task = asyncio.create_task(
+            supervise(settings, get_execution_manager()), name="intradyne-engine"
+        )
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+
 def create_app() -> FastAPI:
     # Refuse to start with live trading armed before phase 5 (MIGRATION.md).
     assert_live_trading_gate(load_settings())
 
-    app = FastAPI(title="IntraDyne Lite API")
+    app = FastAPI(title="IntraDyne Lite API", lifespan=_lifespan)
     # CORS for frontend readiness.
     #
     # `allow_origins=["*"]` together with `allow_credentials=True` is not a
@@ -75,10 +108,6 @@ def create_app() -> FastAPI:
     app.include_router(data_router, dependencies=deps_common, tags=["Data"])
     app.include_router(ws_router, tags=["WebSocket"])
     app.include_router(research_router, dependencies=deps_common, tags=["Research"])
-
-    @app.on_event("startup")
-    def _startup() -> None:
-        setup_logging(_os.getenv("LOG_LEVEL"))
 
     return app
 

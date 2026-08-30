@@ -25,13 +25,17 @@ from .server import create_app
 def setup_logging(log_dir: str, level: str) -> None:
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger.remove()
-    logger.add(lambda msg: print(msg, end=""), level=level, serialize=True)
+    # diagnose=False matters: loguru otherwise renders the *values* of local
+    # variables in tracebacks, and `settings` -- holding the broker API key,
+    # secret and passphrase -- is in scope across most of this module. A
+    # single crash would write those credentials into app.log.
+    common = {"level": level, "serialize": True, "backtrace": True, "diagnose": False}
+    logger.add(lambda msg: print(msg, end=""), **common)
     logger.add(
         Path(log_dir) / "app.log",
         rotation="10 MB",
         retention="10 days",
-        level=level,
-        serialize=True,
+        **common,
     )
 
 

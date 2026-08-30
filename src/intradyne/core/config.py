@@ -136,6 +136,10 @@ class Settings(BaseSettings):
     ai_rate_limit_window: Optional[int] = None
     ai_rate_limit_reqs: Optional[int] = None
 
+    # Trading loop. Off by default: phase 2 puts the machinery in place and
+    # switching it on is a separate, deliberate step.
+    engine_enabled: bool = False
+
     # Execution filters
     max_spread_bps: int = 0  # 0 disables
     entry_cooldown_s: int = 0
