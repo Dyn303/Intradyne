@@ -3,7 +3,7 @@
 **Target:** one service, one image, one config, one ledger. Live-capable by
 construction, paper-only and hard-gated in this phase.
 
-**Status:** Phases 0-2 complete. Phase 3 next (activate the risk engine).
+**Status:** Phases 0-3 complete. Phase 4 next (test and CI credibility).
 
 ---
 
@@ -202,20 +202,29 @@ broker credentials into `app.log`.
 
 The phase that makes the product claim true.
 
-20. Implement `PriceFeed` against `RiskManager.state.symbol_windows` — the 60m
+20. [x] Implement `PriceFeed` against `RiskManager.state.symbol_windows` — the 60m
     price window already exists and is already maintained.
-21. Implement `RiskData` against a **persistent equity history** in SQLite
+21. [x] Implement `RiskData` against a **persistent equity history** in SQLite
     (`DB_URL` already points at `trades.sqlite`). **Must survive restarts:**
     with empty in-memory history `dd_30d([]) == 0.0` and the halt silently
     disarms — today's bug in a new costume.
-22. Fix `/risk/status` breach counting — filter on `event == "guardrail_breach"`
+22. [x] Fix `/risk/status` breach counting — filter on `event == "guardrail_breach"`
     to match `_recent_breach_count`; it currently counts every ledger record.
-23. Reconcile the two drawdown definitions: `RiskManager` uses
+23. [x] Reconcile the two drawdown definitions: `RiskManager` uses
     `1 - current/start` (session-relative), `dd_30d` uses peak-to-trough over
     30d. Both are defensible; they must not be reported as the same number.
 
-**Exit:** a synthetic 25% drawdown halts trading; a 35% 1h drop pauses it; each
-writes a verifiable ledger entry. None of these assertions exist today.
+**Exit (met):** a synthetic 25% drawdown halts trading; a 35% 1h drop pauses
+it; each writes a ledger entry and the chain verifies. Proven both at the gate
+and end-to-end through the HTTP order path. Suite 112 -> 127 passing.
+
+Two further defects were found and fixed here. The kill-switch was unreachable
+in its most common case: the flash-crash branch returns "pause" as soon as it
+trips, and the kill-switch check sat after it, so repeated breaches could never
+escalate to a halt -- the entire purpose of a kill switch. It is now checked
+before the metric guardrails. And the test suite was writing equity rows and
+ledger entries into the repository's own tracked `data/trades.sqlite`; the
+database is now untracked and every test runs against a temporary one.
 
 ### Phase 4 — Test and CI credibility (size M)
 

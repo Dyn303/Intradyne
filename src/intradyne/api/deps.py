@@ -7,28 +7,66 @@ from typing import TYPE_CHECKING, Optional, List, Tuple
 from fastapi import Header, HTTPException
 
 from intradyne.core.config import load_settings
+from intradyne.core.equity import EquityHistory
 from intradyne.core.ledger import Ledger
+from intradyne.core.marks import MarkStore
 from intradyne.risk.guardrails import Guardrails, ShariahPolicy, PriceFeed, RiskData
 
 if TYPE_CHECKING:  # pragma: no cover
     from intradyne.engine.execution import ExecutionManager
 
 
-class _DefaultPriceFeed(PriceFeed):
+class _MarkStorePriceFeed(PriceFeed):
+    """Prices from the in-process mark store.
+
+    This replaced a stub that returned None for every symbol, which meant the
+    flash-crash guardrail compared None against None and never fired.
+    """
+
+    def __init__(self, marks: MarkStore) -> None:
+        self._marks = marks
+
     def get_price(self, symbol: str, at: Optional[datetime] = None) -> Optional[float]:
-        return None
+        return self._marks.get(symbol, at)
 
 
-class _DefaultRiskData(RiskData):
+class _SqliteRiskData(RiskData):
+    """Equity history from disk.
+
+    This replaced a stub returning []; dd_30d([]) is 0.0, so the drawdown halt
+    could never trigger however far equity fell.
+    """
+
+    def __init__(self, history: EquityHistory) -> None:
+        self._history = history
+
     def equity_series_30d(self) -> List[Tuple[datetime, float]]:
-        return []
+        return self._history.series_30d()
 
     def equity_daily_returns_30d(self) -> List[float]:
-        return []
+        return self._history.daily_returns(30)
 
 
 _ENGINE: Optional[Guardrails] = None
 _EXECUTION: Optional["ExecutionManager"] = None
+_MARKS: Optional[MarkStore] = None
+_EQUITY: Optional[EquityHistory] = None
+
+
+def get_mark_store() -> MarkStore:
+    """Recent prices, shared by the order path and the flash-crash guardrail."""
+    global _MARKS
+    if _MARKS is None:
+        _MARKS = MarkStore()
+    return _MARKS
+
+
+def get_equity_history() -> EquityHistory:
+    """Durable equity series backing the drawdown and VaR guardrails."""
+    global _EQUITY
+    if _EQUITY is None:
+        _EQUITY = EquityHistory(load_settings().db_url)
+    return _EQUITY
 
 
 def get_guardrails() -> Guardrails:
@@ -37,8 +75,8 @@ def get_guardrails() -> Guardrails:
         settings = load_settings()
         sh = ShariahPolicy(allowed_crypto=settings.allowed_crypto_list())
         _ENGINE = Guardrails(
-            price_feed=_DefaultPriceFeed(),
-            risk_data=_DefaultRiskData(),
+            price_feed=_MarkStorePriceFeed(get_mark_store()),
+            risk_data=_SqliteRiskData(get_equity_history()),
             ledger=Ledger(path=settings.explain_ledger_path),
             shariah=sh,
             thresholds={
@@ -179,6 +217,8 @@ def get_execution_manager() -> "ExecutionManager":
                 live_broker=None,
                 live_enabled=False,
                 guardrails=guardrails,
+                marks=get_mark_store(),
+                equity=get_equity_history(),
             )
         )
     return _EXECUTION
@@ -189,7 +229,9 @@ def get_portfolio():
 
 
 def reset_execution_manager() -> None:
-    """Drop the cached order path. For tests."""
-    global _EXECUTION, _ENGINE
+    """Drop the cached order path and its risk inputs. For tests."""
+    global _EXECUTION, _ENGINE, _MARKS, _EQUITY
     _EXECUTION = None
     _ENGINE = None
+    _MARKS = None
+    _EQUITY = None

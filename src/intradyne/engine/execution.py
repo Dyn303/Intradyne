@@ -13,7 +13,9 @@ from intradyne.risk.shariah import (
     enforce_spot_only,
     forbid_shorting,
 )
+from intradyne.core.equity import EquityHistory
 from intradyne.core.ledger import ExplainabilityLedger
+from intradyne.core.marks import MarkStore
 from .portfolio import Portfolio
 from .metrics_ml import ML_EXEC_BUYS
 
@@ -32,6 +34,10 @@ class ExecContext:
     #: imperative compliance helpers, which cover the Shariah rules but not
     #: drawdown, flash-crash, VaR, the kill-switch or the operator halt.
     guardrails: Optional[Guardrails] = None
+    #: Recent prices, feeding the flash-crash guardrail.
+    marks: Optional[MarkStore] = None
+    #: Durable equity series, feeding the drawdown and VaR guardrails.
+    equity: Optional[EquityHistory] = None
 
 
 class ExecutionManager:
@@ -72,6 +78,28 @@ class ExecutionManager:
         # requested, and ignoring that would make the step-down decorative.
         return action, reasons, adjusted.qty
 
+    def _record_mark(
+        self, symbol: str, price: Optional[float], l1: Dict[str, float]
+    ) -> None:
+        if self.ctx.marks is None:
+            return
+        mark = l1.get("last") or l1.get("bid") or l1.get("ask") or price
+        if mark:
+            self.ctx.marks.record(symbol, float(mark), ts=l1.get("ts"))
+
+    def record_equity(self) -> Optional[float]:
+        """Snapshot portfolio equity into the durable history.
+
+        Without this the drawdown guardrail has nothing to measure, and
+        without it being durable the measurement resets on every restart.
+        """
+        if self.ctx.equity is None:
+            return None
+        marks = self.ctx.marks.marks() if self.ctx.marks is not None else {}
+        value = self.ctx.portfolio.equity(marks)
+        self.ctx.equity.record(value)
+        return value
+
     async def submit(
         self,
         symbol: str,
@@ -85,6 +113,11 @@ class ExecutionManager:
         checks_passed: Dict[str, bool],
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, object]:
+        # Record the mark first: the flash-crash guardrail compares the
+        # current price against an hour ago, so it must see this tick before
+        # the gate runs on it.
+        self._record_mark(symbol, price, l1)
+
         action, reasons, qty = self._gate(symbol, side, qty, params)
         if action != "allow":
             # Record the refusal. A blocked order previously left no trace at
@@ -180,4 +213,6 @@ class ExecutionManager:
         )
         if order.status == "filled":
             self.ctx.trades += 1
+        # Equity moved, so the drawdown guardrail needs the new point.
+        self.record_equity()
         return {"id": order.id, "status": order.status}

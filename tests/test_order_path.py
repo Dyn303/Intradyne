@@ -277,3 +277,74 @@ def test_sell_with_unknown_inventory_fails_closed(tmp_path):
     )
     assert action == "block"
     assert "inventory unknown" in reasons[0]
+
+
+# ---- the guardrails reach the live order path ----------------------------
+
+
+def test_drawdown_halts_a_real_api_order(api):
+    """End-to-end: equity history -> gate -> refused HTTP order.
+
+    Before phase 3 the risk data was a stub returning [], so dd_30d was always
+    0.0 and this order would have filled no matter how far equity had fallen.
+    """
+    from datetime import datetime, timedelta
+
+    history = deps.get_equity_history()
+    now = datetime.utcnow()
+    history.record(10_000.0, ts=now - timedelta(days=5))
+    history.record(7_000.0, ts=now - timedelta(days=1))  # -30%
+
+    before = _portfolio().balances["USDT"]
+    r = _post(
+        api,
+        "/orders",
+        {"symbol": "BTC/USDT", "side": "buy", "qty": 0.01, "price": 50_000},
+    )
+
+    assert r.status_code == 400, r.text
+    assert r.json()["detail"]["error"] == "halt"
+    assert _portfolio().balances["USDT"] == before
+
+
+def test_a_fill_records_equity_for_the_drawdown_guardrail(api):
+    """The guardrail can only measure what the order path records."""
+    history = deps.get_equity_history()
+    assert history.count() == 0
+
+    _post(
+        api,
+        "/orders",
+        {"symbol": "BTC/USDT", "side": "buy", "qty": 0.01, "price": 50_000},
+    )
+
+    assert history.count() >= 1
+    assert history.latest() == pytest.approx(10_000.0, rel=0.01)
+
+
+def test_risk_status_counts_only_guardrail_breaches(api):
+    """It previously counted every ledger record -- fills and admin actions
+    included -- so it disagreed with the count the kill-switch acts on."""
+    _post(
+        api,
+        "/orders",
+        {"symbol": "BTC/USDT", "side": "buy", "qty": 0.01, "price": 50_000},
+    )
+    _post(
+        api, "/orders", {"symbol": "DOGE/USDT", "side": "buy", "qty": 1, "price": 0.1}
+    )
+
+    body = _get(api, "/risk/status").json()
+    # One compliance breach; the fill and its equity record must not count.
+    assert body["breaches_24h"] == 1
+    assert body["halted"] is False
+
+
+def test_risk_status_reports_the_two_drawdowns_separately(api):
+    body = _get(api, "/risk/status").json()
+    assert "dd_30d" in body
+    assert "dd_warn" in body["thresholds"]
+    assert "dd_soft" in body["session_drawdown_thresholds"]
+    assert (
+        body["thresholds"]["dd_warn"] != body["session_drawdown_thresholds"]["dd_soft"]
+    )

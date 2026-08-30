@@ -105,7 +105,16 @@ async def run_once(
     logger.bind(event="engine_start").info(
         {"symbols": syms, "mode": settings.mode, "venue": settings.exchange}
     )
+    marks = execution.ctx.marks
     async for l1 in feed.start(syms):
+        # Every tick feeds the flash-crash window, not only ticks that happen
+        # to produce an order -- otherwise the hour-ago sample is missing on a
+        # quiet market and the guardrail declines to fire.
+        if marks is not None:
+            price = l1.get("last") or l1.get("bid") or l1.get("ask")
+            symbol = l1.get("symbol")
+            if symbol and price:
+                marks.record(str(symbol), float(price), ts=l1.get("ts"))
         await router.on_tick(l1)
 
 

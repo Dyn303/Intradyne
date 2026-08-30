@@ -157,7 +157,17 @@ class Guardrails:
             self._breach("compliance", symbol=req.symbol, reason=reason, action="block")
             return "block", [reason], req
 
-        # 2) Risk metrics
+        # 2) Kill switch: N breaches in the last 24h.
+        #
+        # Checked before the metric guardrails, not after. The flash-crash
+        # branch returns "pause" as soon as it trips, so while it kept firing
+        # this check was never reached and repeated breaches could never
+        # escalate to a halt -- which is the entire purpose of a kill switch.
+        if self._recent_breach_count(24) >= int(self.th["kill_switch"]):
+            self._breach("kill_switch", action="halt")
+            return "halt", ["kill_switch"], req
+
+        # 3) Risk metrics
         eq = self.risk.equity_series_30d()
         dd = dd_30d(eq)
         if dd >= self.th["dd_halt"]:
@@ -177,7 +187,7 @@ class Guardrails:
             )
             reasons.append(f"dd_warn {dd:.3f}")
 
-        # 3) Flash crash check (1h drop > threshold)
+        # 4) Flash crash check (1h drop > threshold)
         now = datetime.utcnow()
         p_now = self.price.get_price(req.symbol, now)
         p_1h = self.price.get_price(req.symbol, now - timedelta(hours=1))
@@ -196,11 +206,6 @@ class Guardrails:
                     [f"flash_crash {drop:.3f} > {self.th['flash']:.3f}"],
                     req,
                 )
-
-        # 4) Kill switch (N breaches in last 24h)
-        if self._recent_breach_count(24) >= int(self.th["kill_switch"]):
-            self._breach("kill_switch", action="halt")
-            return "halt", ["kill_switch"], req
 
         # 5) VaR step-down
         rets = self.risk.equity_daily_returns_30d()

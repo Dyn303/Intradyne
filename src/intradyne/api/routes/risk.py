@@ -8,7 +8,8 @@ from fastapi import APIRouter
 import orjson
 from intradyne.api.deps import get_guardrails
 from intradyne.core.config import load_settings
-from intradyne.risk.guardrails import dd_30d
+from intradyne.risk.guardrails import dd_30d, historical_var
+from intradyne.risk.kill_switch import halt_reason, is_halted
 
 
 router = APIRouter()
@@ -19,20 +20,44 @@ async def risk_status():
     gr = get_guardrails()
     settings = load_settings()
     since = datetime.utcnow() - timedelta(hours=24)
-    breaches = sum(1 for _ in gr.ledger.iter_recent(since))
-    try:
-        dd = dd_30d(gr.risk.equity_series_30d())
-    except Exception:
-        dd = 0.0
+
+    # Count guardrail breaches, not every ledger record. This previously
+    # counted fills, admin actions and everything else, so the figure shown
+    # here disagreed with the count the kill-switch actually acts on.
+    breaches = sum(
+        1 for r in gr.ledger.iter_recent(since) if r.get("event") == "guardrail_breach"
+    )
+
+    series = gr.risk.equity_series_30d()
+    returns = gr.risk.equity_daily_returns_30d()
+    dd = dd_30d(series)
+    var = historical_var(returns, alpha=0.95)
+
     return {
         "breaches_24h": breaches,
+        # Peak-to-trough over 30 days. NOT the session drawdown the engine's
+        # RiskManager tracks against starting equity -- they are different
+        # measurements with different thresholds, and reporting either as
+        # "the" drawdown has caused confusion before.
         "dd_30d": dd,
+        "var_1d": var,
+        "equity": {
+            "latest": series[-1][1] if series else None,
+            "points_30d": len(series),
+            "daily_returns_30d": len(returns),
+        },
+        "halted": is_halted(),
+        "halt_reason": halt_reason() or None,
         "thresholds": {
             "dd_warn": settings.guardrails.dd_warn_pct,
             "dd_halt": settings.guardrails.dd_halt_pct,
             "flash": settings.guardrails.flash_crash_pct,
             "var_max": settings.guardrails.var_1d_max,
             "kill_switch": settings.guardrails.kill_switch_breaches,
+        },
+        "session_drawdown_thresholds": {
+            "dd_soft": settings.risk.dd_soft,
+            "dd_hard": settings.risk.dd_hard,
         },
     }
 

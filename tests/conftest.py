@@ -6,6 +6,26 @@ from intradyne.core.config import reset_settings_cache
 
 
 @pytest.fixture(autouse=True)
+def _isolate_runtime_state(tmp_path, monkeypatch):
+    """Keep tests off the repository's real database and ledger.
+
+    Both default to paths inside the repo (data/trades.sqlite and
+    explainability_ledger.jsonl). Without this, running the suite silently
+    writes equity rows and ledger entries into tracked files.
+    """
+    monkeypatch.setenv("DB_URL", f"sqlite:///{tmp_path / 'trades.sqlite'}")
+    monkeypatch.setenv("EXPLAIN_LEDGER_PATH", str(tmp_path / "ledger.jsonl"))
+    reset_settings_cache()
+    try:
+        from intradyne.api.deps import reset_execution_manager
+
+        reset_execution_manager()
+    except Exception:  # pragma: no cover
+        pass
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _isolate_settings_cache():
     """Keep the cached Settings from leaking across tests.
 
