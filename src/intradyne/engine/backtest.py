@@ -66,8 +66,13 @@ def run(
         LoaderConfig(data_dir=Path(settings.data_dir), exchange=settings.exchange)
     )
 
+    _exec_cfg = (params.get("execution") or {}) if isinstance(params, dict) else {}
+    _mode = str(_exec_cfg.get("execution_mode", settings.execution_mode))
+    _offset = float(_exec_cfg.get("maker_offset_bps", settings.maker_offset_bps))
+    _ttl = float(_exec_cfg.get("limit_ttl_s", settings.limit_ttl_s))
+
     portfolio = Portfolio(maker_bps=maker_bps, taker_bps=taker_bps)
-    paper = PaperBroker(portfolio, slippage_bps=slippage_bps)
+    paper = PaperBroker(portfolio, slippage_bps=slippage_bps, limit_ttl_s=_ttl)
     ledger_path = Path(settings.artifacts_dir) / "backtests" / "ledger.jsonl"
     ledger = ExplainabilityLedger(path=str(ledger_path))
 
@@ -100,6 +105,8 @@ def run(
         live_broker=None,
         live_enabled=False,
         fast_mode=fast_mode,
+        execution_mode=_mode,
+        maker_offset_bps=_offset,
     )
     router_params = params or {}
     execman = ExecutionManager(ctx)
@@ -168,6 +175,10 @@ def run(
             # augment bar to l1 with symbol
             l1 = {**bar, "symbol": sym}
             # monitor exits and entries via router
+            # Sweep resting limit orders against this quote before the router
+            # acts: a passive order fills when the market comes to it, not
+            # when it was placed.
+            paper.on_tick(l1)
             await router.on_tick(l1)
             # compute equity/metrics
             total_steps += 1

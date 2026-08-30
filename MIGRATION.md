@@ -481,3 +481,46 @@ directly, which is why it is the field to trust.
 Live this will be less severe than in a 1m backtest -- a real venue fills on
 tick data, not bar closes -- but it will not be zero, and it is one more
 reason the taker cost structure does not survive a 2-minute holding period.
+
+### Maker execution: implemented, and it did not help
+
+I recommended maker fills as "the single highest-leverage change". Measured,
+that was wrong for this strategy on this data.
+
+Two modelling flaws had to be fixed first, or the feature would have
+fabricated its own success:
+
+- **A marketable limit was booked as a maker fill.** A buy limit at or above
+  the ask crosses the spread -- that is a taker fill -- but it was credited
+  the maker rebate at the limit price. Posting limits would have looked free.
+- **Resting orders were never re-checked.** `_try_fill` ran once at
+  submission, so a passive order that did not fill immediately stayed open
+  forever. `PaperBroker.on_tick` now sweeps the book each quote, with a TTL.
+
+A third error was mine, in the first cut: posting *exits* passively too. A
+passive stop is not a stop -- it rests unfilled exactly when the market is
+running away, leaving the position open and, because it still counts against
+`max_concurrent_pos`, blocking all further trading. That took a 422-trade run
+down to one. Long-only makes the fix clean: entries post, exits cross.
+
+Results on real ETH data:
+
+| data        | mode  | round trips | win rate | realised |
+| ----------- | ----- | ----------- | -------- | -------- |
+| 1m, 7 days  | taker | 149         | 32.9%    | -12.10 bps |
+| 1m, 7 days  | maker | 144         | **27.8%** | **-14.52 bps** |
+| 1s, 24h     | taker | 422         | 11.8%    | -14.96 bps |
+| 1s, 24h     | maker | 12          | 16.7%    | +11.89 bps *(insufficient data)* |
+
+**Maker execution made it worse on the sample that has enough trades to
+judge.** The fee saving is real but smaller than the adverse selection it
+buys: you fill only when price ticks down to your bid, which is precisely the
+signals where the breakout immediately failed. The win rate drop from 32.9%
+to 27.8% is that effect, and it outweighs the 5bps saved on the entry leg.
+
+**Caveat on the model.** The CSV bars carry no bid/ask, so `bid = ask = last`
+and "posting at the bid" is really "posting at the last price", filled by any
+downtick. That is a reasonable proxy but it likely *overstates* adverse
+selection, since a real resting order sits inside a spread and is filled by
+someone crossing it. Settling whether maker execution helps needs order-book
+or tick data, not OHLCV bars.

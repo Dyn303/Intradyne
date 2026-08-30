@@ -233,6 +233,11 @@ async def run_once(
                 symbol = l1.get("symbol")
                 if symbol and price:
                     marks.record(str(symbol), float(price), ts=l1.get("ts"))
+            # Resting limit orders fill when the market reaches them.
+            try:
+                execution.ctx.paper.on_tick(l1)
+            except Exception:  # noqa: BLE001
+                logger.opt(exception=True).warning("resting-order sweep failed")
             await router.on_tick(l1)
 
             # Sample equity on a timer, not only when a fill happens.

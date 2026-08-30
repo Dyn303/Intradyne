@@ -224,7 +224,11 @@ def get_execution_manager() -> "ExecutionManager":
         _EXECUTION = ExecutionManager(
             ExecContext(
                 portfolio=portfolio,
-                paper=PaperBroker(portfolio, slippage_bps=settings.fees.slippage_bps),
+                paper=PaperBroker(
+                    portfolio,
+                    slippage_bps=settings.fees.slippage_bps,
+                    limit_ttl_s=settings.limit_ttl_s,
+                ),
                 # Same ledger the guardrails write to, so refusals and fills
                 # land in one chain.
                 ledger=guardrails.ledger,
@@ -236,6 +240,8 @@ def get_execution_manager() -> "ExecutionManager":
                 equity=get_equity_history(),
                 limits=get_notional_tracker(),
                 order_keys=OrderKeyStore(settings.db_url),
+                execution_mode=settings.execution_mode,
+                maker_offset_bps=settings.maker_offset_bps,
             )
         )
     return _EXECUTION

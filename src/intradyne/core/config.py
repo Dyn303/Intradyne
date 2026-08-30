@@ -150,6 +150,18 @@ class Settings(BaseSettings):
     # switching it on is a separate, deliberate step.
     engine_enabled: bool = False
 
+    # Execution style.
+    #
+    # "taker" crosses the spread on every order: immediate fills, but 5+2bps a
+    # side, and at ETH's volatility that round trip exceeds the entire move
+    # expected over a two-minute hold. "maker" posts passively and pays 2bps
+    # with no slippage, at the cost of orders that do not fill.
+    execution_mode: str = "taker"  # taker | maker
+    #: How far inside the touch to post, in bps. 0 joins the bid/ask.
+    maker_offset_bps: float = 0.0
+    #: How long a resting order waits before being cancelled.
+    limit_ttl_s: float = 60.0
+
     # Execution filters
     max_spread_bps: int = 0  # 0 disables
     entry_cooldown_s: int = 0

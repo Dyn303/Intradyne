@@ -44,6 +44,10 @@ class ExecContext:
     limits: Optional[NotionalTracker] = None
     #: Idempotency claims for live submission. Paper does not need it.
     order_keys: Optional[OrderKeyStore] = None
+    #: "taker" crosses the spread; "maker" posts passively and may not fill.
+    execution_mode: str = "taker"
+    #: How far inside the touch to post when making, in bps.
+    maker_offset_bps: float = 0.0
 
 
 class ExecutionManager:
@@ -227,6 +231,31 @@ class ExecutionManager:
             self.record_equity()
             return res
 
+        # In maker mode an *entry* becomes a passive limit at the touch. It
+        # may not fill, which is the trade being made: the entry leg costs
+        # 2bps instead of 7, in exchange for missed entries and adverse
+        # selection (the book comes to you precisely when the move is against
+        # you).
+        #
+        # Exits always cross. A passive stop-loss is not a stop: it rests
+        # unfilled exactly when the market is running away from you, leaving
+        # the position open and -- because the position still counts against
+        # max_concurrent_pos -- blocking all further trading. Measured, that
+        # took a 422-trade run down to one.
+        #
+        # Long-only makes this a clean split: entries buy, exits sell.
+        if self.ctx.execution_mode == "maker" and type_ == "market" and side == "buy":
+            touch = l1.get("bid") if side == "buy" else l1.get("ask")
+            touch = touch or l1.get("last")
+            if touch:
+                offset = self.ctx.maker_offset_bps / 10_000.0
+                post = (
+                    float(touch) * (1.0 - offset)
+                    if side == "buy"
+                    else float(touch) * (1.0 + offset)
+                )
+                type_, price = "limit", post
+
         order = self.ctx.paper.place_order(symbol, side, type_, qty, price, l1)
         px = price
         if order.type == "market":
@@ -264,6 +293,12 @@ class ExecutionManager:
                 "type": type_,
             }
         )
+        if order.status != "filled":
+            # A resting limit that has not filled is not a trade. It stays in
+            # the book and is swept by PaperBroker.on_tick on later quotes.
+            return {"id": order.id, "status": order.status, "resting": True}
+
+        px = order.price if order.filled_as_maker else px
         if order.status == "filled":
             self.ctx.trades += 1
             self._record_notional(symbol, qty, px)
