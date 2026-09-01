@@ -80,8 +80,8 @@ def outcomes_for(
 
 def strategy_trades(
     s: Strategy, panel: Dict[str, Any], bar_minutes: int
-) -> Tuple[np.ndarray, float]:
-    """Per-trade gross returns on one instrument, and the median hold.
+) -> Tuple[np.ndarray, np.ndarray, float]:
+    """Per-trade gross returns and entry times on one instrument.
 
     Returns the individual trades rather than their mean: pooling across
     instruments has to be per-trade, or a strategy firing twice on one coin
@@ -97,8 +97,15 @@ def strategy_trades(
             picked.append(i)
             busy = i + max(int(held[i]), 1)
     if not picked:
-        return np.array([]), 0.0
-    return gross[picked], float(np.median(held[picked])) * bar_minutes
+        return np.array([]), np.array([]), 0.0
+    # Timestamps come back too: pooling across instruments needs them to
+    # cluster by time, because instruments that move together do not supply
+    # independent observations.
+    return (
+        gross[picked],
+        panel["bars"].ts[picked],
+        float(np.median(held[picked])) * bar_minutes,
+    )
 
 
 def evaluate_single(

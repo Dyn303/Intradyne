@@ -57,21 +57,42 @@ def pooled(
 ) -> Dict[str, Any]:
     """Every trade the strategy takes, across every instrument."""
     all_r: List[np.ndarray] = []
+    all_t: List[np.ndarray] = []
     per_sym: Dict[str, Tuple[int, float]] = {}
     holds: List[float] = []
     for sym, p in panels.items():
-        r, hold = strategy_trades(s, p, bar_minutes)
+        r, ts, hold = strategy_trades(s, p, bar_minutes)
         if r.size:
             all_r.append(r)
+            all_t.append(ts)
             per_sym[sym] = (int(r.size), float(r.mean()))
             holds.append(hold)
     if not all_r:
         return {"trades": 0}
     pool = np.concatenate(all_r)
+    pool_ts = np.concatenate(all_t)
+
+    # Cluster by day before computing significance.
+    #
+    # These instruments have a mean pairwise correlation of 0.56 at hourly
+    # horizons, which puts the effective number of independent names at
+    # roughly 1.7 out of 20. Treating every pooled trade as an independent
+    # observation therefore overstates t by about 3x -- a strategy measured
+    # at t = 3.91 across 25,946 correlated trades is nearer t = 1.2 once the
+    # correlation is respected. Averaging within a day and testing the daily
+    # series is the cheap, standard correction.
+    day = (pool_ts // 86400).astype("int64")
+    order = np.argsort(day)
+    day, vals = day[order], pool[order]
+    edges = np.flatnonzero(np.diff(day)) + 1
+    daily = np.array([g.mean() for g in np.split(vals, edges)])
+    se_c = float(daily.std(ddof=1) / np.sqrt(daily.size)) if daily.size > 1 else 0.0
     return {
         "trades": int(pool.size),
         "gross_bps": float(pool.mean()),
         "sd_bps": float(pool.std(ddof=1)) if pool.size > 1 else 0.0,
+        "days": int(daily.size),
+        "t_clustered": float(daily.mean() / se_c) if se_c > 0 else 0.0,
         "win_rate": float((pool > 0).mean()),
         "median_hold_min": float(np.median(holds)) if holds else 0.0,
         "per_symbol": per_sym,
@@ -183,8 +204,7 @@ def main(argv=None) -> int:
         thr = pooled_null(
             s, tr_panels, args.bar_minutes, r["trades"], len(rows), args.null_draws, rng
         )
-        se = r["sd_bps"] / np.sqrt(r["trades"])
-        t_stat = r["gross_bps"] / se if se > 0 else 0.0
+        t_stat = r["t_clustered"]
         ok = r["gross_bps"] > thr
         if ok:
             t2.append((s, r))
@@ -211,7 +231,7 @@ def main(argv=None) -> int:
     rows = sorted(t0, key=lambda kv: -kv[1]["gross_bps"])
     hdr = (
         f"{'#':>2} {'strategy':44} {'pooled n':>9} {'syms':>5} {'win':>7} "
-        f"{'gross':>8} {'t':>6} {'net@4':>8}"
+        f"{'gross':>8} {'t_cl':>6} {'net@4':>8}"
     )
     print(
         f"top {args.top} by pooled gross edge (among the {len(t0)} with >= {MIN_TRADES} trades):"

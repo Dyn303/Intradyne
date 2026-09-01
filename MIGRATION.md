@@ -1080,3 +1080,60 @@ strategy rather than over Tier 0 passers, which put a one-trade, 100%-win
 artifact (+63.47bps, PROMUSDT, n=1) at the top. That is exactly the impression
 the filter exists to prevent, and it should not have been printed above the
 real rows.
+
+## There are not twenty independent crypto assets
+
+The pooled result was reported with **t = 3.91** across 25,946 trades, and that
+number was wrong. It treated every pooled trade as an independent observation.
+
+Measured at hourly horizons across the twenty instruments used:
+
+| | |
+|---|---|
+| mean pairwise correlation | **0.563** |
+| effective independent instruments | **1.7 of 20** |
+| pooled sample worth | **~9%** of its trade count |
+
+Correcting for that puts the strategy nearer **t = 1.2**, not 3.91 -- below the
+conventional 1.96, never mind the 3.4-3.8 the multiple-testing literature asks
+for. The claim that it "clears even the multiple-testing hurdle" was false.
+
+The instrument set was chosen by volume, and volume in crypto concentrates in
+Layer 1 blockchains: fourteen of the twenty were L1s. So the obvious remedy was
+category diversity. It does almost nothing.
+
+| set | mean correlation | effective independent |
+|---|---|---|
+| 20 names, L1-heavy | 0.563 | 1.7 of 20 |
+| 10 names spanning distinct categories | 0.469 | **1.8 of 6 measured so far** |
+
+Deliberately spanning memecoin, exchange token, oracle, lending, DEX, L2 and
+privacy moved the correlation from 0.56 to 0.47 and effective breadth from 1.7
+to 1.8. The per-name detail explains why:
+
+| instrument | category | correlation with BTC |
+|---|---|---|
+| LTC | privacy / old L1 | +0.666 |
+| DOGE | memecoin | +0.636 |
+| LINK | oracle | +0.619 |
+| BNB | exchange token | +0.608 |
+| **PAXG** | **tokenised gold** | **+0.141** |
+
+A memecoin, an oracle token and an exchange token all move with Bitcoin at
+about 0.62. **Category labels in crypto describe what a token claims to do, not
+what drives its price.** At intraday horizons the whole asset class is close to
+one trade with different volatility multipliers.
+
+The exception proves the rule: PAXG is a claim on physical gold, the only
+instrument here with an anchor outside crypto, and the only one that
+diversifies.
+
+This reframes the pooling strategy rather than refining it. Statistical power
+in crypto cannot be bought by adding names, because the names are not
+independent -- there are roughly two effective assets available, and one of
+them is gold. Every pooled figure in this file, including the ones reported as
+improvements, has to be read against an effective sample about a tenth of its
+nominal trade count.
+
+`multi_instrument_search.py` now clusters trades by day before computing
+significance, so correlated instruments cannot inflate a t-statistic again.
