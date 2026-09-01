@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 from loguru import logger
 
@@ -60,7 +60,7 @@ class PaperBroker:
         type_: str,
         qty: float,
         price: Optional[float],
-        l1: Dict[str, float],
+        l1: Mapping[str, Any],
     ) -> Order:
         oid = self._new_order_id()
         order = Order(
@@ -76,7 +76,7 @@ class PaperBroker:
         self._try_fill(order, l1, at_submission=True)
         return order
 
-    def on_tick(self, l1: Dict[str, float]) -> None:
+    def on_tick(self, l1: Mapping[str, Any]) -> None:
         """Re-evaluate resting limit orders against a new quote.
 
         Without this, `_try_fill` ran only at submission: a passive order that
@@ -110,7 +110,7 @@ class PaperBroker:
             order.status = "canceled"
 
     def _try_fill(
-        self, order: Order, l1: Dict[str, float], at_submission: bool = False
+        self, order: Order, l1: Mapping[str, Any], at_submission: bool = False
     ) -> None:
         if order.status not in ("open", "partial"):
             return
@@ -119,6 +119,11 @@ class PaperBroker:
 
         if order.type == "market":
             px = ask if order.side == "buy" else bid
+            if px is None:
+                # A quote carrying neither side nor a last price cannot fill
+                # anything. Passing None through reached _apply_slippage and
+                # raised on the multiply, taking the tick loop down.
+                return
             px_slip = self._apply_slippage(px, order.side)
             self._execute(order, order.qty, px_slip, is_maker=False)
             order.status = "filled"
@@ -140,6 +145,8 @@ class PaperBroker:
             # maker fill at the limit price -- as this did -- credits a rebate
             # that was never earned and makes maker execution look free.
             touch = ask if order.side == "buy" else bid
+            if touch is None:
+                return
             self._execute(
                 order,
                 order.qty,

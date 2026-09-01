@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Deque, Dict, Optional
+from typing import Any, Deque, Dict, Mapping, Optional
 
 
 @dataclass
@@ -20,7 +20,7 @@ class MomentumStrategy:
     state: MomentumState = field(default_factory=MomentumState)
     id: str = "mom_scalper_v1"
 
-    def on_tick(self, l1: Dict[str, float]) -> Optional[Dict[str, object]]:
+    def on_tick(self, l1: Mapping[str, Any]) -> Optional[Dict[str, object]]:
         last = l1.get("last") or l1.get("bid") or l1.get("ask")
         if last is None:
             return None

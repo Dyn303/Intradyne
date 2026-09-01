@@ -340,7 +340,8 @@ def run(
     # why net_pnl looks nearly identical across a sweep and cannot be used to
     # compare configurations. Expectancy per trade can.
     halted_early = bool(risk.state.dd_soft_triggered or risk.state.dd_hard_triggered)
-    summary = {
+    # Mixed by design: counts, rates, strings and the nested edge dict.
+    summary: Dict[str, Any] = {
         # `trades` counts individual fills; a round trip is typically several
         # (both strategies can enter on one tick, and exits are separate
         # orders). They were reported side by side as though comparable, so

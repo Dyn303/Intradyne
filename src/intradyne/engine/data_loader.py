@@ -279,7 +279,9 @@ class DataLoader:
         df: pd.DataFrame, spread_bps: float = 1.0
     ) -> Iterator[Dict[str, Any]]:
         if df.empty:
-            return iter(())
+            # A generator returns by stopping; `return iter(())` here was a
+            # value-return inside a generator, which Python ignores.
+            return
         for _, row in df.iterrows():
             ts = int(row["timestamp"]) / 1000.0
             mid = float(row["close"])
