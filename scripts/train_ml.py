@@ -56,6 +56,11 @@ def main() -> int:
     p.add_argument("--prob-cut", type=float, default=0.6)
     p.add_argument("--data-dir", type=str, default="data")
     p.add_argument("--out-dir", type=str, default="artifacts/models")
+    p.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="Fetch missing bars from the exchange instead of failing.",
+    )
     ns = p.parse_args()
 
     import pandas as pd  # lazy import
@@ -65,7 +70,13 @@ def main() -> int:
     symbols: list[str] = [s.strip() for s in ns.symbols.split(",") if s.strip()]
 
     dfs = load_ohlcv_many(
-        symbols, ns.timeframe, start_ms, end_ms, Path(ns.data_dir), ns.exchange
+        symbols,
+        ns.timeframe,
+        start_ms,
+        end_ms,
+        Path(ns.data_dir),
+        ns.exchange,
+        allow_network=ns.allow_network,
     )
     X, y = build_dataset(dfs, atr_mult=ns.atr_mult, horizon=ns.horizon)
     pipe, score = train_pipeline(X, y)

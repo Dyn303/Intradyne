@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Iterator, List, Tuple
@@ -35,10 +36,27 @@ def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+class DataUnavailable(RuntimeError):
+    """No cached bars for a symbol, and fetching was not permitted.
+
+    Raised instead of quietly falling back to the live exchange or to a
+    fabricated random walk. A backtest that cannot find its data must say so:
+    silently measuring something else is worse than not measuring at all.
+    """
+
+
 @dataclass
 class LoaderConfig:
     data_dir: Path
     exchange: str = "bitget"
+    #: Allow a cache miss to fetch from the live exchange. Off by default:
+    #: a backtest must be reproducible, and a run that reaches the network
+    #: gets different bars every time it is repeated.
+    allow_network: bool = False
+    #: Allow a cache miss to fall back to a fabricated random walk. Off by
+    #: default: synthetic bars are not a measurement, and reporting them as
+    #: one is how a backtest comes to state a PnL for data it never had.
+    allow_synthetic: bool = False
 
 
 class DataLoader:
@@ -51,6 +69,17 @@ class DataLoader:
         root = self.cfg.data_dir / self.cfg.exchange
         _ensure_dir(root)
         return root / f"{sym}_{timeframe}.csv"
+
+    @staticmethod
+    def _read_csv(path: Path) -> pd.DataFrame:
+        """Read cached bars without moving any price.
+
+        read_csv's default parser is fast but not bit-exact: it shifts a
+        good third of full-precision float64 values by one ULP. Every read of
+        the same file must return the same numbers, or two runs of one
+        backtest disagree.
+        """
+        return pd.read_csv(path, float_precision="round_trip")
 
     async def fetch_ohlcv_ccxt(
         self, symbol: str, timeframe: str, start_ms: int, end_ms: int
@@ -91,26 +120,41 @@ class DataLoader:
     ) -> pd.DataFrame:
         path = self._symbol_path(symbol, timeframe)
         if use_cache and path.exists():
-            df = pd.read_csv(path)
+            df = self._read_csv(path)
         else:
             # If sub-minute timeframe, try synthesize from 1m cache
             if timeframe.endswith("s"):
                 base_path = self._symbol_path(symbol, "1m")
                 if base_path.exists():
-                    df1m = pd.read_csv(base_path)
+                    df1m = self._read_csv(base_path)
                     df = self._synthesize_subminute(df1m, timeframe)
                 else:
                     # Fallback: synthesize sub-minute directly
-                    df = self._synthesize_direct(symbol, timeframe, start_ms, end_ms)
-            else:
+                    df = self._synthesize_fallback(
+                        symbol, timeframe, start_ms, end_ms, path
+                    )
+            elif self.cfg.allow_network:
                 try:
                     df = await self.fetch_ohlcv_ccxt(
                         symbol, timeframe, start_ms, end_ms
                     )
-                except Exception:
-                    df = self._synthesize_direct(symbol, timeframe, start_ms, end_ms)
+                except Exception as exc:
+                    raise DataUnavailable(
+                        f"fetching {symbol} {timeframe} from "
+                        f"{self.cfg.exchange} failed: {exc}"
+                    ) from exc
+            else:
+                df = self._synthesize_fallback(
+                    symbol, timeframe, start_ms, end_ms, path
+                )
             if not df.empty:
                 df.to_csv(path, index=False)
+                # Read back what was just written, so the run that primes the
+                # cache sees exactly what every later run sees. Returning the
+                # in-memory frame here made the first run of a backtest
+                # disagree with the second on gross_pnl, max_dd and
+                # profit_factor -- same seed, same process.
+                df = self._read_csv(path)
         # Normalize
         if not df.empty:
             df = df.sort_values("timestamp").drop_duplicates("timestamp")
@@ -150,6 +194,30 @@ class DataLoader:
             rows, columns=["timestamp", "open", "high", "low", "close", "volume"]
         )
 
+    def _synthesize_fallback(
+        self, symbol: str, timeframe: str, start_ms: int, end_ms: int, path: Path
+    ) -> pd.DataFrame:
+        """Fabricate bars, but only where that was explicitly asked for."""
+        if not self.cfg.allow_synthetic:
+            raise DataUnavailable(
+                f"no cached bars for {symbol} {timeframe}: expected {path}. "
+                "Set allow_network=True to fetch them, or allow_synthetic=True "
+                "to run against a fabricated series -- results from synthetic "
+                "bars are not a measurement of anything."
+            )
+        return self._synthesize_direct(symbol, timeframe, start_ms, end_ms)
+
+    @staticmethod
+    def _stable_seed(symbol: str) -> int:
+        """A per-symbol seed that is the same in every process.
+
+        This used ``abs(hash(symbol))``. Python salts str hashing per
+        interpreter (PYTHONHASHSEED), so the "deterministic" synthetic series
+        was a different random walk on every run, and the backtest's ``seed``
+        argument had no bearing on it whatsoever.
+        """
+        return zlib.crc32(symbol.encode("utf-8"))
+
     @staticmethod
     def _synthesize_direct(
         symbol: str, timeframe: str, start_ms: int, end_ms: int
@@ -161,8 +229,9 @@ class DataLoader:
         if sec <= 0:
             sec = 60
         n = max(1, int((end_ms - start_ms) // (sec * 1000)))
-        rs = np.random.RandomState(abs(hash(symbol)) % (2**32))
-        base = 100.0 + (abs(hash(symbol)) % 100) * 0.1
+        _seed = DataLoader._stable_seed(symbol)
+        rs = np.random.RandomState(_seed % (2**32))
+        base = 100.0 + (_seed % 100) * 0.1
         rets = rs.normal(loc=0.0, scale=0.0005, size=n)
         prices = [base]
         for r in rets:
