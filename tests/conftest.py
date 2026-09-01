@@ -15,6 +15,13 @@ def _isolate_runtime_state(tmp_path, monkeypatch):
     """
     monkeypatch.setenv("DB_URL", f"sqlite:///{tmp_path / 'trades.sqlite'}")
     monkeypatch.setenv("EXPLAIN_LEDGER_PATH", str(tmp_path / "ledger.jsonl"))
+    # Pin the venue the fixtures are written under. The data loader keys its
+    # cache on data_dir/<exchange>/, and the fixtures hardcode "bitget", so a
+    # developer whose .env named a different exchange got a cache miss on
+    # every test that loads bars -- while CI, which has no .env, hit the
+    # cache and passed. That divergence is what made the backtester's
+    # non-determinism look like a local-only pandas problem.
+    monkeypatch.setenv("EXCHANGE", "bitget")
     reset_settings_cache()
     try:
         from intradyne.api.deps import reset_execution_manager
