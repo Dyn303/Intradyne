@@ -1228,3 +1228,72 @@ instrument to have *both* training and test data, which silently dropped every
 name that delisted between the two -- reintroducing exactly the bias the
 point-in-time universe exists to remove, in the band where delisting is most
 common. Train and test membership are now decided independently.
+
+## The component hierarchy, tested as gates
+
+A proposed system combining market structure, liquidity sweeps, volume
+profile, order flow, footprint, CVD/delta, VWAP and volatility, weighted
+20/20/15/20/10/10/5.
+
+Two things were changed before testing, both for stated reasons.
+
+**Gates rather than weights.** Seven weights are seven fitted parameters, and
+this project has already produced a strategy that reached a day-clustered t of
+4.58, beat its own null, was positive on 10 of 10 instruments and then lost
+money over the following eleven months. As AND-gates the hierarchy has no free
+parameters, so any result is not a tuning artifact.
+
+**The weighting assumed an independence the data denies.** Measured on ETH 5m
+over 20 months:
+
+| pair | correlation |
+|---|---|
+| market structure vs VWAP deviation | **0.72** |
+| market structure vs CVD slope | 0.56 |
+| CVD vs VWAP deviation | 0.47 |
+| OFI vs CVD | 0.45 |
+
+Structure, VWAP, CVD, delta and order flow are one directional factor observed
+at different granularities. Only volatility and volume are independent of it.
+Seven components carry about **3.2 independent dimensions**, so a scheme
+placing 85% of its weight on the directional cluster feels far more confirmed
+than it is. That said, 3.2 of 7 is much better than instruments manage (1.7 of
+20) -- combining indicators genuinely does add more information than adding
+coins.
+
+### Result: no gate beats entering unconditionally
+
+Each gate alone, 2.1M bars across 12 mid-cap instruments, tp150/sl100/240m:
+
+| gate | % of bars | trades | gross bps |
+|---|---|---|---|
+| *(unfiltered)* | 100% | 117,557 | **-0.65** |
+| 1 direction | 44.8% | 60,494 | **-1.56** |
+| 2 location | 49.8% | 67,551 | -1.02 |
+| 3 sweep | 3.3% | 27,106 | **-1.78** |
+| 4 participation | 37.0% | 76,438 | -0.84 |
+| 5 pressure | 45.1% | 78,926 | **-1.81** |
+| 6 worth it | 99.9% | 117,557 | -0.65 |
+
+Every filter returns **less** than no filter, on samples large enough to mean
+it -- 27,000 trades on the rarest gate. Cumulatively the stack collapses to 41
+trades by gate 3, because the gates **conflict**: an uptrend, a price below
+VWAP and a swept five-hour low rarely coincide, since the first is bullish
+structure and the other two are weakness. Stacking them does not concentrate
+signal, it finds the few bars where contradictory conditions happen to meet.
+
+### What this does and does not establish
+
+It tests a mechanical encoding of these concepts, not a discretionary trader's
+reading of them. "Market structure" here is an EMA relationship, not
+higher-highs-and-higher-lows; "liquidity sweep" is one interpretation of many.
+A human applying the same vocabulary may mean something this does not capture.
+
+Two components could not be tested at all: **footprint and order-book
+imbalance need per-price-level bid/ask volume and L2 depth**, which the kline
+archive does not contain. Testing them requires collecting L2 snapshots
+prospectively -- months of it -- or buying the data.
+
+What is tested is well-proxied: VWAP directly, order flow and CVD through the
+taker-buy split, volatility and volume directly. Those four are the measurable
+core of the design, and all four are negative.
