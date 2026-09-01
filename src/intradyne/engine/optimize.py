@@ -209,13 +209,21 @@ def optimize(
             plot_param_importances,
         )
         import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure
 
-        fig1 = plot_optimization_history(study)
-        fig1.figure.savefig(artifacts / "opt_history.png", dpi=150)
-        plt.close(fig1.figure)
-        fig2 = plot_param_importances(study)
-        fig2.figure.savefig(artifacts / "opt_importance.png", dpi=150)
-        plt.close(fig2.figure)
+        def _save(ax, path: Path) -> None:
+            # Axes.figure is typed Figure | SubFigure, and a SubFigure has no
+            # savefig. optuna hands back a top-level Figure in practice, but
+            # which matplotlib is installed decides whether mypy can see that
+            # -- so narrow here rather than let the gate depend on a version.
+            figure = ax.figure
+            if not isinstance(figure, Figure):
+                return
+            figure.savefig(path, dpi=150)
+            plt.close(figure)
+
+        _save(plot_optimization_history(study), artifacts / "opt_history.png")
+        _save(plot_param_importances(study), artifacts / "opt_importance.png")
     except Exception:
         pass
     return out_strat

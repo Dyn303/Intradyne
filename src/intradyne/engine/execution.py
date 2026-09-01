@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 from loguru import logger
 
@@ -95,7 +95,7 @@ class ExecutionManager:
         return action, reasons, adjusted.qty
 
     def _record_mark(
-        self, symbol: str, price: Optional[float], l1: Dict[str, float]
+        self, symbol: str, price: Optional[float], l1: Mapping[str, Any]
     ) -> None:
         if self.ctx.marks is None:
             return
@@ -128,10 +128,14 @@ class ExecutionManager:
         type_: str,
         qty: float,
         price: Optional[float],
-        l1: Dict[str, float],
+        # A quote carries a string symbol alongside its numbers, and
+        # `features`/`checks_passed` are strategy diagnostics that go straight
+        # to the ledger as JSON -- never read numerically. Declaring all three
+        # Dict[str, float] was simply untrue, and every caller contradicted it.
+        l1: Mapping[str, Any],
         strategy_id: str,
-        features: Dict[str, float],
-        checks_passed: Dict[str, bool],
+        features: Mapping[str, Any],
+        checks_passed: Mapping[str, Any],
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, object]:
         # Record the mark first: the flash-crash guardrail compares the

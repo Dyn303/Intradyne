@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, Optional
+from typing import Any, Deque, Dict, Mapping, Optional
 import numpy as np
 
 
@@ -15,7 +15,7 @@ class MLStrategy:
         self.prob_cut = prob_cut
         self._pipe = None
         try:
-            import joblib  # type: ignore
+            import joblib
 
             self._pipe = joblib.load(Path(model_path))
         except Exception:
@@ -26,7 +26,8 @@ class MLStrategy:
         self._lo: Deque[float] = deque(maxlen=50)
         self._vol: Deque[float] = deque(maxlen=50)
 
-    def on_tick(self, l1: Dict[str, object]) -> Optional[Dict[str, object]]:
+    def on_tick(self, l1: Mapping[str, Any]) -> Optional[Dict[str, object]]:
+        # Quote values arrive untyped from the feed; narrowed on use.
         if self._pipe is None:
             return None
         last = float(l1.get("last") or l1.get("bid") or l1.get("ask") or 0.0)

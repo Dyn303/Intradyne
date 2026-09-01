@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    Deque,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Protocol,
+    Tuple,
+)
 from collections import defaultdict, deque
 
 from loguru import logger
@@ -15,11 +24,23 @@ from .metrics_ml import ML_SIGNALS
 from .metrics import METRICS
 
 try:
-    from intradyne.data.sentiment import get_sentiment_score_cached  # type: ignore
+    from intradyne.data.sentiment import get_sentiment_score_cached
 except Exception:  # pragma: no cover
 
-    def get_sentiment_score_cached(ttl: int = 300) -> float:  # type: ignore
+    def get_sentiment_score_cached(ttl: int = 300) -> float:
         return 0.0
+
+
+class TickStrategy(Protocol):
+    """What the router needs from a strategy.
+
+    MomentumStrategy, MeanRevStrategy and MLStrategy share no base class, so
+    a list of them inferred as `object` and the `.on_tick` call could not be
+    checked. A Protocol states the contract without forcing them into a
+    hierarchy they do not otherwise need.
+    """
+
+    def on_tick(self, l1: Mapping[str, Any]) -> Optional[Dict[str, object]]: ...
 
 
 class StrategyRouter:
@@ -92,11 +113,11 @@ class StrategyRouter:
             m = self.momo[s]
             for k, v in params.get("momentum", {}).items():
                 if hasattr(m, k):
-                    setattr(m, k, v)  # type: ignore
+                    setattr(m, k, v)
             r = self.meanrev[s]
             for k, v in params.get("meanrev", {}).items():
                 if hasattr(r, k):
-                    setattr(r, k, v)  # type: ignore
+                    setattr(r, k, v)
 
         # ML strategy (optional)
         ml_params = params.get("ml", {}) if isinstance(params, dict) else {}
@@ -137,8 +158,12 @@ class StrategyRouter:
                 flt.get("atr_block_cooldown_s", self.atr_block_cooldown_s)
             )
 
-    async def on_tick(self, l1: Dict[str, object]) -> None:
-        sym = l1["symbol"]  # type: ignore[index]
+    async def on_tick(self, l1: Mapping[str, Any]) -> None:
+        # An L1 quote arrives from a websocket or a CSV row, so its values are
+        # genuinely dynamic at this boundary -- `Any` says that honestly.
+        # Everything downstream is narrowed here and typed from this point on,
+        # which is what lets the rest of the module be checked at all.
+        sym: str = str(l1["symbol"])
         last = l1.get("last") or l1.get("bid") or l1.get("ask")
         if last is None:
             return
@@ -257,7 +282,7 @@ class StrategyRouter:
                 reason = (
                     "sl" if last_f <= sl else ("tp" if last_f >= tp else "time_stop")
                 )
-                features = {"exit_reason": reason}
+                features: Dict[str, Any] = {"exit_reason": reason}
                 checks = {"whitelist": True, "spot_only": True, "long_only": True}
                 # Micro-sliced exits
                 slice_qty = max(qty / max(1, self.micro_slices), 0.0)
@@ -372,7 +397,7 @@ class StrategyRouter:
                 return
 
         # Strategy priority
-        strats = [self.momo[sym], self.meanrev[sym]]
+        strats: List[TickStrategy] = [self.momo[sym], self.meanrev[sym]]
         if sym in self.ml:
             strats.insert(0, self.ml[sym])
         for strat in strats:
@@ -416,9 +441,10 @@ class StrategyRouter:
                 if getattr(strat, "id", "") == "ml":
                     try:
                         ML_SIGNALS.labels(sym).inc()
+                        _feat = sig.get("features")
                         proba = (
-                            float(sig.get("features", {}).get("proba", 0.0))
-                            if isinstance(sig.get("features"), dict)
+                            float(_feat.get("proba", 0.0))
+                            if isinstance(_feat, dict)
                             else None
                         )
                         self.execman.ctx.ledger.append(
@@ -455,11 +481,10 @@ class StrategyRouter:
                 sl, tp = self.risk.sl_tp_levels(
                     last_f, atr=atr_val if atr_val else None
                 )
-                features = (
-                    sig.get("features", {})
-                    if isinstance(sig.get("features"), dict)
-                    else {}
-                )
+                # Diagnostics bound for the ledger: strings and numbers mix
+                # here by design, so it is not a Dict[str, float].
+                _sig_feat = sig.get("features")
+                features = dict(_sig_feat) if isinstance(_sig_feat, dict) else {}
                 try:
                     features.update(
                         {
@@ -572,14 +597,14 @@ class StrategyRouter:
             for k, v in (params.get("momentum", {}) or {}).items():
                 if hasattr(m, k):
                     try:
-                        setattr(m, k, type(getattr(m, k))(v))  # type: ignore
+                        setattr(m, k, type(getattr(m, k))(v))
                     except Exception:
                         setattr(m, k, v)
         for s, r in self.meanrev.items():
             for k, v in (params.get("meanrev", {}) or {}).items():
                 if hasattr(r, k):
                     try:
-                        setattr(r, k, type(getattr(r, k))(v))  # type: ignore
+                        setattr(r, k, type(getattr(r, k))(v))
                     except Exception:
                         setattr(r, k, v)
         # ML params: dynamically attach/detach
@@ -600,7 +625,7 @@ class StrategyRouter:
                         )
                     else:
                         try:
-                            self.ml[s].prob_cut = prob_cut  # type: ignore[attr-defined]
+                            self.ml[s].prob_cut = prob_cut
                         except Exception:
                             pass
             else:
