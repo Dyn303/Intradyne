@@ -979,3 +979,60 @@ Every one of the twelve strategies that cleared costs falls short of what
 random selection with its own trade count and geometry would have produced.
 None survives at taker cost either -- all twelve need all-maker execution
 merely to be positive before the null is considered.
+
+## Pre-specified signals from the literature: both negative
+
+Every search here has died in the same place -- a strategy clears its costs,
+then fails to beat the best-of-N null for its own trade count. That penalty is
+the price of *searching*. A signal specified in advance by someone else does
+not pay it, so two were taken from the literature as published and tested
+without tuning.
+
+### Intraday momentum (Gao, Han, Li & Zhou, JFE 2018; Shen et al. 2022)
+
+The first half-hour return of the day predicts the last half-hour return.
+20 instruments, 18,860 day-observations.
+
+| | published (SPY) | measured (crypto) |
+|---|---|---|
+| R^2 | 0.016 | **0.00203** |
+| effect | slope +6.94, sig. at 1% | difference +0.73bps, **t = 1.79** |
+
+The sign is consistent -- positive on 18 of 20 instruments -- but the effect is
+roughly eight times weaker in R^2 than the equity original, and t = 1.79 is
+below even the conventional 1.96, let alone the 3.4-3.8 the multiple-testing
+literature requires. Net of a 4bps all-maker round trip it is **-1.09bps**.
+
+This is what the stated prior expected. In equities the effect is attributed to
+opening auctions and late-day portfolio rebalancing. Crypto trades continuously
+with neither, and the UTC day boundary used here is a convention rather than a
+market event. The correlation survives the move weakly; the mechanism does not.
+
+One reporting correction worth recording: the first version of this test put
+t = 4.89 on the raw mean of the position. That number was almost entirely
+drift -- these instruments rise, so any long position shows a large t whether
+or not the rule discriminates. Testing the *difference* between days following
+a positive first window and days following a negative one gives t = 1.79, and
+that is the statistic the claim actually makes.
+
+### Short-horizon cross-sectional momentum
+
+The crypto momentum literature places the effect at 1-4 week formation with
+persistence limited to about a week, unlike the 12-month effect in equities.
+The cross-sectional test run earlier in this project used 1, 3, 6 and 12 month
+formation -- mostly outside that window, which was a real gap.
+
+Tested at the window the literature points at, 402 weekly periods, 583
+instruments, point-in-time with survivorship:
+
+| formation | excess/week | t | positive weeks |
+|---|---|---|---|
+| 1 week | -0.654% | -1.96 | 41% |
+| 2 weeks | -0.394% | -1.16 | 46% |
+| 3 weeks | -0.392% | -1.15 | 44% |
+| 4 weeks | -0.704% | -2.14 | 42% |
+
+All four are negative, and the two endpoints approach significantly so. The
+gap in the earlier test is now closed, and closing it did not help: at the
+window the literature identifies, ranking on trailing return and holding the
+top decile does worse than holding the universe, not better.
