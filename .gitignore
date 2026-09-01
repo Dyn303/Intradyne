@@ -38,3 +38,8 @@ orders_api_ledger_*.jsonl
 _prev/
 @*/
 intradyne_lite/
+
+# Vendored upstream repos, cloned for reference. They are git repos, so a
+# bare `git add -A` stages them as stray gitlinks pointing at commits nobody
+# can resolve -- which has already happened once.
+vendor/
