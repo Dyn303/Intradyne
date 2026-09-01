@@ -205,12 +205,17 @@ def main(argv=None) -> int:
     t4 = [(s, r, rt) for s, r, rt in t3 if rt["gross_bps"] - COST_TAKER_BPS > 0]
     print(f"Tier 4  survives taker cost     : {len(t4)}/{len(t3)} pass\n")
 
-    rows.sort(key=lambda kv: -kv[1]["gross_bps"])
+    # Rank only what cleared Tier 0. Ranking over everything puts a
+    # one-trade, 100%-win artifact at the top of the table, which is
+    # the exact impression this filter exists to prevent.
+    rows = sorted(t0, key=lambda kv: -kv[1]["gross_bps"])
     hdr = (
         f"{'#':>2} {'strategy':44} {'pooled n':>9} {'syms':>5} {'win':>7} "
         f"{'gross':>8} {'t':>6} {'net@4':>8}"
     )
-    print(f"top {args.top} by pooled gross edge:")
+    print(
+        f"top {args.top} by pooled gross edge (among the {len(t0)} with >= {MIN_TRADES} trades):"
+    )
     print(hdr)
     print("-" * len(hdr))
     for i, (s, r) in enumerate(rows[: args.top], 1):

@@ -1036,3 +1036,47 @@ All four are negative, and the two endpoints approach significantly so. The
 gap in the earlier test is now closed, and closing it did not help: at the
 window the literature identifies, ranking on trailing return and holding the
 top decile does worse than holding the universe, not better.
+
+## Pooling across twenty instruments: the cleanest result in this file
+
+The single-instrument search failed at the null, not at the cost gate, and the
+diagnosis was statistical power: 206 trades at tp300/sl150 is a small,
+high-variance sample where best-of-N selection produces +28bps by luck. The
+remedy is more *trades*, not more strategies -- pooling one strategy across
+twenty instruments raises n without raising the number of things selected over,
+so the null falls as 1/sqrt(n) while a real edge does not.
+
+20 instruments, 3.5M five-minute bars, same tiers, 75-minute median hold:
+
+| | single instrument (ETH) | pooled (20) |
+|---|---|---|
+| trades | 206-1,856 | median **13,775**, max 154,984 |
+| Tier 0 | 29/55 | 59/68 |
+| **Tier 1: gross > 4bps** | 8/29 | **0/59** |
+
+**Nothing clears costs once the sample is honest.** And the reason is the
+single most useful number produced here:
+
+| `mom60\|liquid\|tp400/sl50/240m` | gross edge |
+|---|---|
+| on ETH alone (1,001 trades) | **+9.68 bps** |
+| pooled over 20 instruments (25,946 trades) | **+2.99 bps** |
+
+The same strategy, the same geometry, the same period. The single-instrument
+figure was roughly three times too optimistic, and pooling removed the
+inflation rather than confirming it. That is precisely what the best-of-N null
+had been warning about, now demonstrated directly instead of argued from
+simulation.
+
+Note what did *not* happen: the signal did not vanish. At 25,946 trades it
+carries **t = 3.91**, which clears even the 3.4-3.8 hurdle the multiple-testing
+literature demands. It is a real, statistically strong effect of **+2.99bps**
+against a **4bps** floor on round-trip costs. Real, and too small -- the same
+verdict reached at two-minute horizons (+0.5bps against 4bps), reached again
+independently at 75 minutes with a hundred times the sample.
+
+A display flaw was fixed here too: the top-5 table originally ranked over every
+strategy rather than over Tier 0 passers, which put a one-trade, 100%-win
+artifact (+63.47bps, PROMUSDT, n=1) at the top. That is exactly the impression
+the filter exists to prevent, and it should not have been printed above the
+real rows.
