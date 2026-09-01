@@ -116,6 +116,34 @@
   "known": true
  },
  {
+  "base": "USD1",
+  "vol": 232590684.55137,
+  "listed": "2025-05-22",
+  "years": 1.28,
+  "cg_id": "usd1-wlfi",
+  "name": "USD1",
+  "mcap": 4195536621,
+  "categories": [
+   "Stablecoins",
+   "USD Stablecoin",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Aptos Ecosystem",
+   "Mantle Ecosystem",
+   "Tron Ecosystem",
+   "Morph L2 Ecosystem",
+   "World Liberty Financial Portfolio",
+   "Plume Network Ecosystem",
+   "Trump-Affiliated",
+   "Monad Ecosystem"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "SOL",
   "vol": 145941876.93216,
   "listed": "2020-08-11",
@@ -207,6 +235,52 @@
   "known": true
  },
  {
+  "base": "RLUSD",
+  "vol": 95246586.7885,
+  "listed": "2026-01-22",
+  "years": 0.61,
+  "cg_id": "ripple-usd",
+  "name": "Ripple USD",
+  "mcap": 2263514224,
+  "categories": [
+   "Stablecoins",
+   "USD Stablecoin",
+   "Ethereum Ecosystem",
+   "XRP Ledger Ecosystem",
+   "Fiat-backed Stablecoin",
+   "Made in USA"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ENSO",
+  "vol": 28629604.26518,
+  "listed": "2025-10-14",
+  "years": 0.88,
+  "cg_id": "enso",
+  "name": "Enso",
+  "mcap": 18723124,
+  "categories": [
+   "Infrastructure",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Multicoin Capital Portfolio",
+   "Intent",
+   "Polychain Capital Portfolio",
+   "Binance Alpha Spotlight",
+   "CoinList Launchpad"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
   "base": "BNB",
   "vol": 47155291.58663,
   "listed": "2017-11-06",
@@ -239,82 +313,56 @@
   "known": true
  },
  {
-  "base": "SUI",
-  "vol": 21462180.58461,
-  "listed": "2023-05-03",
-  "years": 3.33,
-  "cg_id": "sui",
-  "name": "Sui",
-  "mcap": 2988326331,
-  "rank": 33,
+  "base": "BMT",
+  "vol": 55361249.07024,
+  "listed": "2025-03-18",
+  "years": 1.46,
+  "cg_id": "bubblemaps",
+  "name": "Bubblemaps",
+  "mcap": 14689632,
   "categories": [
-   "Smart Contract Platform",
-   "Binance Launchpool",
-   "Layer 1 (L1)",
-   "Sui Ecosystem",
-   "Coinbase Ventures Portfolio",
-   "Proof of Stake (PoS)",
-   "Andreessen Horowitz (a16z) Portfolio",
-   "YZi Labs (Prev. Binance Labs) Portfolio",
-   "GMCI Layer 1 Index",
-   "Circle Ventures Portfolio",
-   "GMCI Index",
-   "Made in USA"
+   "Analytics",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Wallet IDO",
+   "InfoFi"
   ],
   "flags": [],
-  "what": [
-   "L1"
-  ],
+  "what": [],
   "known": true
  },
  {
-  "base": "UNI",
-  "vol": 51453739.38116,
-  "listed": "2020-09-17",
-  "years": 5.95,
-  "cg_id": "uniswap",
-  "name": "Uniswap",
-  "mcap": 3297922742,
-  "rank": 29,
+  "base": "ARB",
+  "vol": 2058604.27303,
+  "listed": "2023-03-23",
+  "years": 3.44,
+  "cg_id": "arbitrum",
+  "name": "Arbitrum",
+  "mcap": 774495244,
+  "rank": 85,
   "categories": [
-   "Decentralized Exchange (DEX)",
-   "Exchange-based Tokens",
-   "Decentralized Finance (DeFi)",
-   "Yield Farming",
-   "Automated Market Maker (AMM)",
-   "BNB Chain Ecosystem",
-   "Avalanche Ecosystem",
-   "Polygon Ecosystem",
-   "Near Protocol Ecosystem",
-   "Gnosis Chain Ecosystem",
-   "Harmony Ecosystem",
+   "Smart Contract Platform",
    "Arbitrum Ecosystem",
    "Ethereum Ecosystem",
-   "Optimism Ecosystem",
-   "Paradigm Portfolio",
-   "Coinbase Ventures Portfolio",
-   "Index Coop Defi Index",
-   "Andreessen Horowitz (a16z) Portfolio",
-   "Energi Ecosystem",
-   "Sora Ecosystem",
-   "Huobi ECO Chain Ecosystem",
-   "GMCI DeFi Index",
+   "Arbitrum Nova Ecosystem",
+   "Layer 2 (L2)",
+   "eGirl Capital Portfolio",
+   "Rollup",
+   "Alameda Research Portfolio",
+   "Pantera Capital Portfolio",
+   "GMCI Layer 2 Index",
    "GMCI 30 Index",
-   "Blockchain Capital Portfolio",
    "GMCI Index",
    "Polychain Capital Portfolio",
    "Made in USA",
-   "Unichain Ecosystem",
-   "Coinbase 50 Index",
    "Governance"
   ],
-  "flags": [
-   "YIELD",
-   "CEX",
-   "DEX",
-   "DEFI"
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
   ],
-  "what": [],
   "known": true
  },
  {
@@ -442,6 +490,85 @@
   "known": true
  },
  {
+  "base": "SUI",
+  "vol": 21462180.58461,
+  "listed": "2023-05-03",
+  "years": 3.33,
+  "cg_id": "sui",
+  "name": "Sui",
+  "mcap": 2988326331,
+  "rank": 33,
+  "categories": [
+   "Smart Contract Platform",
+   "Binance Launchpool",
+   "Layer 1 (L1)",
+   "Sui Ecosystem",
+   "Coinbase Ventures Portfolio",
+   "Proof of Stake (PoS)",
+   "Andreessen Horowitz (a16z) Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "GMCI Layer 1 Index",
+   "Circle Ventures Portfolio",
+   "GMCI Index",
+   "Made in USA"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "UNI",
+  "vol": 51453739.38116,
+  "listed": "2020-09-17",
+  "years": 5.95,
+  "cg_id": "uniswap",
+  "name": "Uniswap",
+  "mcap": 3297922742,
+  "rank": 29,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "Automated Market Maker (AMM)",
+   "BNB Chain Ecosystem",
+   "Avalanche Ecosystem",
+   "Polygon Ecosystem",
+   "Near Protocol Ecosystem",
+   "Gnosis Chain Ecosystem",
+   "Harmony Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Paradigm Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Index Coop Defi Index",
+   "Andreessen Horowitz (a16z) Portfolio",
+   "Energi Ecosystem",
+   "Sora Ecosystem",
+   "Huobi ECO Chain Ecosystem",
+   "GMCI DeFi Index",
+   "GMCI 30 Index",
+   "Blockchain Capital Portfolio",
+   "GMCI Index",
+   "Polychain Capital Portfolio",
+   "Made in USA",
+   "Unichain Ecosystem",
+   "Coinbase 50 Index",
+   "Governance"
+  ],
+  "flags": [
+   "YIELD",
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "DOGE",
   "vol": 26208253.21064,
   "listed": "2019-07-05",
@@ -500,35 +627,29 @@
   "known": true
  },
  {
-  "base": "ARB",
-  "vol": 2058604.27303,
-  "listed": "2023-03-23",
-  "years": 3.44,
-  "cg_id": "arbitrum",
-  "name": "Arbitrum",
-  "mcap": 774495244,
-  "rank": 85,
+  "base": "0G",
+  "vol": 27579781.900686,
+  "listed": "2025-09-22",
+  "years": 0.94,
+  "cg_id": "zero-gravity",
+  "name": "0G",
+  "mcap": 50220100,
   "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
    "Smart Contract Platform",
-   "Arbitrum Ecosystem",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
    "Ethereum Ecosystem",
-   "Arbitrum Nova Ecosystem",
-   "Layer 2 (L2)",
-   "eGirl Capital Portfolio",
-   "Rollup",
-   "Alameda Research Portfolio",
-   "Pantera Capital Portfolio",
-   "GMCI Layer 2 Index",
-   "GMCI 30 Index",
-   "GMCI Index",
-   "Polychain Capital Portfolio",
-   "Made in USA",
-   "Governance"
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "AI Framework"
   ],
   "flags": [],
   "what": [
    "L1",
-   "L2"
+   "AI",
+   "infra"
   ],
   "known": true
  },
@@ -577,28 +698,50 @@
   "known": true
  },
  {
-  "base": "PEPE",
-  "vol": 9777990.91692125,
-  "listed": "2023-05-05",
-  "years": 3.32,
-  "cg_id": "pepe",
-  "name": "Pepe",
-  "mcap": 1499990096,
-  "rank": 55,
+  "base": "PUMP",
+  "vol": 27084776.916671,
+  "listed": "2025-09-11",
+  "years": 0.97,
+  "cg_id": "pump-fun",
+  "name": "Pump.fun",
+  "mcap": 1806372389,
   "categories": [
-   "BNB Chain Ecosystem",
-   "Avalanche Ecosystem",
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "SocialFi",
+   "Decentralized Finance (DeFi)",
+   "Automated Market Maker (AMM)",
+   "Solana Ecosystem",
+   "Launchpad",
    "Meme",
-   "Arbitrum Ecosystem",
-   "Ethereum Ecosystem",
-   "Frog-Themed",
-   "GMCI Meme Index",
-   "GMCI Index",
-   "The Boy\u2019s Club",
-   "4chan-Themed"
+   "CoinList Launchpad"
   ],
   "flags": [
-   "MEME"
+   "MEME",
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "U",
+  "vol": 26171598.0705,
+  "listed": "2026-01-13",
+  "years": 0.63,
+  "cg_id": "united-stables",
+  "name": "United Stables",
+  "mcap": 1274835610,
+  "categories": [
+   "Stablecoins",
+   "USD Stablecoin",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Tron Ecosystem"
+  ],
+  "flags": [
+   "STABLE"
   ],
   "what": [],
   "known": true
@@ -629,6 +772,123 @@
    "L1",
    "pay"
   ],
+  "known": true
+ },
+ {
+  "base": "HEMI",
+  "vol": 25338437.140381,
+  "listed": "2025-09-23",
+  "years": 0.94,
+  "cg_id": "hemi",
+  "name": "Hemi",
+  "mcap": 14447581,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Modular Blockchain",
+   "Binance HODLer Airdrops",
+   "BTCfi Protocol",
+   "Binance Wallet IDO",
+   "Hemi Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "PEPE",
+  "vol": 9777990.91692125,
+  "listed": "2023-05-05",
+  "years": 3.32,
+  "cg_id": "pepe",
+  "name": "Pepe",
+  "mcap": 1499990096,
+  "rank": 55,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Avalanche Ecosystem",
+   "Meme",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Frog-Themed",
+   "GMCI Meme Index",
+   "GMCI Index",
+   "The Boy\u2019s Club",
+   "4chan-Themed"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ENA",
+  "vol": 23042950.327102,
+  "listed": "2024-04-02",
+  "years": 2.41,
+  "cg_id": "ethena",
+  "name": "Ethena",
+  "mcap": 1478774251,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Binance Launchpool",
+   "Solana Ecosystem",
+   "Avalanche Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Metis Ecosystem",
+   "Optimism Ecosystem",
+   "ZkSync Ecosystem",
+   "Mantle Ecosystem",
+   "Base Ecosystem",
+   "TON Ecosystem",
+   "Manta Network Ecosystem",
+   "Scroll Ecosystem",
+   "Kava Ecosystem",
+   "Blast Ecosystem",
+   "Stablecoin Issuer",
+   "Mode Ecosystem",
+   "DragonFly Capital Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Fraxtal Ecosystem",
+   "Delphi Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "Zircuit Ecosystem",
+   "Morph L2 Ecosystem",
+   "World Liberty Financial Portfolio",
+   "Swellchain Ecosystem",
+   "Governance"
+  ],
+  "flags": [
+   "STABLE",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "TRUMP",
+  "vol": 22650380.146998,
+  "listed": "2025-01-19",
+  "years": 1.62,
+  "cg_id": "official-trump",
+  "name": "Official Trump",
+  "mcap": 634131277,
+  "categories": [
+   "Solana Ecosystem",
+   "Meme",
+   "Solana Meme",
+   "PolitiFi",
+   "Made in USA",
+   "Trump-Affiliated"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -671,6 +931,28 @@
    "BNB Chain Ecosystem",
    "Ethereum Ecosystem",
    "Layer 2 (L2)"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "POL",
+  "vol": 16232782.689055,
+  "listed": "2024-09-13",
+  "years": 1.97,
+  "cg_id": "polygon-ecosystem-token",
+  "name": "POL (ex-MATIC)",
+  "mcap": 992711780,
+  "categories": [
+   "Smart Contract Platform",
+   "Polygon Ecosystem",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)"
   ],
   "flags": [],
   "what": [
@@ -757,6 +1039,60 @@
   "known": true
  },
  {
+  "base": "TAO",
+  "vol": 11883705.69487,
+  "listed": "2024-04-11",
+  "years": 2.39,
+  "cg_id": "bittensor",
+  "name": "Bittensor",
+  "mcap": 2212371162,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "DePIN",
+   "Base Ecosystem",
+   "Bittensor Ecosystem",
+   "Polychain Capital Portfolio"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "LTC",
+  "vol": 9517961.50037,
+  "listed": "2017-12-13",
+  "years": 8.71,
+  "cg_id": "litecoin",
+  "name": "Litecoin",
+  "mcap": 3782462442,
+  "rank": 27,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "Proof of Work (PoW)",
+   "GMCI 30 Index",
+   "GMCI Index",
+   "Made in USA",
+   "Coinbase 50 Index",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1",
+   "infra"
+  ],
+  "known": true
+ },
+ {
   "base": "AAVE",
   "vol": 12857466.54304,
   "listed": "2020-10-15",
@@ -804,43 +1140,13 @@
   "known": true
  },
  {
-  "base": "LTC",
-  "vol": 9517961.50037,
-  "listed": "2017-12-13",
-  "years": 8.71,
-  "cg_id": "litecoin",
-  "name": "Litecoin",
-  "mcap": 3782462442,
-  "rank": 27,
-  "categories": [
-   "Infrastructure",
-   "Smart Contract Platform",
-   "Layer 1 (L1)",
-   "Proof of Work (PoW)",
-   "GMCI 30 Index",
-   "GMCI Index",
-   "Made in USA",
-   "Coinbase 50 Index",
-   "Privacy"
-  ],
-  "flags": [
-   "PRIV"
-  ],
-  "what": [
-   "L1",
-   "infra"
-  ],
-  "known": true
- },
- {
   "base": "EUR",
-  "vol": 3532798.07247,
+  "vol": 11256133.73569,
   "listed": "2020-01-03",
   "years": 6.66,
   "cg_id": null,
   "name": null,
   "mcap": null,
-  "rank": null,
   "categories": [],
   "flags": [],
   "what": [],
@@ -874,85 +1180,6 @@
   "known": true
  },
  {
-  "base": "AVAX",
-  "vol": 5929968.8204,
-  "listed": "2020-09-22",
-  "years": 5.94,
-  "cg_id": "avalanche-2",
-  "name": "Avalanche",
-  "mcap": 3140869168,
-  "rank": 31,
-  "categories": [
-   "Smart Contract Platform",
-   "Layer 1 (L1)",
-   "Avalanche Ecosystem",
-   "Proof of Stake (PoS)",
-   "DragonFly Capital Portfolio",
-   "DeFiance Capital Portfolio",
-   "Andreessen Horowitz (a16z) Portfolio",
-   "GMCI Layer 1 Index",
-   "GMCI 30 Index",
-   "Galaxy Digital Portfolio",
-   "GMCI Index",
-   "Polychain Capital Portfolio",
-   "World Liberty Financial Portfolio",
-   "Made in USA",
-   "Coinbase 50 Index"
-  ],
-  "flags": [],
-  "what": [
-   "L1"
-  ],
-  "known": true
- },
- {
-  "base": "WBTC",
-  "vol": 1833806.2759764,
-  "listed": "2023-04-28",
-  "years": 3.34,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "rank": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "FET",
-  "vol": 11296647.58679,
-  "listed": "2019-02-28",
-  "years": 7.5,
-  "cg_id": "fetch-ai",
-  "name": "Artificial Superintelligence Alliance",
-  "mcap": 355434745,
-  "rank": 118,
-  "categories": [
-   "Artificial Intelligence (AI)",
-   "NFT",
-   "BNB Chain Ecosystem",
-   "Cardano Ecosystem",
-   "Ethereum Ecosystem",
-   "Binance Launchpad",
-   "DWF Labs Portfolio",
-   "Osmosis Ecosystem",
-   "AI Agents",
-   "GMCI DePIN Index",
-   "GMCI Index",
-   "Outlier Ventures Portfolio",
-   "AI Agent Launchpad",
-   "Governance"
-  ],
-  "flags": [
-   "GAME"
-  ],
-  "what": [
-   "AI"
-  ],
-  "known": true
- },
- {
   "base": "OP",
   "vol": 1593288.677009,
   "listed": "2022-06-01",
@@ -982,30 +1209,25 @@
   "known": true
  },
  {
-  "base": "ZEN",
-  "vol": 1815310.45589,
-  "listed": "2020-07-06",
-  "years": 6.15,
-  "cg_id": "zencash",
-  "name": "Horizen",
-  "mcap": 103044488,
-  "rank": 265,
+  "base": "TUT",
+  "vol": 8975134.08404,
+  "listed": "2025-03-27",
+  "years": 1.43,
+  "cg_id": "tutorial",
+  "name": "Tutorial",
+  "mcap": 25172818,
   "categories": [
-   "Smart Contract Platform",
-   "Zero Knowledge (ZK)",
-   "Base Ecosystem",
-   "Made in USA",
-   "Privacy Infrastructure",
-   "Base Native",
-   "Horizen Ecosystem",
-   "Privacy"
+   "BNB Chain Ecosystem",
+   "Meme",
+   "AI Meme",
+   "AI Agents",
+   "Four.meme Ecosystem (BNB Memes)"
   ],
   "flags": [
-   "PRIV"
+   "MEME"
   ],
   "what": [
-   "L1",
-   "L2"
+   "AI"
   ],
   "known": true
  },
@@ -1054,6 +1276,294 @@
   "known": true
  },
  {
+  "base": "AVAX",
+  "vol": 5929968.8204,
+  "listed": "2020-09-22",
+  "years": 5.94,
+  "cg_id": "avalanche-2",
+  "name": "Avalanche",
+  "mcap": 3140869168,
+  "rank": 31,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "Avalanche Ecosystem",
+   "Proof of Stake (PoS)",
+   "DragonFly Capital Portfolio",
+   "DeFiance Capital Portfolio",
+   "Andreessen Horowitz (a16z) Portfolio",
+   "GMCI Layer 1 Index",
+   "GMCI 30 Index",
+   "Galaxy Digital Portfolio",
+   "GMCI Index",
+   "Polychain Capital Portfolio",
+   "World Liberty Financial Portfolio",
+   "Made in USA",
+   "Coinbase 50 Index"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "XPL",
+  "vol": 8429311.070257,
+  "listed": "2025-09-25",
+  "years": 0.93,
+  "cg_id": "plasma",
+  "name": "Plasma",
+  "mcap": 232765674,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Binance HODLer Airdrops",
+   "Neobank",
+   "Echo Launchpad"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "WBTC",
+  "vol": 7761666.4849786,
+  "listed": "2023-04-28",
+  "years": 3.35,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "FET",
+  "vol": 11296647.58679,
+  "listed": "2019-02-28",
+  "years": 7.5,
+  "cg_id": "fetch-ai",
+  "name": "Artificial Superintelligence Alliance",
+  "mcap": 355434745,
+  "rank": 118,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Cardano Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance Launchpad",
+   "DWF Labs Portfolio",
+   "Osmosis Ecosystem",
+   "AI Agents",
+   "GMCI DePIN Index",
+   "GMCI Index",
+   "Outlier Ventures Portfolio",
+   "AI Agent Launchpad",
+   "Governance"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "DOGS",
+  "vol": 7158583.60549352,
+  "listed": "2024-08-26",
+  "years": 2.02,
+  "cg_id": "dogs-2",
+  "name": "Dogs",
+  "mcap": 21875034,
+  "categories": [
+   "Meme",
+   "Dog-Themed",
+   "TON Ecosystem",
+   "TON Meme"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ZRO",
+  "vol": 7060041.13465,
+  "listed": "2024-06-20",
+  "years": 2.2,
+  "cg_id": "layerzero",
+  "name": "LayerZero",
+  "mcap": 361421943,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Avalanche Ecosystem",
+   "Polygon Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Base Ecosystem",
+   "Multicoin Capital Portfolio",
+   "Cross-chain Communication",
+   "Circle Ventures Portfolio",
+   "Sequoia Capital Portfolio",
+   "OKX Ventures Portfolio",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "ZKC",
+  "vol": 7606709.97948,
+  "listed": "2025-09-15",
+  "years": 0.96,
+  "cg_id": "boundless",
+  "name": "Boundless",
+  "mcap": 15648850,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Binance HODLer Airdrops",
+   "Capital Launchpad (Kaito)",
+   "Governance"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "ZEN",
+  "vol": 1815310.45589,
+  "listed": "2020-07-06",
+  "years": 6.15,
+  "cg_id": "zencash",
+  "name": "Horizen",
+  "mcap": 103044488,
+  "rank": 265,
+  "categories": [
+   "Smart Contract Platform",
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem",
+   "Made in USA",
+   "Privacy Infrastructure",
+   "Base Native",
+   "Horizen Ecosystem",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "ONDO",
+  "vol": 6198340.85629,
+  "listed": "2025-04-11",
+  "years": 1.39,
+  "cg_id": "ondo-finance",
+  "name": "Ondo",
+  "mcap": 1702395725,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Coinbase Ventures Portfolio",
+   "Pantera Capital Portfolio",
+   "GMCI DeFi Index",
+   "RWA Protocol",
+   "GMCI Index",
+   "World Liberty Financial Portfolio",
+   "Binance Alpha Spotlight",
+   "Made in USA",
+   "CoinList Launchpad"
+  ],
+  "flags": [
+   "RWA",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "MORPHO",
+  "vol": 5799773.78656,
+  "listed": "2025-10-03",
+  "years": 0.91,
+  "cg_id": "morpho",
+  "name": "Morpho",
+  "mcap": 1728693167,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Lending/Borrowing Protocols",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Coinbase Ventures Portfolio",
+   "Pantera Capital Portfolio",
+   "Morpho Ecosystem",
+   "Binance Alpha Spotlight",
+   "Katana Ecosystem",
+   "Base Native"
+  ],
+  "flags": [
+   "LEND",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "PENGU",
+  "vol": 5598909.631727,
+  "listed": "2024-12-17",
+  "years": 1.71,
+  "cg_id": "pudgy-penguins",
+  "name": "Pudgy Penguins",
+  "mcap": 552936247,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Meme",
+   "Ethereum Ecosystem",
+   "Solana Meme",
+   "Hyperliquid Ecosystem",
+   "Binance HODLer Airdrops",
+   "Airdropped Tokens by NFT Projects",
+   "Abstract Ecosystem",
+   "Made in USA",
+   "HyperEVM Ecosystem",
+   "IP Meme",
+   "Robinhood Ecosystem"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "BCH",
   "vol": 4161800.6206,
   "listed": "2019-11-28",
@@ -1076,21 +1586,32 @@
   "known": true
  },
  {
-  "base": "ONG",
-  "vol": 9134834.77393,
-  "listed": "2019-02-16",
-  "years": 7.53,
-  "cg_id": "ong",
-  "name": "Ontology Gas",
-  "mcap": 43580674,
-  "rank": 516,
+  "base": "ZK",
+  "vol": 6740261.54327,
+  "listed": "2024-06-17",
+  "years": 2.21,
+  "cg_id": "zksync",
+  "name": "ZKsync",
+  "mcap": 93015949,
   "categories": [
    "Smart Contract Platform",
-   "Layer 1 (L1)"
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)",
+   "ZkSync Ecosystem",
+   "Consensys Portfolio",
+   "Blockchain Capital Portfolio",
+   "OKX Ventures Portfolio",
+   "Privacy Blockchain",
+   "Privacy Infrastructure",
+   "Privacy"
   ],
-  "flags": [],
+  "flags": [
+   "PRIV"
+  ],
   "what": [
-   "L1"
+   "L1",
+   "L2"
   ],
   "known": true
  },
@@ -1147,6 +1668,110 @@
   "known": true
  },
  {
+  "base": "ONG",
+  "vol": 9134834.77393,
+  "listed": "2019-02-16",
+  "years": 7.53,
+  "cg_id": "ong",
+  "name": "Ontology Gas",
+  "mcap": 43580674,
+  "rank": 516,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "INJ",
+  "vol": 3365041.00753,
+  "listed": "2020-10-21",
+  "years": 5.86,
+  "cg_id": "injective-protocol",
+  "name": "Injective",
+  "mcap": 493932987,
+  "rank": 104,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Cosmos Ecosystem",
+   "Layer 1 (L1)",
+   "Terra Ecosystem",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Binance Launchpad",
+   "Osmosis Ecosystem",
+   "Proof of Stake (PoS)",
+   "Pantera Capital Portfolio",
+   "Secret Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "GMCI Layer 1 Index",
+   "GMCI Index",
+   "Made in USA",
+   "Coinbase 50 Index"
+  ],
+  "flags": [
+   "RWA",
+   "DEFI"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "EURI",
+  "vol": 4943011.25701,
+  "listed": "2024-08-28",
+  "years": 2.01,
+  "cg_id": "eurite",
+  "name": "Eurite",
+  "mcap": 38457179,
+  "categories": [
+   "Stablecoins",
+   "EUR Stablecoin",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "MiCA-Compliant Stablecoin",
+   "Bank-Issued Stablecoin"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "LA",
+  "vol": 5034769.03404,
+  "listed": "2025-07-09",
+  "years": 1.15,
+  "cg_id": "lagrange",
+  "name": "Lagrange",
+  "mcap": 11613966,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2",
+   "AI"
+  ],
+  "known": true
+ },
+ {
   "base": "CAKE",
   "vol": 2052594.61508,
   "listed": "2021-02-19",
@@ -1190,41 +1815,127 @@
   "known": true
  },
  {
-  "base": "INJ",
-  "vol": 3365041.00753,
-  "listed": "2020-10-21",
-  "years": 5.86,
-  "cg_id": "injective-protocol",
-  "name": "Injective",
-  "mcap": 493932987,
-  "rank": 104,
+  "base": "NOT",
+  "vol": 5011714.839124,
+  "listed": "2024-05-16",
+  "years": 2.29,
+  "cg_id": "notcoin",
+  "name": "Notcoin",
+  "mcap": 49028534,
   "categories": [
-   "Smart Contract Platform",
-   "Decentralized Finance (DeFi)",
-   "BNB Chain Ecosystem",
-   "Cosmos Ecosystem",
-   "Layer 1 (L1)",
-   "Terra Ecosystem",
-   "Ethereum Ecosystem",
-   "Real World Assets (RWA)",
-   "Binance Launchpad",
-   "Osmosis Ecosystem",
-   "Proof of Stake (PoS)",
-   "Pantera Capital Portfolio",
-   "Secret Ecosystem",
-   "YZi Labs (Prev. Binance Labs) Portfolio",
-   "GMCI Layer 1 Index",
-   "GMCI Index",
-   "Made in USA",
-   "Coinbase 50 Index"
+   "Gaming (GameFi)",
+   "Binance Launchpool",
+   "Meme",
+   "Play To Earn",
+   "TON Ecosystem",
+   "TON Meme",
+   "Tap to Earn"
   ],
   "flags": [
-   "RWA",
+   "MEME",
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "AXL",
+  "vol": 5517931.936236,
+  "listed": "2024-03-01",
+  "years": 2.5,
+  "cg_id": "axelar",
+  "name": "Axelar",
+  "mcap": 53136647,
+  "categories": [
+   "Infrastructure",
+   "BNB Chain Ecosystem",
+   "Avalanche Ecosystem",
+   "Polygon Ecosystem",
+   "Fantom Ecosystem",
+   "Arbitrum Ecosystem",
+   "Moonbeam Ecosystem",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Interoperability",
+   "Bridge Governance Tokens",
+   "Base Ecosystem",
+   "Osmosis Ecosystem",
+   "Cross-chain Communication",
+   "Secret Ecosystem",
+   "Galaxy Digital Portfolio",
+   "Polychain Capital Portfolio",
+   "Made in USA",
+   "CoinList Launchpad"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "ASTER",
+  "vol": 4741074.31482,
+  "listed": "2025-10-06",
+  "years": 0.9,
+  "cg_id": "aster-2",
+  "name": "Aster",
+  "mcap": 1886918020,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Perpetuals",
+   "Made in China"
+  ],
+  "flags": [
+   "DERIV",
+   "CEX",
+   "DEX",
    "DEFI"
   ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SOMI",
+  "vol": 4622813.14186,
+  "listed": "2025-09-02",
+  "years": 1.0,
+  "cg_id": "somnia",
+  "name": "Somnia",
+  "mcap": 19659895,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "Gaming Blockchains",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
   "what": [
    "L1"
   ],
+  "known": true
+ },
+ {
+  "base": "JST",
+  "vol": 1971270.023633,
+  "listed": "2020-08-11",
+  "years": 6.05,
+  "cg_id": "just",
+  "name": "JUST",
+  "mcap": 816001155,
+  "rank": 80,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Tron Ecosystem"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -1260,22 +1971,46 @@
   "known": true
  },
  {
-  "base": "JST",
-  "vol": 1971270.023633,
-  "listed": "2020-08-11",
-  "years": 6.05,
-  "cg_id": "just",
-  "name": "JUST",
-  "mcap": 816001155,
-  "rank": 80,
+  "base": "MIRA",
+  "vol": 4670974.476799,
+  "listed": "2025-09-26",
+  "years": 0.93,
+  "cg_id": "mira-3",
+  "name": "Mira",
+  "mcap": 15506276,
   "categories": [
-   "Decentralized Finance (DeFi)",
-   "Tron Ecosystem"
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
+   "Base Ecosystem",
+   "Binance Alpha Spotlight",
+   "AI Framework",
+   "Base Native"
   ],
-  "flags": [
-   "DEFI"
+  "flags": [],
+  "what": [
+   "AI"
   ],
-  "what": [],
+  "known": true
+ },
+ {
+  "base": "TWT",
+  "vol": 2625829.0702,
+  "listed": "2021-01-27",
+  "years": 5.59,
+  "cg_id": "trust-wallet-token",
+  "name": "Trust Wallet",
+  "mcap": 214191048,
+  "rank": 167,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Wallets",
+   "Account Abstraction",
+   "Energi Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
   "known": true
  },
  {
@@ -1303,6 +2038,57 @@
   "flags": [],
   "what": [
    "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "GIGGLE",
+  "vol": 4490208.20258,
+  "listed": "2025-10-25",
+  "years": 0.85,
+  "cg_id": "giggle-fund",
+  "name": "Giggle Fund",
+  "mcap": 38529927,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Meme"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "FIL",
+  "vol": 1965974.617213,
+  "listed": "2020-10-15",
+  "years": 5.87,
+  "cg_id": "filecoin",
+  "name": "Filecoin",
+  "mcap": 571186464,
+  "rank": 97,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Storage",
+   "Layer 1 (L1)",
+   "DePIN",
+   "Alleged SEC Securities",
+   "Pantera Capital Portfolio",
+   "GMCI DePIN Index",
+   "GMCI 30 Index",
+   "Sequoia Capital Portfolio",
+   "Blockchain Capital Portfolio",
+   "GMCI Index",
+   "Made in USA",
+   "CoinList Launchpad"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "depin",
+   "infra"
   ],
   "known": true
  },
@@ -1345,57 +2131,25 @@
   "known": true
  },
  {
-  "base": "TWT",
-  "vol": 2625829.0702,
-  "listed": "2021-01-27",
-  "years": 5.59,
-  "cg_id": "trust-wallet-token",
-  "name": "Trust Wallet",
-  "mcap": 214191048,
-  "rank": 167,
+  "base": "WLFI",
+  "vol": 3848069.44392,
+  "listed": "2025-09-01",
+  "years": 1.0,
+  "cg_id": "world-liberty-financial",
+  "name": "World Liberty Financial",
+  "mcap": 1829306197,
   "categories": [
    "BNB Chain Ecosystem",
-   "Wallets",
-   "Account Abstraction",
-   "Energi Ecosystem"
-  ],
-  "flags": [],
-  "what": [
-   "infra"
-  ],
-  "known": true
- },
- {
-  "base": "FIL",
-  "vol": 1965974.617213,
-  "listed": "2020-10-15",
-  "years": 5.87,
-  "cg_id": "filecoin",
-  "name": "Filecoin",
-  "mcap": 571186464,
-  "rank": 97,
-  "categories": [
-   "Infrastructure",
-   "Smart Contract Platform",
-   "Storage",
-   "Layer 1 (L1)",
-   "DePIN",
-   "Alleged SEC Securities",
-   "Pantera Capital Portfolio",
-   "GMCI DePIN Index",
-   "GMCI 30 Index",
-   "Sequoia Capital Portfolio",
-   "Blockchain Capital Portfolio",
-   "GMCI Index",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Stablecoin Issuer",
    "Made in USA",
-   "CoinList Launchpad"
+   "Trump-Affiliated"
   ],
-  "flags": [],
-  "what": [
-   "L1",
-   "depin",
-   "infra"
+  "flags": [
+   "STABLE"
   ],
+  "what": [],
   "known": true
  },
  {
@@ -1419,25 +2173,187 @@
   "known": true
  },
  {
-  "base": "AUCTION",
-  "vol": 6034046.56763,
-  "listed": "2021-10-29",
-  "years": 4.84,
-  "cg_id": "auction",
-  "name": "Bounce",
-  "mcap": 25418094,
-  "rank": 746,
+  "base": "BONK",
+  "vol": 3250156.29737904,
+  "listed": "2023-12-15",
+  "years": 2.71,
+  "cg_id": "bonk",
+  "name": "Bonk",
+  "mcap": 265430861,
   "categories": [
-   "Decentralized Finance (DeFi)",
-   "Launchpad",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Polygon Ecosystem",
+   "Meme",
+   "Arbitrum Ecosystem",
    "Ethereum Ecosystem",
-   "DWF Labs Portfolio",
-   "Coinbase Ventures Portfolio",
-   "Pantera Capital Portfolio",
-   "Blockchain Capital Portfolio"
+   "Aptos Ecosystem",
+   "Dog-Themed",
+   "Solana Meme",
+   "Neon Ecosystem",
+   "GMCI Meme Index",
+   "GMCI Index",
+   "Made in USA",
+   "Unichain Ecosystem",
+   "Coinbase 50 Index",
+   "4chan-Themed"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "BERA",
+  "vol": 3298071.2898545,
+  "listed": "2025-02-06",
+  "years": 1.57,
+  "cg_id": "berachain-bera",
+  "name": "Berachain",
+  "mcap": 59071532,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Layer 1 (L1)",
+   "Berachain Ecosystem",
+   "Binance HODLer Airdrops",
+   "Outlier Ventures Portfolio",
+   "Polychain Capital Portfolio"
   ],
   "flags": [
    "DEFI"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "ZKP",
+  "vol": 3184688.50862,
+  "listed": "2026-01-07",
+  "years": 0.65,
+  "cg_id": "zkpass",
+  "name": "zkPass",
+  "mcap": 9098265,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Oracle",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Animoca Brands Portfolio",
+   "Binance Alpha Spotlight",
+   "Binance Buildkey TGE",
+   "Privacy Infrastructure",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1",
+   "L2",
+   "oracle",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "ETHFI",
+  "vol": 3194496.32902,
+  "listed": "2024-03-18",
+  "years": 2.46,
+  "cg_id": "ether-fi",
+  "name": "Ether.fi",
+  "mcap": 552042474,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Binance Launchpool",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Scroll Ecosystem",
+   "Restaking",
+   "Liquid Restaking Governance Tokens",
+   "Ether.fi Ecosystem",
+   "Consensys Portfolio",
+   "OKX Ventures Portfolio",
+   "Neobank"
+  ],
+  "flags": [
+   "YIELD",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "XUSD",
+  "vol": 3522211.9985,
+  "listed": "2025-03-19",
+  "years": 1.45,
+  "cg_id": "straitsx-xusd",
+  "name": "StraitsX XUSD",
+  "mcap": 46201111,
+  "categories": [
+   "Stablecoins",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SHIB",
+  "vol": 2003101.32639074,
+  "listed": "2021-05-10",
+  "years": 5.31,
+  "cg_id": "shiba-inu",
+  "name": "Shiba Inu",
+  "mcap": 3003576007,
+  "rank": 32,
+  "categories": [
+   "Meme",
+   "Ethereum Ecosystem",
+   "Animoca Brands Portfolio",
+   "Dog-Themed",
+   "GMCI Meme Index",
+   "GMCI 30 Index",
+   "GMCI Index",
+   "Coinbase 50 Index"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ANIME",
+  "vol": 2905426.082983,
+  "listed": "2025-01-23",
+  "years": 1.6,
+  "cg_id": "anime",
+  "name": "Animecoin",
+  "mcap": 15701191,
+  "categories": [
+   "NFT",
+   "Meme",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Anime-Themed",
+   "Binance HODLer Airdrops",
+   "Airdropped Tokens by NFT Projects"
+  ],
+  "flags": [
+   "MEME",
+   "GAME"
   ],
   "what": [],
   "known": true
@@ -1484,31 +2400,6 @@
   "known": true
  },
  {
-  "base": "SHIB",
-  "vol": 2003101.32639074,
-  "listed": "2021-05-10",
-  "years": 5.31,
-  "cg_id": "shiba-inu",
-  "name": "Shiba Inu",
-  "mcap": 3003576007,
-  "rank": 32,
-  "categories": [
-   "Meme",
-   "Ethereum Ecosystem",
-   "Animoca Brands Portfolio",
-   "Dog-Themed",
-   "GMCI Meme Index",
-   "GMCI 30 Index",
-   "GMCI Index",
-   "Coinbase 50 Index"
-  ],
-  "flags": [
-   "MEME"
-  ],
-  "what": [],
-  "known": true
- },
- {
   "base": "JASMY",
   "vol": 608681.340908,
   "listed": "2021-11-22",
@@ -1528,6 +2419,243 @@
   "what": [
    "depin"
   ],
+  "known": true
+ },
+ {
+  "base": "PLUME",
+  "vol": 2577243.97502,
+  "listed": "2025-08-18",
+  "years": 1.04,
+  "cg_id": "plume",
+  "name": "Plume",
+  "mcap": 95640383,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "RWA Protocol",
+   "Binance HODLer Airdrops",
+   "Made in USA",
+   "Plume Network Ecosystem"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "TNSR",
+  "vol": 2609771.2645,
+  "listed": "2024-04-08",
+  "years": 2.4,
+  "cg_id": "tensor",
+  "name": "Tensor",
+  "mcap": 26584759,
+  "categories": [
+   "NFT",
+   "Solana Ecosystem",
+   "NFT Marketplace"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "AUCTION",
+  "vol": 6034046.56763,
+  "listed": "2021-10-29",
+  "years": 4.84,
+  "cg_id": "auction",
+  "name": "Bounce",
+  "mcap": 25418094,
+  "rank": 746,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Launchpad",
+   "Ethereum Ecosystem",
+   "DWF Labs Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Pantera Capital Portfolio",
+   "Blockchain Capital Portfolio"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ZAMA",
+  "vol": 2394753.49487,
+  "listed": "2026-02-02",
+  "years": 0.58,
+  "cg_id": "zama",
+  "name": "Zama",
+  "mcap": 110856420,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Cross-chain Communication",
+   "Binance Wallet IDO",
+   "CoinList Launchpad",
+   "Privacy Infrastructure",
+   "Zama Gateway Mainnet Ecosystem",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SC",
+  "vol": 924916.828161,
+  "listed": "2020-07-06",
+  "years": 6.15,
+  "cg_id": "siacoin",
+  "name": "Siacoin",
+  "mcap": 33331435,
+  "categories": [
+   "Smart Contract Platform",
+   "Storage",
+   "DePIN",
+   "Paradigm Portfolio",
+   "Proof of Work (PoW)",
+   "DragonFly Capital Portfolio",
+   "Made in USA"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "ACE",
+  "vol": 2315168.49809,
+  "listed": "2023-12-18",
+  "years": 2.7,
+  "cg_id": "endurance",
+  "name": "Fusionist",
+  "mcap": 17470735,
+  "categories": [
+   "Gaming (GameFi)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Binance Launchpool",
+   "RPG",
+   "Strategy Games",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Endurance Ecosystem"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "VIRTUAL",
+  "vol": 2183926.44113,
+  "listed": "2025-04-11",
+  "years": 1.39,
+  "cg_id": "virtual-protocol",
+  "name": "Virtuals Protocol",
+  "mcap": 460850559,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Solana Ecosystem",
+   "Launchpad",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "AI Agents",
+   "Virtuals Protocol Ecosystem",
+   "AI Agent Launchpad",
+   "Binance Alpha Spotlight",
+   "AI Framework",
+   "Robotics",
+   "Base Native",
+   "Robinhood Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "STRK",
+  "vol": 2129296.7304279,
+  "listed": "2024-02-20",
+  "years": 2.53,
+  "cg_id": "starknet",
+  "name": "Starknet",
+  "mcap": 191613632,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)",
+   "Starknet Ecosystem",
+   "Paradigm Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Rollup",
+   "Multicoin Capital Portfolio",
+   "Bitcoin Sidechains",
+   "SideChain",
+   "Alameda Research Portfolio",
+   "Pantera Capital Portfolio",
+   "GMCI Layer 2 Index",
+   "Consensys Portfolio",
+   "Sequoia Capital Portfolio",
+   "GMCI Index",
+   "Privacy Blockchain",
+   "Polychain Capital Portfolio",
+   "Quantum-Resistant",
+   "Privacy Infrastructure",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1",
+   "L2",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "ATM",
+  "vol": 2116306.71048,
+  "listed": "2020-12-30",
+  "years": 5.67,
+  "cg_id": "atletico-madrid",
+  "name": "Atletico Madrid Fan Token",
+  "mcap": 10574407,
+  "categories": [
+   "Sports",
+   "Binance Launchpool",
+   "Fan Token",
+   "Solana Ecosystem",
+   "Base Ecosystem",
+   "Chiliz Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [],
+  "what": [],
   "known": true
  },
  {
@@ -1579,43 +2707,254 @@
   "known": true
  },
  {
-  "base": "ATM",
-  "vol": 2074197.12534,
-  "listed": "2020-12-30",
-  "years": 5.67,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "COTI",
-  "vol": 4211836.78001,
-  "listed": "2020-02-26",
-  "years": 6.51,
-  "cg_id": "coti",
-  "name": "COTI",
-  "mcap": 39425066,
-  "rank": 554,
+  "base": "SCR",
+  "vol": 2074558.470484,
+  "listed": "2024-10-11",
+  "years": 1.89,
+  "cg_id": "scroll",
+  "name": "Scroll",
+  "mcap": 4635966,
   "categories": [
    "Smart Contract Platform",
-   "Ethereum Ecosystem",
+   "Binance Launchpool",
    "Layer 2 (L2)",
    "Zero Knowledge (ZK)",
-   "Alleged SEC Securities",
-   "Privacy Blockchain",
-   "Privacy Infrastructure",
-   "Privacy"
+   "Scroll Ecosystem"
   ],
-  "flags": [
-   "PRIV"
-  ],
+  "flags": [],
   "what": [
    "L1",
    "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "USDE",
+  "vol": 1109600.5377,
+  "listed": "2025-09-09",
+  "years": 0.98,
+  "cg_id": "ethena-usde",
+  "name": "Ethena USDe",
+  "mcap": 4117709822,
+  "categories": [
+   "Stablecoins",
+   "USD Stablecoin",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Avalanche Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Metis Ecosystem",
+   "Optimism Ecosystem",
+   "Aptos Ecosystem",
+   "ZkSync Ecosystem",
+   "Mantle Ecosystem",
+   "Linea Ecosystem",
+   "Base Ecosystem",
+   "TON Ecosystem",
+   "Manta Network Ecosystem",
+   "Scroll Ecosystem",
+   "Berachain Ecosystem",
+   "Kava Ecosystem",
+   "Blast Ecosystem",
+   "Mode Ecosystem",
+   "Fraxtal Ecosystem",
+   "X Layer Ecosystem",
+   "Hyperliquid Ecosystem",
+   "Fiat-backed Stablecoin",
+   "Zircuit Ecosystem",
+   "Morph L2 Ecosystem",
+   "Swellchain Ecosystem",
+   "HyperEVM Ecosystem",
+   "Synthetic Dollar",
+   "Plasma Ecosystem",
+   "MegaETH Ecosystem",
+   "Monad Ecosystem",
+   "Base Native",
+   "Robinhood Ecosystem"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ERA",
+  "vol": 1998087.77487,
+  "listed": "2025-07-17",
+  "years": 1.13,
+  "cg_id": "caldera",
+  "name": "Caldera",
+  "mcap": 10695241,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Rollups-as-a-Service (RaaS)",
+   "Cross-chain Communication",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "HUMA",
+  "vol": 2061254.82558,
+  "listed": "2025-05-26",
+  "years": 1.27,
+  "cg_id": "huma-finance",
+  "name": "Huma Finance",
+  "mcap": 36857183,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Payment Solutions",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "pay"
+  ],
+  "known": true
+ },
+ {
+  "base": "PYTH",
+  "vol": 1949174.319576,
+  "listed": "2024-02-02",
+  "years": 2.58,
+  "cg_id": "pyth-network",
+  "name": "Pyth Network",
+  "mcap": 396005711,
+  "categories": [
+   "Infrastructure",
+   "Decentralized Finance (DeFi)",
+   "Oracle",
+   "Analytics",
+   "Solana Ecosystem",
+   "Neon Ecosystem",
+   "Manta Network Ecosystem",
+   "Multicoin Capital Portfolio",
+   "GMCI DeFi Index",
+   "Delphi Ventures Portfolio",
+   "GMCI Index"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "oracle",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "MITO",
+  "vol": 1932654.257531,
+  "listed": "2025-08-29",
+  "years": 1.01,
+  "cg_id": "mitosis",
+  "name": "Mitosis",
+  "mcap": 9573189,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Binance HODLer Airdrops",
+   "Binance Wallet IDO"
+  ],
+  "flags": [
+   "YIELD",
+   "DEFI"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "BOME",
+  "vol": 1887957.7119825,
+  "listed": "2024-03-16",
+  "years": 2.46,
+  "cg_id": "book-of-meme",
+  "name": "BOOK OF MEME",
+  "mcap": 60246359,
+  "categories": [
+   "Solana Ecosystem",
+   "Meme",
+   "Frog-Themed",
+   "Solana Meme",
+   "GMCI Meme Index",
+   "GMCI Index"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "JTO",
+  "vol": 2503797.39088,
+  "listed": "2023-12-07",
+  "years": 2.74,
+  "cg_id": "jito-governance-token",
+  "name": "Jito",
+  "mcap": 229784606,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Solana Ecosystem",
+   "Liquid Staking Governance Tokens",
+   "Multicoin Capital Portfolio",
+   "Alameda Research Portfolio",
+   "Delphi Ventures Portfolio",
+   "Liquid Staking",
+   "Made in USA"
+  ],
+  "flags": [
+   "YIELD",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "TIA",
+  "vol": 1872103.360839,
+  "listed": "2023-10-31",
+  "years": 2.84,
+  "cg_id": "celestia",
+  "name": "Celestia",
+  "mcap": 326895949,
+  "categories": [
+   "Smart Contract Platform",
+   "Cosmos Ecosystem",
+   "Layer 1 (L1)",
+   "Data Availability",
+   "Modular Blockchain",
+   "Osmosis Ecosystem",
+   "eGirl Capital Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Proof of Stake (PoS)",
+   "Secret Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Delphi Ventures Portfolio",
+   "Galaxy Digital Portfolio",
+   "Blockchain Capital Portfolio",
+   "OKX Ventures Portfolio",
+   "Polychain Capital Portfolio"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
   ],
   "known": true
  },
@@ -1652,6 +2991,139 @@
   "known": true
  },
  {
+  "base": "BB",
+  "vol": 1820811.618084,
+  "listed": "2024-05-13",
+  "years": 2.3,
+  "cg_id": "bouncebit",
+  "name": "BounceBit",
+  "mcap": 3857929,
+  "categories": [
+   "Smart Contract Platform",
+   "Solana Ecosystem",
+   "Layer 1 (L1)",
+   "Ethereum Ecosystem",
+   "Restaking",
+   "Proof of Stake (PoS)",
+   "DeFiance Capital Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Binance Megadrop",
+   "Blockchain Capital Portfolio",
+   "OKX Ventures Portfolio"
+  ],
+  "flags": [
+   "YIELD"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "COTI",
+  "vol": 4211836.78001,
+  "listed": "2020-02-26",
+  "years": 6.51,
+  "cg_id": "coti",
+  "name": "COTI",
+  "mcap": 39425066,
+  "rank": 554,
+  "categories": [
+   "Smart Contract Platform",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)",
+   "Alleged SEC Securities",
+   "Privacy Blockchain",
+   "Privacy Infrastructure",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "BANK",
+  "vol": 1800301.27538,
+  "listed": "2025-11-13",
+  "years": 0.8,
+  "cg_id": "lorenzo-protocol",
+  "name": "Lorenzo Protocol",
+  "mcap": 15102105,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Liquid Staking",
+   "BTCfi Protocol"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "RENDER",
+  "vol": 1777685.03377,
+  "listed": "2024-07-26",
+  "years": 2.1,
+  "cg_id": "render-token",
+  "name": "Render",
+  "mcap": 750002051,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "NFT",
+   "Metaverse",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "DePIN",
+   "Multicoin Capital Portfolio",
+   "Alameda Research Portfolio",
+   "GMCI DePIN Index",
+   "GMCI 30 Index",
+   "GMCI Index",
+   "Made in USA",
+   "Coinbase 50 Index"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "OPEN",
+  "vol": 1955028.14547,
+  "listed": "2025-09-08",
+  "years": 0.98,
+  "cg_id": "openledger-2",
+  "name": "OpenLedger",
+  "mcap": 29587416,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Rollup",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2",
+   "AI"
+  ],
+  "known": true
+ },
+ {
   "base": "STX",
   "vol": 1704194.91028,
   "listed": "2019-10-25",
@@ -1681,6 +3153,169 @@
    "L2",
    "infra"
   ],
+  "known": true
+ },
+ {
+  "base": "WIF",
+  "vol": 1606611.869491,
+  "listed": "2024-03-05",
+  "years": 2.49,
+  "cg_id": "dogwifcoin",
+  "name": "dogwifhat",
+  "mcap": 197075575,
+  "categories": [
+   "Solana Ecosystem",
+   "Meme",
+   "Dog-Themed",
+   "Solana Meme",
+   "GMCI Meme Index",
+   "GMCI Index",
+   "Unichain Ecosystem"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "EIGEN",
+  "vol": 1484244.763102,
+  "listed": "2024-10-01",
+  "years": 1.92,
+  "cg_id": "eigenlayer",
+  "name": "EigenCloud (prev. EigenLayer)",
+  "mcap": 183070608,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Data Availability",
+   "Restaking",
+   "Polychain Capital Portfolio",
+   "AI Framework",
+   "Made in USA",
+   "x402 Ecosystem"
+  ],
+  "flags": [
+   "YIELD"
+  ],
+  "what": [
+   "AI",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "NIL",
+  "vol": 1546887.909274,
+  "listed": "2025-03-24",
+  "years": 1.44,
+  "cg_id": "nillion",
+  "name": "Nillion",
+  "mcap": 26099712,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
+   "Binance Launchpool",
+   "Ethereum Ecosystem",
+   "CoinList Launchpad",
+   "Privacy Infrastructure",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "AI",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "BARD",
+  "vol": 1499944.20727,
+  "listed": "2025-09-18",
+  "years": 0.95,
+  "cg_id": "lombard-protocol",
+  "name": "Lombard",
+  "mcap": 46768462,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance HODLer Airdrops",
+   "BTCfi Protocol",
+   "Binance Alpha Spotlight",
+   "Buidlpad Launchpad"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "TREE",
+  "vol": 1586204.10191,
+  "listed": "2025-07-29",
+  "years": 1.09,
+  "cg_id": "tree-capital",
+  "name": "Tree",
+  "mcap": 15752166,
+  "categories": [
+   "Analytics",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "BFUSD",
+  "vol": 1335162.3183,
+  "listed": "2025-08-13",
+  "years": 1.05,
+  "cg_id": "bfusd",
+  "name": "BFUSD",
+  "mcap": 1319384321,
+  "categories": [
+   "Stablecoins",
+   "Yield-Bearing Stablecoin"
+  ],
+  "flags": [
+   "STABLE"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "CVX",
+  "vol": 406132.98181,
+  "listed": "2021-12-23",
+  "years": 4.68,
+  "cg_id": "convex-finance",
+  "name": "Convex Finance",
+  "mcap": 214298002,
+  "rank": 166,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "Yield Aggregator",
+   "Ethereum Ecosystem",
+   "Metagovernance",
+   "Curve Ecosystem",
+   "Yield Optimizer",
+   "Governance"
+  ],
+  "flags": [
+   "YIELD",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -1727,6 +3362,82 @@
   "known": true
  },
  {
+  "base": "ALGO",
+  "vol": 701822.6696,
+  "listed": "2019-06-22",
+  "years": 7.19,
+  "cg_id": "algorand",
+  "name": "Algorand",
+  "mcap": 778928512,
+  "rank": 83,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "Algorand Ecosystem",
+   "Real World Assets (RWA)",
+   "DWF Labs Portfolio",
+   "Multicoin Capital Portfolio",
+   "Proof of Stake (PoS)",
+   "GMCI Layer 1 Index",
+   "GMCI Index",
+   "Made in USA",
+   "Coinbase 50 Index",
+   "Quantum-Resistant",
+   "CoinList Launchpad"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "SPK",
+  "vol": 1260578.238713,
+  "listed": "2025-06-17",
+  "years": 1.21,
+  "cg_id": "spark-2",
+  "name": "Spark",
+  "mcap": 62430874,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Lending/Borrowing Protocols",
+   "Ethereum Ecosystem",
+   "Stablecoin Issuer",
+   "Binance HODLer Airdrops",
+   "Governance"
+  ],
+  "flags": [
+   "LEND",
+   "STABLE",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "EDEN",
+  "vol": 1197381.77769,
+  "listed": "2025-09-30",
+  "years": 0.92,
+  "cg_id": "openeden",
+  "name": "OpenEden",
+  "mcap": 25255842,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "RWA Protocol"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "ONT",
   "vol": 1799915.16773,
   "listed": "2018-06-08",
@@ -1744,6 +3455,30 @@
   "flags": [],
   "what": [
    "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "PROVE",
+  "vol": 1278549.02444,
+  "listed": "2025-08-05",
+  "years": 1.07,
+  "cg_id": "succinct",
+  "name": "Succinct",
+  "mcap": 35958271,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2",
+   "infra"
   ],
   "known": true
  },
@@ -1776,32 +3511,6 @@
   "what": [
    "L1"
   ],
-  "known": true
- },
- {
-  "base": "CVX",
-  "vol": 406132.98181,
-  "listed": "2021-12-23",
-  "years": 4.68,
-  "cg_id": "convex-finance",
-  "name": "Convex Finance",
-  "mcap": 214298002,
-  "rank": 166,
-  "categories": [
-   "Decentralized Finance (DeFi)",
-   "Yield Farming",
-   "Yield Aggregator",
-   "Ethereum Ecosystem",
-   "Metagovernance",
-   "Curve Ecosystem",
-   "Yield Optimizer",
-   "Governance"
-  ],
-  "flags": [
-   "YIELD",
-   "DEFI"
-  ],
-  "what": [],
   "known": true
  },
  {
@@ -1876,6 +3585,97 @@
   "known": true
  },
  {
+  "base": "\u5e01\u5b89\u4eba\u751f",
+  "vol": 1175726.76126,
+  "listed": "2026-01-07",
+  "years": 0.65,
+  "cg_id": "bianrensheng",
+  "name": "\u5e01\u5b89\u4eba\u751f (BinanceLife)",
+  "mcap": 483598733,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Meme",
+   "Binance Alpha Spotlight",
+   "Chinese Meme",
+   "Four.meme Ecosystem (BNB Memes)"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "KAITO",
+  "vol": 1161273.32064,
+  "listed": "2025-02-20",
+  "years": 1.53,
+  "cg_id": "kaito",
+  "name": "KAITO",
+  "mcap": 73147757,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Analytics",
+   "Launchpad",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "InfoFi",
+   "Governance",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "HOME",
+  "vol": 1173307.10061,
+  "listed": "2025-06-12",
+  "years": 1.22,
+  "cg_id": "home",
+  "name": "HOME",
+  "mcap": 26256145,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Base Ecosystem",
+   "Account Abstraction",
+   "Dex Aggregator",
+   "Base Native"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "ORDI",
+  "vol": 1135379.859,
+  "listed": "2023-11-07",
+  "years": 2.82,
+  "cg_id": "ordinals",
+  "name": "ORDI",
+  "mcap": 82938006,
+  "categories": [
+   "Solana Ecosystem",
+   "Meme",
+   "BRC-20",
+   "Bitcoin Ecosystem",
+   "Inscriptions"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "AMP",
   "vol": 609207.147762,
   "listed": "2021-11-23",
@@ -1903,120 +3703,6 @@
   "known": true
  },
  {
-  "base": "APE",
-  "vol": 421649.490343,
-  "listed": "2022-03-17",
-  "years": 4.45,
-  "cg_id": "apecoin",
-  "name": "ApeCoin",
-  "mcap": 137023804,
-  "rank": 214,
-  "categories": [
-   "Smart Contract Platform",
-   "Gaming (GameFi)",
-   "NFT",
-   "BNB Chain Ecosystem",
-   "Solana Ecosystem",
-   "Polygon Ecosystem",
-   "Arbitrum Ecosystem",
-   "Ethereum Ecosystem",
-   "Animoca Brands Portfolio",
-   "Gaming Blockchains",
-   "Gaming Governance Token",
-   "Gaming Utility Token",
-   "Andreessen Horowitz (a16z) Portfolio",
-   "ApeChain Ecosystem",
-   "Airdropped Tokens by NFT Projects",
-   "HyperEVM Ecosystem",
-   "Coinbase 50 Index",
-   "Governance",
-   "IP Meme",
-   "Monad Ecosystem",
-   "Robinhood Ecosystem"
-  ],
-  "flags": [
-   "GAME"
-  ],
-  "what": [
-   "L1"
-  ],
-  "known": true
- },
- {
-  "base": "MBL",
-  "vol": 1182184.908654,
-  "listed": "2020-02-21",
-  "years": 6.53,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "COMP",
-  "vol": 1126874.95259,
-  "listed": "2020-06-25",
-  "years": 6.18,
-  "cg_id": "compound-governance-token",
-  "name": "Compound",
-  "mcap": 191275220,
-  "categories": [
-   "Decentralized Finance (DeFi)",
-   "Yield Farming",
-   "BNB Chain Ecosystem",
-   "Lending/Borrowing Protocols",
-   "Avalanche Ecosystem",
-   "Polygon Ecosystem",
-   "Near Protocol Ecosystem",
-   "Harmony Ecosystem",
-   "Arbitrum Ecosystem",
-   "Ethereum Ecosystem",
-   "Base Ecosystem",
-   "Paradigm Portfolio",
-   "Index Coop Defi Index",
-   "Energi Ecosystem",
-   "Sora Ecosystem",
-   "Polychain Capital Portfolio",
-   "Made in USA",
-   "Governance",
-   "Base Native"
-  ],
-  "flags": [
-   "LEND",
-   "YIELD",
-   "DEFI"
-  ],
-  "what": [],
-  "known": true
- },
- {
-  "base": "SC",
-  "vol": 924916.828161,
-  "listed": "2020-07-06",
-  "years": 6.15,
-  "cg_id": "siacoin",
-  "name": "Siacoin",
-  "mcap": 33331435,
-  "categories": [
-   "Smart Contract Platform",
-   "Storage",
-   "DePIN",
-   "Paradigm Portfolio",
-   "Proof of Work (PoW)",
-   "DragonFly Capital Portfolio",
-   "Made in USA"
-  ],
-  "flags": [],
-  "what": [
-   "L1",
-   "depin"
-  ],
-  "known": true
- },
- {
   "base": "ENS",
   "vol": 1043642.4228,
   "listed": "2021-11-10",
@@ -2038,40 +3724,185 @@
   "known": true
  },
  {
-  "base": "MOVR",
-  "vol": 4462761.405113,
-  "listed": "2021-11-08",
-  "years": 4.81,
+  "base": "KITE",
+  "vol": 1103156.48129,
+  "listed": "2025-11-03",
+  "years": 0.83,
+  "cg_id": "kite-2",
+  "name": "Kite",
+  "mcap": 281845235,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Avalanche Ecosystem",
+   "Ethereum Ecosystem",
+   "AI Agents",
+   "Hyperliquid Ecosystem",
+   "Binance Alpha Spotlight",
+   "HyperEVM Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "HEI",
+  "vol": 1100741.83396,
+  "listed": "2025-02-13",
+  "years": 1.55,
+  "cg_id": "heima",
+  "name": "Heima",
+  "mcap": 11229750,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Binance Launchpool",
+   "Ethereum Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "HOLO",
+  "vol": 1093575.45063,
+  "listed": "2025-09-11",
+  "years": 0.97,
+  "cg_id": "holoworld",
+  "name": "Holoworld",
+  "mcap": 48925215,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
+   "Solana Ecosystem",
+   "AI Agents",
+   "Binance HODLer Airdrops",
+   "AI Agent Launchpad",
+   "AI Framework"
+  ],
+  "flags": [],
+  "what": [
+   "AI",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "SEI",
+  "vol": 675835.063742,
+  "listed": "2023-08-15",
+  "years": 3.04,
+  "cg_id": "sei-network",
+  "name": "Sei",
+  "mcap": 301142565,
+  "rank": 134,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Layer 1 (L1)",
+   "Parallelized EVM",
+   "Coinbase Ventures Portfolio",
+   "Multicoin Capital Portfolio",
+   "GMCI Layer 1 Index",
+   "Delphi Ventures Portfolio",
+   "Circle Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "GMCI Index",
+   "Sei Network Ecosystem",
+   "World Liberty Financial Portfolio",
+   "Made in USA"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "MBL",
+  "vol": 1077772.515613,
+  "listed": "2020-02-21",
+  "years": 6.53,
+  "cg_id": "moviebloc",
+  "name": "MovieBloc",
+  "mcap": 12856887,
+  "categories": [
+   "DWF Labs Portfolio"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "TST",
+  "vol": 1059063.453939,
+  "listed": "2025-02-09",
+  "years": 1.56,
+  "cg_id": "test-3",
+  "name": "Test",
+  "mcap": 15397274,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Meme",
+   "Binance Alpha Spotlight",
+   "Four.meme Ecosystem (BNB Memes)"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "VELODROME",
+  "vol": 1025291.554321,
+  "listed": "2024-12-13",
+  "years": 1.72,
   "cg_id": null,
   "name": null,
   "mcap": null,
-  "rank": null,
   "categories": [],
   "flags": [],
   "what": [],
   "known": false
  },
  {
-  "base": "API3",
-  "vol": 1009051.688396,
-  "listed": "2022-01-21",
-  "years": 4.61,
-  "cg_id": "api3",
-  "name": "Api3",
-  "mcap": 32392536,
+  "base": "ZBT",
+  "vol": 1043932.63146,
+  "listed": "2025-10-17",
+  "years": 0.87,
+  "cg_id": "zerobase",
+  "name": "ZEROBASE",
+  "mcap": 26947763,
   "categories": [
+   "Smart Contract Platform",
    "Decentralized Finance (DeFi)",
-   "Oracle",
+   "BNB Chain Ecosystem",
    "Ethereum Ecosystem",
-   "DWF Labs Portfolio",
-   "Pantera Capital Portfolio",
-   "Governance"
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem",
+   "Proof of Stake (PoS)",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Binance Wallet IDO",
+   "Privacy Infrastructure",
+   "Privacy"
   ],
   "flags": [
+   "PRIV",
    "DEFI"
   ],
   "what": [
-   "oracle"
+   "L1",
+   "L2"
   ],
   "known": true
  },
@@ -2147,64 +3978,161 @@
   "known": true
  },
  {
-  "base": "SEI",
-  "vol": 675835.063742,
-  "listed": "2023-08-15",
-  "years": 3.04,
-  "cg_id": "sei-network",
-  "name": "Sei",
-  "mcap": 301142565,
-  "rank": 134,
+  "base": "API3",
+  "vol": 1009051.688396,
+  "listed": "2022-01-21",
+  "years": 4.61,
+  "cg_id": "api3",
+  "name": "Api3",
+  "mcap": 32392536,
   "categories": [
-   "Smart Contract Platform",
    "Decentralized Finance (DeFi)",
-   "Layer 1 (L1)",
-   "Parallelized EVM",
-   "Coinbase Ventures Portfolio",
-   "Multicoin Capital Portfolio",
-   "GMCI Layer 1 Index",
-   "Delphi Ventures Portfolio",
-   "Circle Ventures Portfolio",
-   "OKX Ventures Portfolio",
-   "GMCI Index",
-   "Sei Network Ecosystem",
-   "World Liberty Financial Portfolio",
-   "Made in USA"
+   "Oracle",
+   "Ethereum Ecosystem",
+   "DWF Labs Portfolio",
+   "Pantera Capital Portfolio",
+   "Governance"
   ],
   "flags": [
    "DEFI"
   ],
   "what": [
-   "L1"
+   "oracle"
   ],
   "known": true
  },
  {
-  "base": "ALGO",
-  "vol": 701822.6696,
-  "listed": "2019-06-22",
-  "years": 7.19,
-  "cg_id": "algorand",
-  "name": "Algorand",
-  "mcap": 778928512,
-  "rank": 83,
+  "base": "MOVR",
+  "vol": 968124.302654,
+  "listed": "2021-11-08",
+  "years": 4.81,
+  "cg_id": "moonriver",
+  "name": "Moonriver",
+  "mcap": 10131702,
   "categories": [
    "Smart Contract Platform",
    "Layer 1 (L1)",
-   "Algorand Ecosystem",
-   "Real World Assets (RWA)",
-   "DWF Labs Portfolio",
+   "Moonriver Ecosystem",
+   "Base Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Meter Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "BROCCOLI714",
+  "vol": 957688.25547,
+  "listed": "2025-03-27",
+  "years": 1.43,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "SAPIEN",
+  "vol": 944619.80694,
+  "listed": "2025-11-06",
+  "years": 0.82,
+  "cg_id": "sapien-2",
+  "name": "Sapien",
+  "mcap": 15533031,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
+   "Base Ecosystem",
+   "Governance",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "AI",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "AR",
+  "vol": 498664.83025,
+  "listed": "2021-05-14",
+  "years": 5.3,
+  "cg_id": "arweave",
+  "name": "Arweave",
+  "mcap": 137077183,
+  "rank": 213,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "Storage",
+   "Layer 1 (L1)",
+   "DePIN",
+   "Coinbase Ventures Portfolio",
    "Multicoin Capital Portfolio",
-   "Proof of Stake (PoS)",
-   "GMCI Layer 1 Index",
-   "GMCI Index",
-   "Made in USA",
+   "Andreessen Horowitz (a16z) Portfolio",
+   "Blockchain Capital Portfolio"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "BNSOL",
+  "vol": 924141.2973,
+  "listed": "2024-10-17",
+  "years": 1.87,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "APE",
+  "vol": 421649.490343,
+  "listed": "2022-03-17",
+  "years": 4.45,
+  "cg_id": "apecoin",
+  "name": "ApeCoin",
+  "mcap": 137023804,
+  "rank": 214,
+  "categories": [
+   "Smart Contract Platform",
+   "Gaming (GameFi)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Polygon Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Animoca Brands Portfolio",
+   "Gaming Blockchains",
+   "Gaming Governance Token",
+   "Gaming Utility Token",
+   "Andreessen Horowitz (a16z) Portfolio",
+   "ApeChain Ecosystem",
+   "Airdropped Tokens by NFT Projects",
+   "HyperEVM Ecosystem",
    "Coinbase 50 Index",
-   "Quantum-Resistant",
-   "CoinList Launchpad"
+   "Governance",
+   "IP Meme",
+   "Monad Ecosystem",
+   "Robinhood Ecosystem"
   ],
   "flags": [
-   "RWA"
+   "GAME"
   ],
   "what": [
    "L1"
@@ -2212,25 +4140,60 @@
   "known": true
  },
  {
-  "base": "RVN",
-  "vol": 949409.351655,
-  "listed": "2019-09-25",
-  "years": 6.93,
-  "cg_id": "ravencoin",
-  "name": "Ravencoin",
-  "mcap": 49185424,
+  "base": "EUL",
+  "vol": 909288.1287,
+  "listed": "2025-10-13",
+  "years": 0.88,
+  "cg_id": "euler",
+  "name": "Euler",
+  "mcap": 31240263,
   "categories": [
-   "Smart Contract Platform",
-   "Real World Assets (RWA)",
-   "Proof of Work (PoW)",
-   "Made in USA"
+   "BNB Chain Ecosystem",
+   "Lending/Borrowing Protocols",
+   "Avalanche Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Berachain Ecosystem",
+   "Paradigm Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Sonic Ecosystem",
+   "Swellchain Ecosystem",
+   "Unichain Ecosystem",
+   "TAC Ecosystem",
+   "Plasma Ecosystem",
+   "BOB Network Ecosystem"
   ],
   "flags": [
-   "RWA"
+   "LEND"
   ],
-  "what": [
-   "L1"
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "FF",
+  "vol": 908219.336575,
+  "listed": "2025-09-29",
+  "years": 0.92,
+  "cg_id": "falcon-finance-ff",
+  "name": "Falcon Finance",
+  "mcap": 251873281,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Buidlpad Launchpad"
   ],
+  "flags": [
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -2265,31 +4228,44 @@
   "known": true
  },
  {
-  "base": "AR",
-  "vol": 498664.83025,
-  "listed": "2021-05-14",
-  "years": 5.3,
-  "cg_id": "arweave",
-  "name": "Arweave",
-  "mcap": 137077183,
-  "rank": 213,
+  "base": "RVN",
+  "vol": 949409.351655,
+  "listed": "2019-09-25",
+  "years": 6.93,
+  "cg_id": "ravencoin",
+  "name": "Ravencoin",
+  "mcap": 49185424,
   "categories": [
-   "Artificial Intelligence (AI)",
    "Smart Contract Platform",
-   "Storage",
-   "Layer 1 (L1)",
-   "DePIN",
-   "Coinbase Ventures Portfolio",
-   "Multicoin Capital Portfolio",
-   "Andreessen Horowitz (a16z) Portfolio",
-   "Blockchain Capital Portfolio"
+   "Real World Assets (RWA)",
+   "Proof of Work (PoW)",
+   "Made in USA"
   ],
-  "flags": [],
+  "flags": [
+   "RWA"
+  ],
   "what": [
-   "L1",
-   "AI",
-   "depin"
+   "L1"
   ],
+  "known": true
+ },
+ {
+  "base": "FORM",
+  "vol": 903204.67134,
+  "listed": "2025-03-19",
+  "years": 1.45,
+  "cg_id": "four",
+  "name": "Four",
+  "mcap": 99252981,
+  "categories": [
+   "Gaming (GameFi)",
+   "BNB Chain Ecosystem",
+   "Launchpad"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -2316,6 +4292,67 @@
   "what": [
    "L1"
   ],
+  "known": true
+ },
+ {
+  "base": "NEIRO",
+  "vol": 881882.2179647,
+  "listed": "2024-09-16",
+  "years": 1.96,
+  "cg_id": "neiro-3",
+  "name": "Neiro",
+  "mcap": 36352890,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Meme",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Dog-Themed",
+   "HyperEVM Ecosystem",
+   "IP Meme",
+   "Base Native"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "COMP",
+  "vol": 1126874.95259,
+  "listed": "2020-06-25",
+  "years": 6.18,
+  "cg_id": "compound-governance-token",
+  "name": "Compound",
+  "mcap": 191275220,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "BNB Chain Ecosystem",
+   "Lending/Borrowing Protocols",
+   "Avalanche Ecosystem",
+   "Polygon Ecosystem",
+   "Near Protocol Ecosystem",
+   "Harmony Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Paradigm Portfolio",
+   "Index Coop Defi Index",
+   "Energi Ecosystem",
+   "Sora Ecosystem",
+   "Polychain Capital Portfolio",
+   "Made in USA",
+   "Governance",
+   "Base Native"
+  ],
+  "flags": [
+   "LEND",
+   "YIELD",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -2358,30 +4395,86 @@
   "known": true
  },
  {
-  "base": "DCR",
-  "vol": 384023.76181,
-  "listed": "2020-07-30",
-  "years": 6.08,
-  "cg_id": "decred",
-  "name": "Decred",
-  "mcap": 255931655,
-  "rank": 143,
+  "base": "MUBARAK",
+  "vol": 859730.750708,
+  "listed": "2025-03-27",
+  "years": 1.43,
+  "cg_id": "mubarak",
+  "name": "Mubarak",
+  "mcap": 21504373,
   "categories": [
-   "Smart Contract Platform",
-   "Privacy Coins",
-   "Layer 1 (L1)",
-   "Proof of Stake (PoS)",
-   "Proof of Work (PoW)",
-   "Blockchain Capital Portfolio",
-   "Made in USA",
-   "Privacy"
+   "BNB Chain Ecosystem",
+   "Meme"
   ],
   "flags": [
-   "PRIV"
+   "MEME"
   ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "PORTAL",
+  "vol": 802656.57574,
+  "listed": "2024-02-29",
+  "years": 2.51,
+  "cg_id": "portal-2",
+  "name": "Portal",
+  "mcap": 12626699,
+  "categories": [
+   "Gaming (GameFi)",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Gaming Platform"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ALLO",
+  "vol": 789483.04421,
+  "listed": "2025-11-11",
+  "years": 0.8,
+  "cg_id": "allora",
+  "name": "Allora",
+  "mcap": 58946334,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
+   "Base Ecosystem",
+   "Binance Alpha Spotlight",
+   "AI Framework",
+   "Base Native"
+  ],
+  "flags": [],
   "what": [
-   "L1"
+   "AI"
   ],
+  "known": true
+ },
+ {
+  "base": "SKY",
+  "vol": 555412.60173,
+  "listed": "2025-09-17",
+  "years": 0.96,
+  "cg_id": "sky",
+  "name": "Sky",
+  "mcap": 1581055574,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Ethereum Ecosystem",
+   "Stablecoin Issuer",
+   "Hydration Ecosystem",
+   "Governance"
+  ],
+  "flags": [
+   "STABLE",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -2412,82 +4505,6 @@
    "L1",
    "AI"
   ],
-  "known": true
- },
- {
-  "base": "GMT",
-  "vol": 775202.421667,
-  "listed": "2022-03-09",
-  "years": 4.48,
-  "cg_id": "stepn",
-  "name": "GMT",
-  "mcap": 22887219,
-  "categories": [
-   "Gaming (GameFi)",
-   "NFT",
-   "BNB Chain Ecosystem",
-   "Solana Ecosystem",
-   "Polygon Ecosystem",
-   "Play To Earn",
-   "Move To Earn",
-   "Ethereum Ecosystem",
-   "Binance Launchpad",
-   "Gaming Governance Token",
-   "Sports Games",
-   "Alameda Research Portfolio",
-   "YZi Labs (Prev. Binance Labs) Portfolio",
-   "Sequoia Capital Portfolio"
-  ],
-  "flags": [
-   "GAME"
-  ],
-  "what": [],
-  "known": true
- },
- {
-  "base": "SNX",
-  "vol": 795093.60137,
-  "listed": "2020-07-09",
-  "years": 6.15,
-  "cg_id": "havven",
-  "name": "Synthetix",
-  "mcap": 121359629,
-  "categories": [
-   "Decentralized Exchange (DEX)",
-   "Exchange-based Tokens",
-   "Decentralized Finance (DeFi)",
-   "Yield Farming",
-   "Derivatives",
-   "Synthetic Issuer",
-   "Avalanche Ecosystem",
-   "Polygon Ecosystem",
-   "Near Protocol Ecosystem",
-   "Fantom Ecosystem",
-   "Harmony Ecosystem",
-   "Ethereum Ecosystem",
-   "Optimism Ecosystem",
-   "Base Ecosystem",
-   "DWF Labs Portfolio",
-   "Paradigm Portfolio",
-   "Coinbase Ventures Portfolio",
-   "Index Coop Defi Index",
-   "Energi Ecosystem",
-   "Huobi ECO Chain Ecosystem",
-   "GMCI DeFi Index",
-   "Synthetic",
-   "GMCI Index",
-   "Coinbase 50 Index",
-   "Governance",
-   "Base Native"
-  ],
-  "flags": [
-   "YIELD",
-   "DERIV",
-   "CEX",
-   "DEX",
-   "DEFI"
-  ],
-  "what": [],
   "known": true
  },
  {
@@ -2524,36 +4541,75 @@
   "known": true
  },
  {
-  "base": "MAGIC",
-  "vol": 3220492.64559,
-  "listed": "2022-12-12",
-  "years": 3.72,
-  "cg_id": "magic",
-  "name": "Treasure",
-  "mcap": 15506722,
-  "rank": 993,
+  "base": "AT",
+  "vol": 850359.95435,
+  "listed": "2025-11-27",
+  "years": 0.76,
+  "cg_id": "apro",
+  "name": "Apro",
+  "mcap": 31072062,
   "categories": [
-   "Artificial Intelligence (AI)",
-   "Smart Contract Platform",
-   "NFT",
-   "Metaverse",
-   "Arbitrum Ecosystem",
+   "Infrastructure",
+   "Oracle",
    "Ethereum Ecosystem",
-   "Layer 2 (L2)",
-   "Zero Knowledge (ZK)",
-   "Base Ecosystem",
-   "AI Agents",
-   "AI Agent Launchpad",
-   "x402 Ecosystem"
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "oracle",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "HMSTR",
+  "vol": 729673.0006908,
+  "listed": "2024-09-26",
+  "years": 1.93,
+  "cg_id": "hamster-kombat",
+  "name": "Hamster Kombat",
+  "mcap": 11275574,
+  "categories": [
+   "Gaming (GameFi)",
+   "Play To Earn",
+   "Telegram Apps",
+   "TON Ecosystem",
+   "Tap to Earn",
+   "Arcade Games"
   ],
   "flags": [
    "GAME"
   ],
-  "what": [
-   "L1",
-   "L2",
-   "AI"
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "F",
+  "vol": 727214.911112,
+  "listed": "2025-10-25",
+  "years": 0.85,
+  "cg_id": "synfutures",
+  "name": "SynFutures",
+  "mcap": 15246958,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Perpetuals",
+   "Ethereum Ecosystem",
+   "NFTFi",
+   "DragonFly Capital Portfolio",
+   "Pantera Capital Portfolio",
+   "Polychain Capital Portfolio",
+   "Base Native"
   ],
+  "flags": [
+   "DERIV",
+   "GAME",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -2588,6 +4644,155 @@
   "known": true
  },
  {
+  "base": "LINEA",
+  "vol": 713378.711772,
+  "listed": "2025-09-10",
+  "years": 0.97,
+  "cg_id": "linea",
+  "name": "Linea",
+  "mcap": 64202253,
+  "categories": [
+   "Smart Contract Platform",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)",
+   "Linea Ecosystem",
+   "Consensys Portfolio",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "HYPER",
+  "vol": 718590.48264,
+  "listed": "2025-04-22",
+  "years": 1.36,
+  "cg_id": "hyperlane",
+  "name": "Hyperlane",
+  "mcap": 22419150,
+  "categories": [
+   "Infrastructure",
+   "BNB Chain Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Interoperability",
+   "Base Ecosystem",
+   "Cross-chain Communication",
+   "Binance HODLer Airdrops",
+   "Binance Wallet IDO",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "DCR",
+  "vol": 384023.76181,
+  "listed": "2020-07-30",
+  "years": 6.08,
+  "cg_id": "decred",
+  "name": "Decred",
+  "mcap": 255931655,
+  "rank": 143,
+  "categories": [
+   "Smart Contract Platform",
+   "Privacy Coins",
+   "Layer 1 (L1)",
+   "Proof of Stake (PoS)",
+   "Proof of Work (PoW)",
+   "Blockchain Capital Portfolio",
+   "Made in USA",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "YB",
+  "vol": 647364.97816,
+  "listed": "2025-10-15",
+  "years": 0.88,
+  "cg_id": "yield-basis",
+  "name": "Yield Basis",
+  "mcap": 24213468,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance Wallet IDO"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "GMT",
+  "vol": 775202.421667,
+  "listed": "2022-03-09",
+  "years": 4.48,
+  "cg_id": "stepn",
+  "name": "GMT",
+  "mcap": 22887219,
+  "categories": [
+   "Gaming (GameFi)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Solana Ecosystem",
+   "Polygon Ecosystem",
+   "Play To Earn",
+   "Move To Earn",
+   "Ethereum Ecosystem",
+   "Binance Launchpad",
+   "Gaming Governance Token",
+   "Sports Games",
+   "Alameda Research Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Sequoia Capital Portfolio"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "BIO",
+  "vol": 712950.597371,
+  "listed": "2025-01-03",
+  "years": 1.66,
+  "cg_id": "bio-protocol",
+  "name": "Bio Protocol",
+  "mcap": 56981256,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Binance Launchpool",
+   "Solana Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Decentralized Science (DeSci)",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "UMA",
   "vol": 670150.7359,
   "listed": "2020-09-09",
@@ -2617,44 +4822,212 @@
   "known": true
  },
  {
-  "base": "PEOPLE",
-  "vol": 656361.872989,
-  "listed": "2021-12-23",
-  "years": 4.68,
-  "cg_id": "constitutiondao",
-  "name": "ConstitutionDAO",
-  "mcap": 40343154,
-  "rank": 539,
+  "base": "SAHARA",
+  "vol": 677153.16876,
+  "listed": "2025-06-26",
+  "years": 1.18,
+  "cg_id": "sahara-ai",
+  "name": "Sahara AI",
+  "mcap": 30687904,
   "categories": [
-   "Meme",
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
    "Ethereum Ecosystem",
-   "PolitiFi"
+   "Binance HODLer Airdrops",
+   "Governance",
+   "Buidlpad Launchpad"
   ],
-  "flags": [
-   "MEME"
+  "flags": [],
+  "what": [
+   "AI"
   ],
-  "what": [],
   "known": true
  },
  {
-  "base": "ZIL",
-  "vol": 594910.6283608,
-  "listed": "2019-02-19",
-  "years": 7.53,
-  "cg_id": "zilliqa",
-  "name": "Zilliqa",
-  "mcap": 50896431,
+  "base": "SXT",
+  "vol": 685646.54277,
+  "listed": "2025-05-08",
+  "years": 1.32,
+  "cg_id": "space-and-time",
+  "name": "Space and Time",
+  "mcap": 40963725,
   "categories": [
    "Smart Contract Platform",
-   "BNB Chain Ecosystem",
-   "GMCI Layer 1 Index",
-   "GMCI Index",
-   "Made in China"
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "ESP",
+  "vol": 673164.70371,
+  "listed": "2026-02-12",
+  "years": 0.55,
+  "cg_id": "espresso",
+  "name": "Espresso",
+  "mcap": 52991229,
+  "categories": [
+   "Infrastructure",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Rollups-as-a-Service (RaaS)",
+   "Binance Wallet IDO",
+   "Capital Launchpad (Kaito)"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "IO",
+  "vol": 668120.216066,
+  "listed": "2024-06-11",
+  "years": 2.22,
+  "cg_id": "io",
+  "name": "io.net",
+  "mcap": 52232191,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Internet of Things (IOT)",
+   "Binance Launchpool",
+   "Solana Ecosystem",
+   "DePIN",
+   "Animoca Brands Portfolio",
+   "Multicoin Capital Portfolio",
+   "Delphi Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "Made in USA"
+  ],
+  "flags": [],
+  "what": [
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "S",
+  "vol": 922922.469851,
+  "listed": "2025-01-16",
+  "years": 1.62,
+  "cg_id": "sonic-3",
+  "name": "Sonic",
+  "mcap": 110522158,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "Galaxy Digital Portfolio",
+   "Sonic Ecosystem"
   ],
   "flags": [],
   "what": [
    "L1"
   ],
+  "known": true
+ },
+ {
+  "base": "AEVO",
+  "vol": 686046.7055862,
+  "listed": "2024-03-13",
+  "years": 2.47,
+  "cg_id": "aevo-exchange",
+  "name": "Aevo",
+  "mcap": 20037249,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Binance Launchpool",
+   "Derivatives",
+   "Perpetuals",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "DragonFly Capital Portfolio",
+   "Pantera Capital Portfolio"
+  ],
+  "flags": [
+   "DERIV",
+   "DEFI"
+  ],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "WAL",
+  "vol": 635184.84169,
+  "listed": "2025-10-10",
+  "years": 0.89,
+  "cg_id": "walrus-2",
+  "name": "Walrus",
+  "mcap": 62206408,
+  "categories": [
+   "Infrastructure",
+   "Storage",
+   "Sui Ecosystem",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [],
+  "what": [
+   "depin",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "SIGN",
+  "vol": 615453.91219,
+  "listed": "2025-04-28",
+  "years": 1.34,
+  "cg_id": "sign-global",
+  "name": "Sign",
+  "mcap": 24970704,
+  "categories": [
+   "Smart Contract Platform",
+   "Analytics",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "GPS",
+  "vol": 611272.786408,
+  "listed": "2025-03-04",
+  "years": 1.49,
+  "cg_id": "goplus-security",
+  "name": "GoPlus Security",
+  "mcap": 55974389,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Base Ecosystem",
+   "Cybersecurity",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "OKX Ventures Portfolio",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [],
   "known": true
  },
  {
@@ -2704,6 +5077,222 @@
   "known": true
  },
  {
+  "base": "PEOPLE",
+  "vol": 656361.872989,
+  "listed": "2021-12-23",
+  "years": 4.68,
+  "cg_id": "constitutiondao",
+  "name": "ConstitutionDAO",
+  "mcap": 40343154,
+  "rank": 539,
+  "categories": [
+   "Meme",
+   "Ethereum Ecosystem",
+   "PolitiFi"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "MAGIC",
+  "vol": 3220492.64559,
+  "listed": "2022-12-12",
+  "years": 3.72,
+  "cg_id": "magic",
+  "name": "Treasure",
+  "mcap": 15506722,
+  "rank": 993,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "NFT",
+   "Metaverse",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem",
+   "AI Agents",
+   "AI Agent Launchpad",
+   "x402 Ecosystem"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [
+   "L1",
+   "L2",
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "ZIL",
+  "vol": 594910.6283608,
+  "listed": "2019-02-19",
+  "years": 7.53,
+  "cg_id": "zilliqa",
+  "name": "Zilliqa",
+  "mcap": 50896431,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "GMCI Layer 1 Index",
+   "GMCI Index",
+   "Made in China"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "AVNT",
+  "vol": 591148.84646,
+  "listed": "2025-09-15",
+  "years": 0.96,
+  "cg_id": "avantis",
+  "name": "Avantis",
+  "mcap": 35792087,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Derivatives",
+   "Perpetuals",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Made in USA",
+   "Base Native"
+  ],
+  "flags": [
+   "DERIV",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "MET",
+  "vol": 626668.87412,
+  "listed": "2025-11-13",
+  "years": 0.8,
+  "cg_id": "meteora",
+  "name": "Meteora",
+  "mcap": 106504145,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "Solana Ecosystem",
+   "Launchpad",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "BEAMX",
+  "vol": 579286.095382,
+  "listed": "2023-11-14",
+  "years": 2.8,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "KERNEL",
+  "vol": 564878.98171,
+  "listed": "2025-04-14",
+  "years": 1.38,
+  "cg_id": "kernel-2",
+  "name": "KernelDAO",
+  "mcap": 11083204,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Restaking",
+   "Liquid Restaking Governance Tokens"
+  ],
+  "flags": [
+   "YIELD",
+   "RWA",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SAGA",
+  "vol": 560515.469552,
+  "listed": "2024-04-09",
+  "years": 2.4,
+  "cg_id": "saga-2",
+  "name": "Saga",
+  "mcap": 6289823,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Binance Launchpool",
+   "Layer 1 (L1)",
+   "Modular Blockchain",
+   "Gaming Blockchains",
+   "Appchains",
+   "Saga Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "MMT",
+  "vol": 569167.78707,
+  "listed": "2025-11-04",
+  "years": 0.82,
+  "cg_id": "momentum-3",
+  "name": "Momentum",
+  "mcap": 32457345,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Sui Ecosystem",
+   "Coinbase Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "Binance HODLer Airdrops",
+   "Binance Wallet IDO",
+   "CeFi"
+  ],
+  "flags": [
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
   "base": "SYN",
   "vol": 550980.854551,
   "listed": "2023-02-22",
@@ -2728,6 +5317,57 @@
   ],
   "flags": [],
   "what": [],
+  "known": true
+ },
+ {
+  "base": "AIXBT",
+  "vol": 560344.972217,
+  "listed": "2025-01-10",
+  "years": 1.64,
+  "cg_id": "aixbt",
+  "name": "aixbt",
+  "mcap": 20106685,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Solana Ecosystem",
+   "Meme",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "AI Meme",
+   "AI Agents",
+   "Virtuals Protocol Ecosystem",
+   "Binance Alpha Spotlight",
+   "DeFAI",
+   "Base Native"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "SENT",
+  "vol": 546980.58459,
+  "listed": "2026-01-22",
+  "years": 0.61,
+  "cg_id": "sentient",
+  "name": "Sentient",
+  "mcap": 92875076,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "Ethereum Ecosystem",
+   "Binance Alpha Spotlight",
+   "Binance Wallet IDO"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI"
+  ],
   "known": true
  },
  {
@@ -2760,22 +5400,154 @@
   "known": true
  },
  {
-  "base": "SUN",
-  "vol": 537366.87076,
-  "listed": "2020-09-21",
-  "years": 5.94,
-  "cg_id": "sun-token",
-  "name": "Sun Token",
-  "mcap": 317304266,
+  "base": "W",
+  "vol": 530646.873084,
+  "listed": "2024-04-03",
+  "years": 2.41,
+  "cg_id": "wormhole",
+  "name": "Wormhole",
+  "mcap": 59664355,
   "categories": [
-   "Decentralized Finance (DeFi)",
-   "Tron Ecosystem",
-   "Made in China"
+   "Solana Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Interoperability",
+   "Base Ecosystem",
+   "Multicoin Capital Portfolio",
+   "Cross-chain Communication",
+   "Made in USA",
+   "Governance",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "CHZ",
+  "vol": 709719.7183,
+  "listed": "2019-09-06",
+  "years": 6.98,
+  "cg_id": "chiliz",
+  "name": "Chiliz",
+  "mcap": 140805222,
+  "rank": 209,
+  "categories": [
+   "Smart Contract Platform",
+   "Sports",
+   "NFT",
+   "Solana Ecosystem",
+   "Layer 1 (L1)",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Alleged SEC Securities",
+   "Chiliz Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Coinbase 50 Index"
   ],
   "flags": [
+   "GAME"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "INIT",
+  "vol": 502399.089865,
+  "listed": "2025-04-24",
+  "years": 1.36,
+  "cg_id": "initia",
+  "name": "Initia",
+  "mcap": 12199140,
+  "categories": [
+   "Infrastructure",
+   "Smart Contract Platform",
+   "Binance Launchpool",
+   "Layer 1 (L1)",
+   "Osmosis Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Initia Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "OG",
+  "vol": 502062.2384,
+  "listed": "2020-12-30",
+  "years": 5.67,
+  "cg_id": "og-fan-token",
+  "name": "OG Fan Token",
+  "mcap": 13848445,
+  "categories": [
+   "Entertainment",
+   "Sports",
+   "Binance Launchpool",
+   "Fan Token",
+   "Solana Ecosystem",
+   "Base Ecosystem",
+   "Chiliz Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "NOM",
+  "vol": 495481.79998,
+  "listed": "2025-10-01",
+  "years": 0.92,
+  "cg_id": "nomina",
+  "name": "Nomina",
+  "mcap": 4679511,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Perpetuals",
+   "Ethereum Ecosystem"
+  ],
+  "flags": [
+   "DERIV",
    "DEFI"
   ],
-  "what": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "SOPH",
+  "vol": 486505.34475,
+  "listed": "2025-05-28",
+  "years": 1.26,
+  "cg_id": "sophon",
+  "name": "Sophon",
+  "mcap": 17108841,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Polygon Ecosystem",
+   "Arbitrum Ecosystem",
+   "Layer 2 (L2)",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
   "known": true
  },
  {
@@ -2811,33 +5583,60 @@
   "known": true
  },
  {
-  "base": "TRB",
-  "vol": 362120.99229,
-  "listed": "2020-08-29",
-  "years": 6.0,
-  "cg_id": "tellor",
-  "name": "Tellor Tributes",
-  "mcap": 47756059,
-  "rank": 483,
+  "base": "ADX",
+  "vol": 475863.6071,
+  "listed": "2021-10-29",
+  "years": 4.84,
+  "cg_id": "adex",
+  "name": "heyAura",
+  "mcap": 9173073,
   "categories": [
-   "Decentralized Finance (DeFi)",
-   "Oracle",
-   "Polygon Ecosystem",
-   "Gnosis Chain Ecosystem",
-   "Arbitrum Ecosystem",
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
    "Ethereum Ecosystem",
-   "Optimism Ecosystem",
-   "Manta Network Ecosystem",
-   "YZi Labs (Prev. Binance Labs) Portfolio",
-   "Lisk Ecosystem",
-   "Made in USA"
+   "AI Agents",
+   "AI Applications",
+   "DeFAI",
+   "x402 Ecosystem",
+   "Robinhood Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "WBETH",
+  "vol": 471563.885172,
+  "listed": "2023-07-19",
+  "years": 3.12,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "TURBO",
+  "vol": 468864.258,
+  "listed": "2024-09-16",
+  "years": 1.96,
+  "cg_id": "turbo",
+  "name": "Turbo",
+  "mcap": 65233482,
+  "categories": [
+   "Meme",
+   "Ethereum Ecosystem",
+   "Frog-Themed",
+   "AI Meme"
   ],
   "flags": [
-   "DEFI"
+   "MEME"
   ],
-  "what": [
-   "oracle"
-  ],
+  "what": [],
   "known": true
  },
  {
@@ -2865,130 +5664,150 @@
   "known": true
  },
  {
-  "base": "WBETH",
-  "vol": 506370.852087,
-  "listed": "2023-07-19",
-  "years": 3.12,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "CHZ",
-  "vol": 709719.7183,
-  "listed": "2019-09-06",
-  "years": 6.98,
-  "cg_id": "chiliz",
-  "name": "Chiliz",
-  "mcap": 140805222,
-  "rank": 209,
+  "base": "SUN",
+  "vol": 537366.87076,
+  "listed": "2020-09-21",
+  "years": 5.94,
+  "cg_id": "sun-token",
+  "name": "Sun Token",
+  "mcap": 317304266,
   "categories": [
-   "Smart Contract Platform",
-   "Sports",
-   "NFT",
-   "Solana Ecosystem",
-   "Layer 1 (L1)",
-   "Ethereum Ecosystem",
-   "Base Ecosystem",
-   "Alleged SEC Securities",
-   "Chiliz Ecosystem",
-   "YZi Labs (Prev. Binance Labs) Portfolio",
-   "Coinbase 50 Index"
-  ],
-  "flags": [
-   "GAME"
-  ],
-  "what": [
-   "L1"
-  ],
-  "known": true
- },
- {
-  "base": "CFX",
-  "vol": 380030.36173,
-  "listed": "2021-03-29",
-  "years": 5.42,
-  "cg_id": "conflux-token",
-  "name": "Conflux",
-  "mcap": 241542203,
-  "rank": 150,
-  "categories": [
-   "Smart Contract Platform",
-   "DWF Labs Portfolio",
-   "Proof of Work (PoW)",
-   "GMCI Layer 1 Index",
-   "Sequoia Capital Portfolio",
-   "GMCI Index",
+   "Decentralized Finance (DeFi)",
+   "Tron Ecosystem",
    "Made in China"
   ],
-  "flags": [],
-  "what": [
-   "L1"
+  "flags": [
+   "DEFI"
   ],
+  "what": [],
   "known": true
  },
  {
-  "base": "QNT",
-  "vol": 472575.05434,
-  "listed": "2021-07-29",
-  "years": 5.09,
-  "cg_id": "quant-network",
-  "name": "Quant",
-  "mcap": 892999694,
+  "base": "PARTI",
+  "vol": 459172.49685,
+  "listed": "2025-03-25",
+  "years": 1.44,
+  "cg_id": "particle-network",
+  "name": "Particle Network",
+  "mcap": 5537158,
   "categories": [
-   "Infrastructure",
-   "Ethereum Ecosystem",
-   "Real World Assets (RWA)",
-   "Energi Ecosystem",
-   "Coinbase 50 Index"
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Base Ecosystem",
+   "Account Abstraction",
+   "Cross-chain Communication",
+   "Binance HODLer Airdrops",
+   "Chain Abstraction",
+   "Binance Wallet IDO",
+   "Base Native"
   ],
   "flags": [
-   "RWA"
+   "DEFI"
   ],
   "what": [
+   "L1",
    "infra"
   ],
   "known": true
  },
  {
-  "base": "OG",
-  "vol": 466710.189,
-  "listed": "2020-12-30",
-  "years": 5.67,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "NEXO",
-  "vol": 392248.92074,
-  "listed": "2022-04-29",
-  "years": 4.34,
-  "cg_id": "nexo",
-  "name": "NEXO",
-  "mcap": 844365486,
-  "rank": 78,
+  "base": "GMX",
+  "vol": 538697.18441,
+  "listed": "2022-10-05",
+  "years": 3.9,
+  "cg_id": "gmx",
+  "name": "GMX",
+  "mcap": 79913570,
+  "rank": 318,
   "categories": [
-   "Exchange-based Tokens",
-   "Centralized Exchange (CEX) Token",
-   "Polygon Ecosystem",
-   "Fantom Ecosystem",
-   "Ethereum Ecosystem",
-   "Alleged SEC Securities",
-   "Energi Ecosystem",
-   "Sora Ecosystem",
-   "Crypto Card Issuer"
+   "Decentralized Finance (DeFi)",
+   "Derivatives",
+   "Perpetuals",
+   "Avalanche Ecosystem",
+   "Arbitrum Ecosystem"
   ],
   "flags": [
-   "CEX"
+   "DERIV",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SHELL",
+  "vol": 452871.57032,
+  "listed": "2025-02-27",
+  "years": 1.51,
+  "cg_id": "myshell",
+  "name": "MyShell",
+  "mcap": 6252274,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "DragonFly Capital Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Delphi Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "Binance HODLer Airdrops",
+   "AI Agent Launchpad",
+   "Binance Alpha Spotlight",
+   "AI Framework",
+   "Binance Wallet IDO"
+  ],
+  "flags": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "BABY",
+  "vol": 431910.15832,
+  "listed": "2025-04-10",
+  "years": 1.39,
+  "cg_id": "babylon",
+  "name": "Babylon",
+  "mcap": 55836739,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "LSDFi",
+   "Paradigm Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Galaxy Digital Portfolio",
+   "OKX Ventures Portfolio",
+   "Liquid Staking",
+   "Binance HODLer Airdrops",
+   "BTCfi Protocol",
+   "Polychain Capital Portfolio"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "SSV",
+  "vol": 417318.83715,
+  "listed": "2023-02-24",
+  "years": 3.52,
+  "cg_id": "ssv-network",
+  "name": "SSV Network",
+  "mcap": 40151493,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "Ethereum Ecosystem",
+   "Restaking",
+   "Coinbase Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "Liquid Staking"
+  ],
+  "flags": [
+   "YIELD",
+   "DEFI"
   ],
   "what": [],
   "known": true
@@ -3034,17 +5853,163 @@
  },
  {
   "base": "RAD",
-  "vol": 477220.4319,
+  "vol": 447239.3058,
   "listed": "2021-10-07",
   "years": 4.9,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "rank": null,
-  "categories": [],
+  "cg_id": "radicle",
+  "name": "Radworks",
+  "mcap": 13885184,
+  "categories": [
+   "Infrastructure",
+   "Ethereum Ecosystem",
+   "DePIN",
+   "Galaxy Digital Portfolio"
+  ],
   "flags": [],
+  "what": [
+   "depin",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "CFX",
+  "vol": 380030.36173,
+  "listed": "2021-03-29",
+  "years": 5.42,
+  "cg_id": "conflux-token",
+  "name": "Conflux",
+  "mcap": 241542203,
+  "rank": 150,
+  "categories": [
+   "Smart Contract Platform",
+   "DWF Labs Portfolio",
+   "Proof of Work (PoW)",
+   "GMCI Layer 1 Index",
+   "Sequoia Capital Portfolio",
+   "GMCI Index",
+   "Made in China"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "RED",
+  "vol": 425412.93056,
+  "listed": "2025-02-28",
+  "years": 1.51,
+  "cg_id": "redstone-oracles",
+  "name": "RedStone",
+  "mcap": 53026449,
+  "categories": [
+   "Infrastructure",
+   "Oracle",
+   "Binance Launchpool",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Base Ecosystem",
+   "Base Native"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [
+   "oracle",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "SNX",
+  "vol": 795093.60137,
+  "listed": "2020-07-09",
+  "years": 6.15,
+  "cg_id": "havven",
+  "name": "Synthetix",
+  "mcap": 121359629,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "Derivatives",
+   "Synthetic Issuer",
+   "Avalanche Ecosystem",
+   "Polygon Ecosystem",
+   "Near Protocol Ecosystem",
+   "Fantom Ecosystem",
+   "Harmony Ecosystem",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Base Ecosystem",
+   "DWF Labs Portfolio",
+   "Paradigm Portfolio",
+   "Coinbase Ventures Portfolio",
+   "Index Coop Defi Index",
+   "Energi Ecosystem",
+   "Huobi ECO Chain Ecosystem",
+   "GMCI DeFi Index",
+   "Synthetic",
+   "GMCI Index",
+   "Coinbase 50 Index",
+   "Governance",
+   "Base Native"
+  ],
+  "flags": [
+   "YIELD",
+   "DERIV",
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
   "what": [],
-  "known": false
+  "known": true
+ },
+ {
+  "base": "PNUT",
+  "vol": 452451.22983,
+  "listed": "2024-11-11",
+  "years": 1.8,
+  "cg_id": "peanut-the-squirrel",
+  "name": "Peanut the Squirrel",
+  "mcap": 48255443,
+  "categories": [
+   "Solana Ecosystem",
+   "Meme",
+   "Solana Meme",
+   "Pump.fun Ecosystem",
+   "Zoo-Themed",
+   "Memorial Themed"
+  ],
+  "flags": [
+   "MEME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "STO",
+  "vol": 433939.83675,
+  "listed": "2025-05-02",
+  "years": 1.33,
+  "cg_id": "stakestone",
+  "name": "StakeStone",
+  "mcap": 9376830,
+  "categories": [
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Wallet IDO"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
  },
  {
   "base": "DUSK",
@@ -3070,6 +6035,52 @@
   "what": [
    "L1",
    "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "QNT",
+  "vol": 472575.05434,
+  "listed": "2021-07-29",
+  "years": 5.09,
+  "cg_id": "quant-network",
+  "name": "Quant",
+  "mcap": 892999694,
+  "categories": [
+   "Infrastructure",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Energi Ecosystem",
+   "Coinbase 50 Index"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "EPIC",
+  "vol": 427996.16109,
+  "listed": "2025-03-13",
+  "years": 1.47,
+  "cg_id": "epic-chain",
+  "name": "Epic Chain",
+  "mcap": 11332227,
+  "categories": [
+   "Tourism",
+   "Ethereum Ecosystem",
+   "Real World Assets (RWA)",
+   "Payment Solutions",
+   "RWA Protocol"
+  ],
+  "flags": [
+   "RWA"
+  ],
+  "what": [
+   "pay"
   ],
   "known": true
  },
@@ -3116,67 +6127,6 @@
   "known": true
  },
  {
-  "base": "GMX",
-  "vol": 538697.18441,
-  "listed": "2022-10-05",
-  "years": 3.9,
-  "cg_id": "gmx",
-  "name": "GMX",
-  "mcap": 79913570,
-  "rank": 318,
-  "categories": [
-   "Decentralized Finance (DeFi)",
-   "Derivatives",
-   "Perpetuals",
-   "Avalanche Ecosystem",
-   "Arbitrum Ecosystem"
-  ],
-  "flags": [
-   "DERIV",
-   "DEFI"
-  ],
-  "what": [],
-  "known": true
- },
- {
-  "base": "FLUX",
-  "vol": 452731.353828,
-  "listed": "2021-12-10",
-  "years": 4.73,
-  "cg_id": "zelcash",
-  "name": "Flux",
-  "mcap": 21154341,
-  "categories": [
-   "Artificial Intelligence (AI)",
-   "Smart Contract Platform",
-   "Masternodes",
-   "DePIN",
-   "Proof of Work (PoW)",
-   "Made in USA",
-   "Governance"
-  ],
-  "flags": [],
-  "what": [
-   "L1",
-   "AI",
-   "depin"
-  ],
-  "known": true
- },
- {
-  "base": "ADX",
-  "vol": 363963.9267,
-  "listed": "2021-10-29",
-  "years": 4.84,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
   "base": "IOTA",
   "vol": 504395.6382,
   "listed": "2018-05-31",
@@ -3209,39 +6159,211 @@
   "known": true
  },
  {
-  "base": "ID",
-  "vol": 421303.4308,
-  "listed": "2023-03-22",
-  "years": 3.44,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "rank": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
- },
- {
-  "base": "SSV",
-  "vol": 417318.83715,
-  "listed": "2023-02-24",
-  "years": 3.52,
-  "cg_id": "ssv-network",
-  "name": "SSV Network",
-  "mcap": 40151493,
+  "base": "TRB",
+  "vol": 362120.99229,
+  "listed": "2020-08-29",
+  "years": 6.0,
+  "cg_id": "tellor",
+  "name": "Tellor Tributes",
+  "mcap": 47756059,
+  "rank": 483,
   "categories": [
    "Decentralized Finance (DeFi)",
+   "Oracle",
+   "Polygon Ecosystem",
+   "Gnosis Chain Ecosystem",
+   "Arbitrum Ecosystem",
    "Ethereum Ecosystem",
-   "Restaking",
+   "Optimism Ecosystem",
+   "Manta Network Ecosystem",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Lisk Ecosystem",
+   "Made in USA"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "oracle"
+  ],
+  "known": true
+ },
+ {
+  "base": "ORCA",
+  "vol": 423200.85268,
+  "listed": "2024-12-06",
+  "years": 1.74,
+  "cg_id": "orca",
+  "name": "Orca",
+  "mcap": 76315263,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "Yield Farming",
+   "Automated Market Maker (AMM)",
+   "Solana Ecosystem",
    "Coinbase Ventures Portfolio",
-   "OKX Ventures Portfolio",
-   "Liquid Staking"
+   "DeFiance Capital Portfolio",
+   "Made in USA"
   ],
   "flags": [
    "YIELD",
+   "CEX",
+   "DEX",
    "DEFI"
   ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ALT",
+  "vol": 459723.52756,
+  "listed": "2024-01-25",
+  "years": 2.6,
+  "cg_id": "altlayer",
+  "name": "AltLayer",
+  "mcap": 43963748,
+  "categories": [
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Binance Launchpool",
+   "Ethereum Ecosystem",
+   "Layer 2 (L2)",
+   "Restaking",
+   "Rollups-as-a-Service (RaaS)",
+   "Rollup",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Governance"
+  ],
+  "flags": [
+   "YIELD"
+  ],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "FLUX",
+  "vol": 452731.353828,
+  "listed": "2021-12-10",
+  "years": 4.73,
+  "cg_id": "zelcash",
+  "name": "Flux",
+  "mcap": 21154341,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "Masternodes",
+   "DePIN",
+   "Proof of Work (PoW)",
+   "Made in USA",
+   "Governance"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "VANA",
+  "vol": 389762.10558,
+  "listed": "2024-12-16",
+  "years": 1.71,
+  "cg_id": "vana",
+  "name": "Vana",
+  "mcap": 27780538,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "BNB Chain Ecosystem",
+   "Layer 1 (L1)",
+   "Polygon Ecosystem",
+   "Arbitrum Ecosystem",
+   "Optimism Ecosystem",
+   "Base Ecosystem",
+   "Paradigm Portfolio",
+   "Coinbase Ventures Portfolio",
+   "DeFiance Capital Portfolio",
+   "Polychain Capital Portfolio",
+   "Vana Ecosystem",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "NEXO",
+  "vol": 392248.92074,
+  "listed": "2022-04-29",
+  "years": 4.34,
+  "cg_id": "nexo",
+  "name": "NEXO",
+  "mcap": 844365486,
+  "rank": 78,
+  "categories": [
+   "Exchange-based Tokens",
+   "Centralized Exchange (CEX) Token",
+   "Polygon Ecosystem",
+   "Fantom Ecosystem",
+   "Ethereum Ecosystem",
+   "Alleged SEC Securities",
+   "Energi Ecosystem",
+   "Sora Ecosystem",
+   "Crypto Card Issuer"
+  ],
+  "flags": [
+   "CEX"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "NEWT",
+  "vol": 393988.941929,
+  "listed": "2025-06-24",
+  "years": 1.19,
+  "cg_id": "newton-protocol",
+  "name": "Newton Protocol",
+  "mcap": 8908217,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance HODLer Airdrops",
+   "DeFAI"
+  ],
+  "flags": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "SOLV",
+  "vol": 393486.55967,
+  "listed": "2025-01-17",
+  "years": 1.62,
+  "cg_id": "solv-protocol",
+  "name": "Solv Protocol",
+  "mcap": 16486589,
+  "categories": [
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance Megadrop",
+   "BTCfi Protocol",
+   "Made in China"
+  ],
+  "flags": [],
   "what": [],
   "known": true
  },
@@ -3272,6 +6394,143 @@
    "oracle",
    "infra"
   ],
+  "known": true
+ },
+ {
+  "base": "TOWNS",
+  "vol": 382547.7441,
+  "listed": "2025-08-05",
+  "years": 1.07,
+  "cg_id": "towns",
+  "name": "Towns",
+  "mcap": 5308937,
+  "categories": [
+   "Communication",
+   "Smart Contract Platform",
+   "SocialFi",
+   "BNB Chain Ecosystem",
+   "Layer 2 (L2)",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "Binance Alpha Spotlight",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
+  "known": true
+ },
+ {
+  "base": "KAIA",
+  "vol": 344268.86345,
+  "listed": "2024-10-31",
+  "years": 1.83,
+  "cg_id": "kaia",
+  "name": "Kaia",
+  "mcap": 191456821,
+  "categories": [
+   "Smart Contract Platform",
+   "Layer 1 (L1)"
+  ],
+  "flags": [],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "2Z",
+  "vol": 376356.84346,
+  "listed": "2025-10-02",
+  "years": 0.91,
+  "cg_id": "doublezero",
+  "name": "DoubleZero",
+  "mcap": 187135625,
+  "categories": [
+   "Infrastructure",
+   "Solana Ecosystem",
+   "Binance Alpha Spotlight",
+   "CoinList Launchpad"
+  ],
+  "flags": [],
+  "what": [
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "1000SATS",
+  "vol": 368860.98239887,
+  "listed": "2023-12-12",
+  "years": 2.72,
+  "cg_id": null,
+  "name": null,
+  "mcap": null,
+  "categories": [],
+  "flags": [],
+  "what": [],
+  "known": false
+ },
+ {
+  "base": "GUN",
+  "vol": 365660.37468,
+  "listed": "2025-03-31",
+  "years": 1.42,
+  "cg_id": "gunz",
+  "name": "Gunz",
+  "mcap": 9850081,
+  "categories": [
+   "Smart Contract Platform",
+   "Gaming (GameFi)",
+   "Binance Launchpool",
+   "Solana Ecosystem",
+   "Layer 1 (L1)",
+   "Avalanche Ecosystem",
+   "Play To Earn",
+   "Shooting Games",
+   "Coinbase Ventures Portfolio",
+   "Gaming Blockchains",
+   "Avalanche L1",
+   "YZi Labs (Prev. Binance Labs) Portfolio",
+   "Delphi Ventures Portfolio",
+   "Action Games",
+   "GUNZ Ecosystem"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "DOLO",
+  "vol": 361778.377991,
+  "listed": "2025-08-27",
+  "years": 1.01,
+  "cg_id": "dolomite",
+  "name": "Dolomite",
+  "mcap": 13327305,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "Automated Market Maker (AMM)",
+   "Lending/Borrowing Protocols",
+   "Ethereum Ecosystem",
+   "Coinbase Ventures Portfolio",
+   "Dex Aggregator"
+  ],
+  "flags": [
+   "LEND",
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
   "known": true
  },
  {
@@ -3321,10 +6580,89 @@
   "known": true
  },
  {
-  "base": "OGN",
-  "vol": 390995.28424,
-  "listed": "2020-01-09",
-  "years": 6.64,
+  "base": "THETA",
+  "vol": 466445.30552,
+  "listed": "2019-04-10",
+  "years": 7.39,
+  "cg_id": "theta-token",
+  "name": "Theta Network",
+  "mcap": 170949589,
+  "rank": 189,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Smart Contract Platform",
+   "Layer 1 (L1)",
+   "DePIN",
+   "Theta Ecosystem",
+   "Blockchain Capital Portfolio",
+   "Made in USA"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "AI",
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "WCT",
+  "vol": 418844.058555,
+  "listed": "2025-04-15",
+  "years": 1.38,
+  "cg_id": "connect-token-wct",
+  "name": "WalletConnect Token",
+  "mcap": 17057737,
+  "categories": [
+   "Binance Launchpool",
+   "Solana Ecosystem",
+   "Wallets",
+   "Ethereum Ecosystem",
+   "Optimism Ecosystem",
+   "Base Ecosystem",
+   "CoinList Launchpad",
+   "Base Native"
+  ],
+  "flags": [],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "COW",
+  "vol": 377726.94165,
+  "listed": "2024-11-06",
+  "years": 1.82,
+  "cg_id": "cow-protocol",
+  "name": "CoW Protocol",
+  "mcap": 70646516,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Polygon Ecosystem",
+   "Gnosis Chain Ecosystem",
+   "MEV Protection",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "Base Ecosystem",
+   "Intent",
+   "Delphi Ventures Portfolio",
+   "Blockchain Capital Portfolio"
+  ],
+  "flags": [
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "1000CHEEMS",
+  "vol": 341110.734838,
+  "listed": "2025-02-09",
+  "years": 1.56,
   "cg_id": null,
   "name": null,
   "mcap": null,
@@ -3362,26 +6700,146 @@
   "known": true
  },
  {
-  "base": "THETA",
-  "vol": 466445.30552,
-  "listed": "2019-04-10",
-  "years": 7.39,
-  "cg_id": "theta-token",
-  "name": "Theta Network",
-  "mcap": 170949589,
-  "rank": 189,
+  "base": "BIGTIME",
+  "vol": 347234.17282,
+  "listed": "2025-04-11",
+  "years": 1.39,
+  "cg_id": "big-time",
+  "name": "Big Time",
+  "mcap": 18677968,
   "categories": [
-   "Artificial Intelligence (AI)",
+   "Gaming (GameFi)",
+   "Play To Earn",
+   "Ethereum Ecosystem",
+   "RPG",
+   "Alameda Research Portfolio",
+   "Circle Ventures Portfolio",
+   "OKX Ventures Portfolio",
+   "MMO"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "BREV",
+  "vol": 353082.7834,
+  "listed": "2026-01-06",
+  "years": 0.65,
+  "cg_id": "brevis",
+  "name": "Brevis",
+  "mcap": 19040660,
+  "categories": [
+   "Infrastructure",
    "Smart Contract Platform",
-   "Layer 1 (L1)",
-   "DePIN",
-   "Theta Ecosystem",
-   "Blockchain Capital Portfolio",
-   "Made in USA"
+   "BNB Chain Ecosystem",
+   "Zero Knowledge (ZK)",
+   "Base Ecosystem",
+   "Binance HODLer Airdrops",
+   "Base Native"
   ],
   "flags": [],
   "what": [
    "L1",
+   "L2",
+   "infra"
+  ],
+  "known": true
+ },
+ {
+  "base": "STORJ",
+  "vol": 335331.2943,
+  "listed": "2020-07-30",
+  "years": 6.09,
+  "cg_id": "storj",
+  "name": "Storj",
+  "mcap": 14132998,
+  "categories": [
+   "Storage",
+   "Harmony Ecosystem",
+   "Ethereum Ecosystem",
+   "DePIN",
+   "Energi Ecosystem"
+  ],
+  "flags": [],
+  "what": [
+   "depin"
+  ],
+  "known": true
+ },
+ {
+  "base": "FOGO",
+  "vol": 338358.50228,
+  "listed": "2026-01-15",
+  "years": 0.63,
+  "cg_id": "fogo",
+  "name": "Fogo",
+  "mcap": 28296078,
+  "categories": [
+   "Smart Contract Platform",
+   "Decentralized Finance (DeFi)",
+   "Layer 1 (L1)",
+   "Binance Alpha Spotlight"
+  ],
+  "flags": [
+   "DEFI"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
+ },
+ {
+  "base": "THE",
+  "vol": 332652.07649,
+  "listed": "2024-11-27",
+  "years": 1.76,
+  "cg_id": "thena",
+  "name": "Thena",
+  "mcap": 9663842,
+  "categories": [
+   "Decentralized Exchange (DEX)",
+   "Exchange-based Tokens",
+   "Decentralized Finance (DeFi)",
+   "BNB Chain Ecosystem",
+   "Perpetuals",
+   "opBNB Ecosystem",
+   "Binance HODLer Airdrops"
+  ],
+  "flags": [
+   "DERIV",
+   "CEX",
+   "DEX",
+   "DEFI"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "LPT",
+  "vol": 353450.45618,
+  "listed": "2021-05-28",
+  "years": 5.26,
+  "cg_id": "livepeer",
+  "name": "Livepeer",
+  "mcap": 66722719,
+  "categories": [
+   "Artificial Intelligence (AI)",
+   "Harmony Ecosystem",
+   "Arbitrum Ecosystem",
+   "Ethereum Ecosystem",
+   "DePIN",
+   "Coinbase Ventures Portfolio",
+   "Multicoin Capital Portfolio",
+   "Pantera Capital Portfolio",
+   "GMCI DePIN Index",
+   "GMCI Index",
+   "Coinbase 50 Index"
+  ],
+  "flags": [],
+  "what": [
    "AI",
    "depin"
   ],
@@ -3420,38 +6878,80 @@
   "known": true
  },
  {
-  "base": "ALICE",
-  "vol": 903951.82208,
-  "listed": "2021-03-15",
-  "years": 5.46,
-  "cg_id": null,
-  "name": null,
-  "mcap": null,
-  "rank": null,
-  "categories": [],
-  "flags": [],
-  "what": [],
-  "known": false
+  "base": "XVG",
+  "vol": 300097.811073,
+  "listed": "2021-06-06",
+  "years": 5.24,
+  "cg_id": "verge",
+  "name": "Verge",
+  "mcap": 41606636,
+  "categories": [
+   "Smart Contract Platform",
+   "Privacy Coins",
+   "Proof of Work (PoW)",
+   "Made in USA",
+   "Privacy"
+  ],
+  "flags": [
+   "PRIV"
+  ],
+  "what": [
+   "L1"
+  ],
+  "known": true
  },
  {
-  "base": "EDU",
-  "vol": 386527.3364,
-  "listed": "2023-04-28",
-  "years": 3.34,
-  "cg_id": "edu-coin",
-  "name": "Open Campus",
-  "mcap": 39592512,
-  "rank": 549,
+  "base": "COOKIE",
+  "vol": 319455.26419,
+  "listed": "2025-01-10",
+  "years": 1.64,
+  "cg_id": "cookie",
+  "name": "Cookie DAO",
+  "mcap": 9728453,
   "categories": [
-   "Education",
+   "Artificial Intelligence (AI)",
+   "Marketing",
+   "Analytics",
    "BNB Chain Ecosystem",
-   "Polygon Ecosystem",
    "Ethereum Ecosystem",
-   "Binance Launchpad",
-   "YZi Labs (Prev. Binance Labs) Portfolio"
+   "Animoca Brands Portfolio",
+   "Base Ecosystem",
+   "AI Agents",
+   "Binance Alpha Spotlight",
+   "InfoFi",
+   "Governance",
+   "Base Native"
   ],
   "flags": [],
-  "what": [],
+  "what": [
+   "AI"
+  ],
+  "known": true
+ },
+ {
+  "base": "METIS",
+  "vol": 336210.09799,
+  "listed": "2024-03-11",
+  "years": 2.48,
+  "cg_id": "metis-token",
+  "name": "Metis",
+  "mcap": 21650769,
+  "categories": [
+   "Smart Contract Platform",
+   "Ethereum Ecosystem",
+   "Metis Ecosystem",
+   "Layer 2 (L2)",
+   "DWF Labs Portfolio",
+   "Rollup",
+   "GMCI Layer 2 Index",
+   "OKX Ventures Portfolio",
+   "GMCI Index"
+  ],
+  "flags": [],
+  "what": [
+   "L1",
+   "L2"
+  ],
   "known": true
  },
  {
@@ -3486,87 +6986,118 @@
   "known": true
  },
  {
-  "base": "LPT",
-  "vol": 353450.45618,
-  "listed": "2021-05-28",
-  "years": 5.26,
-  "cg_id": "livepeer",
-  "name": "Livepeer",
-  "mcap": 66722719,
-  "categories": [
-   "Artificial Intelligence (AI)",
-   "Harmony Ecosystem",
-   "Arbitrum Ecosystem",
-   "Ethereum Ecosystem",
-   "DePIN",
-   "Coinbase Ventures Portfolio",
-   "Multicoin Capital Portfolio",
-   "Pantera Capital Portfolio",
-   "GMCI DePIN Index",
-   "GMCI Index",
-   "Coinbase 50 Index"
-  ],
-  "flags": [],
-  "what": [
-   "AI",
-   "depin"
-  ],
-  "known": true
- },
- {
-  "base": "RSR",
-  "vol": 301583.1566626,
-  "listed": "2020-08-27",
-  "years": 6.01,
-  "cg_id": "reserve-rights-token",
-  "name": "Reserve Rights",
-  "mcap": 83916695,
+  "base": "OGN",
+  "vol": 307529.90442,
+  "listed": "2020-01-09",
+  "years": 6.64,
+  "cg_id": "origin-protocol",
+  "name": "Origin Token",
+  "mcap": 12621617,
   "categories": [
    "Decentralized Finance (DeFi)",
-   "Arbitrum Ecosystem",
    "Ethereum Ecosystem",
-   "Real World Assets (RWA)",
    "Base Ecosystem",
-   "Coinbase Ventures Portfolio",
-   "Energi Ecosystem",
+   "Curve Ecosystem",
+   "Pantera Capital Portfolio",
+   "Sonic Ecosystem",
+   "Liquid Staking",
    "Made in USA",
+   "CoinList Launchpad",
    "Base Native"
   ],
   "flags": [
-   "RWA",
    "DEFI"
   ],
   "what": [],
   "known": true
  },
  {
-  "base": "CKB",
-  "vol": 300177.698482,
-  "listed": "2021-01-26",
-  "years": 5.6,
-  "cg_id": "nervos-network",
-  "name": "Nervos Network",
-  "mcap": 51492328,
+  "base": "NEO",
+  "vol": 307282.87926,
+  "listed": "2017-11-20",
+  "years": 8.78,
+  "cg_id": "neo",
+  "name": "NEO",
+  "mcap": 144146344,
   "categories": [
    "Smart Contract Platform",
-   "Interoperability",
-   "Layer 2 (L2)",
-   "Rollup",
-   "Multicoin Capital Portfolio",
-   "Proof of Work (PoW)",
-   "DragonFly Capital Portfolio",
-   "Sequoia Capital Portfolio",
-   "Blockchain Capital Portfolio",
-   "Polychain Capital Portfolio",
-   "Made in China",
-   "Quantum-Resistant"
+   "Proof of Stake (PoS)",
+   "Made in China"
   ],
   "flags": [],
   "what": [
-   "L1",
-   "L2",
-   "infra"
+   "L1"
   ],
+  "known": true
+ },
+ {
+  "base": "ALICE",
+  "vol": 306884.512918,
+  "listed": "2021-03-15",
+  "years": 5.46,
+  "cg_id": "my-neighbor-alice",
+  "name": "My Neighbor Alice",
+  "mcap": 13354374,
+  "categories": [
+   "Gaming (GameFi)",
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Binance Launchpool",
+   "Metaverse",
+   "DaoMaker Launchpad",
+   "Ethereum Ecosystem",
+   "Gaming Governance Token",
+   "Gaming Utility Token",
+   "Simulation Games",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "ID",
+  "vol": 303753.015,
+  "listed": "2023-03-22",
+  "years": 3.45,
+  "cg_id": "space-id",
+  "name": "SPACE ID",
+  "mcap": 13972260,
+  "categories": [
+   "NFT",
+   "BNB Chain Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance Launchpad",
+   "DWF Labs Portfolio",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [
+   "GAME"
+  ],
+  "what": [],
+  "known": true
+ },
+ {
+  "base": "EDU",
+  "vol": 386527.3364,
+  "listed": "2023-04-28",
+  "years": 3.34,
+  "cg_id": "edu-coin",
+  "name": "Open Campus",
+  "mcap": 39592512,
+  "rank": 549,
+  "categories": [
+   "Education",
+   "BNB Chain Ecosystem",
+   "Polygon Ecosystem",
+   "Ethereum Ecosystem",
+   "Binance Launchpad",
+   "YZi Labs (Prev. Binance Labs) Portfolio"
+  ],
+  "flags": [],
+  "what": [],
   "known": true
  }
 ]

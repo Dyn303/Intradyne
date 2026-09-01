@@ -205,8 +205,15 @@ def add_history(c: httpx.Client, rows, min_years: float):
     return kept
 
 
-def identities(c: httpx.Client, pages: int = 4) -> Dict[str, Dict[str, Any]]:
-    """Map a ticker to the highest-market-cap coin holding it."""
+def identities(c: httpx.Client, pages: int = 8) -> Dict[str, Dict[str, Any]]:
+    """Map a ticker to the highest-market-cap coin holding it.
+
+    Ranked pages rather than the full ~19k coin list, because dozens of
+    tokens share a ticker and the ranking says which one is meant. Eight
+    pages (2000 coins) rather than four: at 1000 the tail included WBTC,
+    PYTH and VIRTUAL, which are not obscure -- they were simply below the
+    cut, and landed in the unidentified bucket as a result.
+    """
     sym2id: Dict[str, Dict[str, Any]] = {}
     rank = 0
     for page in range(1, pages + 1):
