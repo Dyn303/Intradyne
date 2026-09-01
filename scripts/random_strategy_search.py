@@ -40,7 +40,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -60,9 +60,9 @@ from strategy_search import (  # noqa: E402
 
 # ---- the filter, fixed before running -----------------------------------
 
-MIN_TRADES = 200          # Tier 0: below this, nothing is measurable
-COST_MAKER_BPS = 4.0      # Tier 1: the most favourable round trip available
-COST_TAKER_BPS = 14.0     # Tier 4: what it costs if you cross the spread
+MIN_TRADES = 200  # Tier 0: below this, nothing is measurable
+COST_MAKER_BPS = 4.0  # Tier 1: the most favourable round trip available
+COST_TAKER_BPS = 14.0  # Tier 4: what it costs if you cross the spread
 REQUIRED_MARGIN_BPS = 0.0  # Tier 1 asks only that gross clears cost
 
 
@@ -132,19 +132,23 @@ class Strategy:
     @property
     def name(self) -> str:
         s = self.spec
-        return (f"{'+'.join(s['conds'])}|{s['regime']}|"
-                f"tp{s['tp']:g}/sl{s['sl']:g}/{s['hold']}m")
+        return (
+            f"{'+'.join(s['conds'])}|{s['regime']}|"
+            f"tp{s['tp']:g}/sl{s['sl']:g}/{s['hold']}m"
+        )
 
-    def mask(self, preds: Dict[str, np.ndarray],
-             regs: Dict[str, np.ndarray]) -> np.ndarray:
+    def mask(
+        self, preds: Dict[str, np.ndarray], regs: Dict[str, np.ndarray]
+    ) -> np.ndarray:
         m = np.ones(len(regs["any"]), dtype=bool)
         for c in self.spec["conds"]:
             m &= np.nan_to_num(preds[c], nan=0).astype(bool)
         return m & regs[self.spec["regime"]]
 
 
-def sample_strategies(rng: np.random.Generator, pred_names: List[str],
-                      reg_names: List[str], n: int) -> List[Strategy]:
+def sample_strategies(
+    rng: np.random.Generator, pred_names: List[str], reg_names: List[str], n: int
+) -> List[Strategy]:
     """Draw n distinct strategies from the space."""
     seen, out = set(), []
     tries = 0
@@ -171,9 +175,13 @@ def sample_strategies(rng: np.random.Generator, pred_names: List[str],
 # ---- evaluation ---------------------------------------------------------
 
 
-def evaluate_strategy(s: Strategy, bars: Bars, preds, regs,
-                      outcome_cache: Dict[Tuple[float, float, int], Any]
-                      ) -> Optional[Dict[str, float]]:
+def evaluate_strategy(
+    s: Strategy,
+    bars: Bars,
+    preds,
+    regs,
+    outcome_cache: Dict[Tuple[float, float, int], Any],
+) -> Optional[Dict[str, float]]:
     key = (s.spec["tp"], s.spec["sl"], s.spec["hold"])
     if key not in outcome_cache:
         outcome_cache[key] = forward_outcomes(
@@ -183,12 +191,21 @@ def evaluate_strategy(s: Strategy, bars: Bars, preds, regs,
     r = evaluate(s.mask(preds, regs), gross, held, 1)
     if r["trades"] < 1:
         return None
-    return {"trades": r["trades"], "gross_bps": r["mean_bps"],
-            "win_rate": r["win_rate"]}
+    return {
+        "trades": r["trades"],
+        "gross_bps": r["mean_bps"],
+        "win_rate": r["win_rate"],
+    }
 
 
-def null_best_of(gross: np.ndarray, held: np.ndarray, counts: List[int],
-                 n_strategies: int, draws: int, rng) -> float:
+def null_best_of(
+    gross: np.ndarray,
+    held: np.ndarray,
+    counts: List[int],
+    n_strategies: int,
+    draws: int,
+    rng,
+) -> float:
     """Best-of-N gross edge reachable by entering at random."""
     finite = np.where(np.isfinite(gross))[0]
     bests = []
@@ -221,19 +238,25 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     cache = Path(args.data) / "bars"
-    train, n_tr = load_months(cache, args.symbol, args.timeframe,
-                              args.train, args.train_end)
-    test, n_te = load_months(cache, args.symbol, args.timeframe,
-                             args.test, args.test_end)
-    print(f"{args.symbol} {args.timeframe}: train {len(train):,} bars "
-          f"({n_tr} months), test {len(test):,} bars ({n_te} months)")
+    train, n_tr = load_months(
+        cache, args.symbol, args.timeframe, args.train, args.train_end
+    )
+    test, n_te = load_months(
+        cache, args.symbol, args.timeframe, args.test, args.test_end
+    )
+    print(
+        f"{args.symbol} {args.timeframe}: train {len(train):,} bars "
+        f"({n_tr} months), test {len(test):,} bars ({n_te} months)"
+    )
 
     preds_tr, regs_tr = _predicates(train), _regimes(train)
     preds_te, regs_te = _predicates(test), _regimes(test)
     rng = np.random.default_rng(args.seed)
     strategies = sample_strategies(rng, sorted(preds_tr), list(regs_tr), args.n)
-    print(f"{len(strategies)} random strategies from "
-          f"{len(preds_tr)} predicates x {len(regs_tr)} regimes\n")
+    print(
+        f"{len(strategies)} random strategies from "
+        f"{len(preds_tr)} predicates x {len(regs_tr)} regimes\n"
+    )
 
     print("filter fixed before running:")
     print(f"  Tier 0  >= {MIN_TRADES} non-overlapping trades")
@@ -251,10 +274,11 @@ def main(argv=None) -> int:
     print(f"evaluated {len(rows)}/{len(strategies)} (rest produced no trades)")
 
     t0 = [(s, r) for s, r in rows if r["trades"] >= MIN_TRADES]
-    print(f"\nTier 0  >= {MIN_TRADES} trades          : "
-          f"{len(t0)}/{len(rows)} pass")
+    print(f"\nTier 0  >= {MIN_TRADES} trades          : {len(t0)}/{len(rows)} pass")
 
-    t1 = [(s, r) for s, r in t0 if r["gross_bps"] > COST_MAKER_BPS + REQUIRED_MARGIN_BPS]
+    t1 = [
+        (s, r) for s, r in t0 if r["gross_bps"] > COST_MAKER_BPS + REQUIRED_MARGIN_BPS
+    ]
     print(f"Tier 1  gross > {COST_MAKER_BPS:g}bps cost      : {len(t1)}/{len(t0)} pass")
 
     if t1:
@@ -262,8 +286,11 @@ def main(argv=None) -> int:
         anykey = next(iter(cache_tr))
         g, h = cache_tr[anykey]
         thr = null_best_of(g, h, counts, len(rows), args.null_draws, rng)
-        t2 = [(s, r) for s, r in t1
-              if r["gross_bps"] - COST_MAKER_BPS > thr - COST_MAKER_BPS]
+        t2 = [
+            (s, r)
+            for s, r in t1
+            if r["gross_bps"] - COST_MAKER_BPS > thr - COST_MAKER_BPS
+        ]
         print(f"Tier 2  beats null ({thr:+.2f}bps)   : {len(t2)}/{len(t1)} pass")
     else:
         t2, thr = [], float("nan")
@@ -280,18 +307,23 @@ def main(argv=None) -> int:
     t4 = [(s, r, rt) for s, r, rt in t3 if rt["gross_bps"] - COST_TAKER_BPS > 0]
     print(f"Tier 4  survives taker cost     : {len(t4)}/{len(t3)} pass\n")
 
-    # Report the leaders regardless of how far they got, so the shape of the
-    # failure is visible rather than just its existence.
-    rows.sort(key=lambda kv: -kv[1]["gross_bps"])
-    hdr = (f"{'#':>2} {'strategy':52} {'trades':>7} {'win':>7} {'gross':>8} "
-           f"{'net@4':>8} {'net@14':>8}")
-    print("top by gross edge, before any filter:")
+    # Ranked among Tier 0 survivors only. A 6-trade strategy showing +24bps is
+    # exactly the noise Tier 0 exists to remove, and quoting it as "the best
+    # result" would misrepresent the search to anyone reading the summary.
+    rows = sorted(t0, key=lambda kv: -kv[1]["gross_bps"])
+    hdr = (
+        f"{'#':>2} {'strategy':52} {'trades':>7} {'win':>7} {'gross':>8} "
+        f"{'net@4':>8} {'net@14':>8}"
+    )
+    print(f"top by gross edge among the {len(t0)} with >= {MIN_TRADES} trades:")
     print(hdr)
     print("-" * len(hdr))
     for i, (s, r) in enumerate(rows[: args.top], 1):
-        print(f"{i:>2} {s.name[:52]:52} {r['trades']:7d} {r['win_rate']:7.1%} "
-              f"{r['gross_bps']:+8.2f} {r['gross_bps'] - COST_MAKER_BPS:+8.2f} "
-              f"{r['gross_bps'] - COST_TAKER_BPS:+8.2f}")
+        print(
+            f"{i:>2} {s.name[:52]:52} {r['trades']:7d} {r['win_rate']:7.1%} "
+            f"{r['gross_bps']:+8.2f} {r['gross_bps'] - COST_MAKER_BPS:+8.2f} "
+            f"{r['gross_bps'] - COST_TAKER_BPS:+8.2f}"
+        )
 
     survivors = [s.name for s, _, _ in t4]
     print()
@@ -303,19 +335,32 @@ def main(argv=None) -> int:
         print("No strategy cleared every tier.")
         if rows:
             best = rows[0][1]["gross_bps"]
-            print(f"The best gross edge among {len(rows)} strategies was "
-                  f"{best:+.2f}bps per trade, against a {COST_MAKER_BPS:g}bps "
-                  f"round trip at\nthe most favourable execution available. "
-                  "Ranking the survivors of a filter\nnothing reached would be "
-                  "reporting noise.")
+            print(
+                f"Best gross edge among the {len(rows)} strategies with a "
+                f"measurable trade count:\n{best:+.2f}bps per trade, against "
+                f"a {COST_MAKER_BPS:g}bps round trip at the most favourable "
+                f"execution\navailable. "
+                "Ranking the survivors of a filter\nnothing reached would be "
+                "reporting noise."
+            )
     out = Path("artifacts/random_strategy_search.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(
-        {"n": len(strategies), "evaluated": len(rows),
-         "tier0": len(t0), "tier1": len(t1), "tier2": len(t2),
-         "tier3": len(t3), "tier4": len(t4),
-         "null_threshold_bps": thr,
-         "top": [{"name": s.name, **r} for s, r in rows[:20]]}, indent=1))
+    out.write_text(
+        json.dumps(
+            {
+                "n": len(strategies),
+                "evaluated": len(rows),
+                "tier0": len(t0),
+                "tier1": len(t1),
+                "tier2": len(t2),
+                "tier3": len(t3),
+                "tier4": len(t4),
+                "null_threshold_bps": thr,
+                "top": [{"name": s.name, **r} for s, r in rows[:20]],
+            },
+            indent=1,
+        )
+    )
     return 0 if survivors else 2
 
 

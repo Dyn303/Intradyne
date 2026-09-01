@@ -867,3 +867,59 @@ Whether it is worth running is a separate question. The signals did not merely
 fail to clear a high bar; most were solidly negative against a benchmark that
 shares their drift and survivorship. That is not the shape of an edge hidden
 under noise.
+
+## 100 random intraday strategies: nothing reaches Tier 1
+
+Everything searched before this tested *single* entry signals.
+`scripts/random_strategy_search.py` samples whole strategies instead --
+entry predicate, confluence requirement, regime filter, exit geometry and
+holding period -- across 38 predicates and 4 regimes. Confluence is why it was
+worth running: requiring two or three conditions to agree trades far less
+often but more selectively, and trading less often is the only mechanism that
+can lift a per-trade edge toward the cost line.
+
+The filter was committed before the run, in `db82f61`, with the tiers in this
+order deliberately:
+
+    Tier 0  >= 200 non-overlapping trades
+    Tier 1  gross edge per trade exceeds the round trip
+    Tier 2  net edge beats the best-of-100 null
+    Tier 3  net edge still positive out of sample
+    Tier 4  still positive at taker cost
+
+Tier 1 sits first because nothing downstream can rescue a strategy whose gross
+edge does not clear its own costs. Ranking on win rate or Sharpe before that
+question is settled is how a search produces a confident, worthless top five.
+
+| | ETH | BTC |
+|---|---|---|
+| generated | 100 | 100 |
+| produced trades | 66 | 67 |
+| **Tier 0** (>=200 trades) | 53 | 59 |
+| **Tier 1** (gross > 4bps) | **0** | **0** |
+| Tier 2-4 | not reached | not reached |
+
+Best gross edge among strategies with a measurable trade count: **+1.52bps**
+(ETH, 22,851 trades) and **+2.18bps** (BTC, 3,327 trades). The round trip is
+4bps all-maker and 14bps taker. Nothing came within half of the cheapest
+possible cost.
+
+This is consistent with, and independent of, the earlier tick measurement:
+that put the intraday edge at ~0.5bps per trade at a two-minute horizon, real
+at 4-6 sigma. Confluence and regime filtering do lift it -- roughly three to
+four times -- and it is still not close. Three or four times too small instead
+of thirty.
+
+### Why no top five is reported
+
+A top five was requested. Producing one would have meant ranking the survivors
+of a filter that nothing reached, which is the exact failure this project has
+already made four times. The leaders are listed by gross edge so the shape of
+the result is visible, but every one of them loses money after costs, and the
+ordering among them is noise.
+
+One detail worth recording: the first version of this write-up would have
+quoted BTC's best as **+24.08bps**. That was a 6-trade strategy -- precisely
+what Tier 0 exists to exclude -- and it was being reported in a summary line
+that ranked before the filter rather than after it. Fixed, and the ranking is
+now taken from Tier 0 survivors only.
