@@ -107,6 +107,37 @@ def _predicates(b: Bars) -> Dict[str, np.ndarray]:
     return out
 
 
+def resample(b: Bars, k: int) -> Bars:
+    """Aggregate k consecutive bars into one.
+
+    1-minute resolution is what you would choose to study a two-minute trade.
+    For a position held one to eight hours it is five times more data than the
+    decision needs, and it invites scalping-shaped parameters -- which is how
+    the first version of this search ended up measuring scalps while calling
+    them intraday. Coarser bars make the timeframe explicit.
+    """
+    if k <= 1:
+        return b
+    n = (len(b) // k) * k
+    if n == 0:
+        return b
+
+    def blocks(a: np.ndarray) -> np.ndarray:
+        return a[:n].reshape(-1, k)
+
+    return Bars(
+        ts=blocks(b.ts)[:, 0],
+        open=blocks(b.open)[:, 0],
+        high=blocks(b.high).max(axis=1),
+        low=blocks(b.low).min(axis=1),
+        close=blocks(b.close)[:, -1],
+        volume=blocks(b.volume).sum(axis=1),
+        buy_volume=blocks(b.buy_volume).sum(axis=1),
+        sell_volume=blocks(b.sell_volume).sum(axis=1),
+        trades=blocks(b.trades).sum(axis=1),
+    )
+
+
 def _regimes(b: Bars) -> Dict[str, np.ndarray]:
     """Optional context conditions -- when the strategy is allowed to trade."""
     ret1 = np.diff(b.close, prepend=b.close[0]) / b.close
@@ -134,7 +165,7 @@ class Strategy:
         s = self.spec
         return (
             f"{'+'.join(s['conds'])}|{s['regime']}|"
-            f"tp{s['tp']:g}/sl{s['sl']:g}/{s['hold']}m"
+            f"tp{s['tp']:g}/sl{s['sl']:g}/{s['hold_min']}m"
         )
 
     def mask(
@@ -159,12 +190,23 @@ def sample_strategies(
         spec = {
             "conds": list(conds),
             "regime": str(rng.choice(reg_names, p=[0.55, 0.15, 0.15, 0.15])),
-            # Intraday: minutes to a few hours, never overnight.
-            "hold": int(rng.choice([5, 15, 30, 60, 120, 240])),
-            "tp": float(rng.choice([10, 20, 40, 60, 100, 150])),
-            "sl": float(rng.choice([10, 20, 40, 60, 100])),
+            # Intraday geometry: hours, not seconds.
+            #
+            # The first version of this grid allowed sl down to 10bps, which
+            # silently turned every strategy into a scalp: `hold` is only a
+            # maximum, so a 10bps stop exits in seconds no matter what it
+            # says. It produced entries like tp150/sl10/240m at an 11.7% win
+            # rate and 35 trades a day -- labelled intraday, measured as
+            # scalping. The stop floor is what makes a trade last.
+            #
+            # The ceiling matters too: tp150 was the old maximum and it
+            # dominated the leaders, which is the signature of a grid
+            # truncated below where the answer lives.
+            "hold_min": int(rng.choice([60, 120, 240, 360, 480])),
+            "tp": float(rng.choice([100, 150, 200, 300, 400, 600])),
+            "sl": float(rng.choice([50, 75, 100, 150, 200])),
         }
-        key = (conds, spec["regime"], spec["hold"], spec["tp"], spec["sl"])
+        key = (conds, spec["regime"], spec["hold_min"], spec["tp"], spec["sl"])
         if key in seen:
             continue
         seen.add(key)
@@ -181,20 +223,37 @@ def evaluate_strategy(
     preds,
     regs,
     outcome_cache: Dict[Tuple[float, float, int], Any],
+    bar_minutes: int,
 ) -> Optional[Dict[str, float]]:
-    key = (s.spec["tp"], s.spec["sl"], s.spec["hold"])
+    hold_bars = max(1, s.spec["hold_min"] // bar_minutes)
+    key = (s.spec["tp"], s.spec["sl"], hold_bars)
     if key not in outcome_cache:
         outcome_cache[key] = forward_outcomes(
-            bars, s.spec["tp"], s.spec["sl"], s.spec["hold"], 0.0
+            bars, s.spec["tp"], s.spec["sl"], hold_bars, 0.0
         )
     gross, held = outcome_cache[key]
-    r = evaluate(s.mask(preds, regs), gross, held, 1)
+    mask = s.mask(preds, regs)
+    r = evaluate(mask, gross, held, 1)
     if r["trades"] < 1:
         return None
+
+    # How long the trades *actually* lasted, not the configured maximum.
+    # `hold` is a ceiling; a tight stop exits long before it, so a strategy
+    # can carry an intraday label while behaving like a scalp. Measuring it
+    # is the only way to tell the difference.
+    idx = np.where(mask & np.isfinite(gross))[0]
+    picked, busy = [], -1
+    for i in idx:
+        if i > busy:
+            picked.append(i)
+            busy = i + max(int(held[i]), 1)
+    median_hold = float(np.median(held[picked])) * bar_minutes if picked else 0.0
+
     return {
         "trades": r["trades"],
         "gross_bps": r["mean_bps"],
         "win_rate": r["win_rate"],
+        "median_hold_min": median_hold,
     }
 
 
@@ -231,6 +290,12 @@ def main(argv=None) -> int:
     p.add_argument("--train-end", default="2025-08")
     p.add_argument("--test", default="2025-09")
     p.add_argument("--test-end", default="2026-07")
+    p.add_argument(
+        "--bar-minutes",
+        type=int,
+        default=5,
+        help="Resample the 1m cache to this granularity",
+    )
     p.add_argument("--n", type=int, default=100)
     p.add_argument("--seed", type=int, default=20260901)
     p.add_argument("--null-draws", type=int, default=40)
@@ -244,9 +309,11 @@ def main(argv=None) -> int:
     test, n_te = load_months(
         cache, args.symbol, args.timeframe, args.test, args.test_end
     )
+    train = resample(train, args.bar_minutes)
+    test = resample(test, args.bar_minutes)
     print(
-        f"{args.symbol} {args.timeframe}: train {len(train):,} bars "
-        f"({n_tr} months), test {len(test):,} bars ({n_te} months)"
+        f"{args.symbol}: train {len(train):,} x {args.bar_minutes}m bars "
+        f"({n_tr} months), test {len(test):,} ({n_te} months)"
     )
 
     preds_tr, regs_tr = _predicates(train), _regimes(train)
@@ -268,13 +335,25 @@ def main(argv=None) -> int:
     cache_tr: Dict[Tuple[float, float, int], Any] = {}
     rows = []
     for s in strategies:
-        r = evaluate_strategy(s, train, preds_tr, regs_tr, cache_tr)
+        r = evaluate_strategy(s, train, preds_tr, regs_tr, cache_tr, args.bar_minutes)
         if r:
             rows.append((s, r))
     print(f"evaluated {len(rows)}/{len(strategies)} (rest produced no trades)")
 
     t0 = [(s, r) for s, r in rows if r["trades"] >= MIN_TRADES]
     print(f"\nTier 0  >= {MIN_TRADES} trades          : {len(t0)}/{len(rows)} pass")
+    if t0:
+        holds = sorted(r["median_hold_min"] for _, r in t0)
+        per_day = sorted(r["trades"] / (n_tr * 30.4) for _, r in t0)
+        mid = len(holds) // 2
+        print(
+            f"        actual median hold      : {holds[mid]:.0f} min "
+            f"(range {holds[0]:.0f}-{holds[-1]:.0f})"
+        )
+        print(
+            f"        trades per day          : {per_day[mid]:.1f} "
+            f"(range {per_day[0]:.1f}-{per_day[-1]:.1f})"
+        )
 
     t1 = [
         (s, r) for s, r in t0 if r["gross_bps"] > COST_MAKER_BPS + REQUIRED_MARGIN_BPS
@@ -282,16 +361,30 @@ def main(argv=None) -> int:
     print(f"Tier 1  gross > {COST_MAKER_BPS:g}bps cost      : {len(t1)}/{len(t0)} pass")
 
     if t1:
-        counts = [r["trades"] for _, r in t1]
-        anykey = next(iter(cache_tr))
-        g, h = cache_tr[anykey]
-        thr = null_best_of(g, h, counts, len(rows), args.null_draws, rng)
-        t2 = [
-            (s, r)
-            for s, r in t1
-            if r["gross_bps"] - COST_MAKER_BPS > thr - COST_MAKER_BPS
-        ]
-        print(f"Tier 2  beats null ({thr:+.2f}bps)   : {len(t2)}/{len(t1)} pass")
+        # The null has to be built from the strategy's *own* geometry and its
+        # own trade count. Per-trade dispersion depends heavily on tp/sl/hold,
+        # so a tp600/sl200 strategy and a tp100/sl50 one cannot share a
+        # threshold -- an earlier version drew one from whichever geometry
+        # happened to be cached first and applied it to all of them, which
+        # made the bar arbitrary in exactly the tier that rejects everything.
+        t2, thrs = [], []
+        for s, r in t1:
+            hold_bars = max(1, s.spec["hold_min"] // args.bar_minutes)
+            g, h = cache_tr[(s.spec["tp"], s.spec["sl"], hold_bars)]
+            thr_s = null_best_of(
+                g, h, [int(r["trades"])], len(rows), args.null_draws, rng
+            )
+            thrs.append(thr_s)
+            if r["gross_bps"] > thr_s:
+                t2.append((s, r))
+        thr = float(np.median(thrs)) if thrs else float("nan")
+        print(f"Tier 2  beats own null (med {thr:+.1f}bps): {len(t2)}/{len(t1)} pass")
+        for (s, r), t in zip(t1, thrs):
+            flag = "PASS" if r["gross_bps"] > t else "    "
+            print(
+                f"        {flag} {s.name[:44]:44} {r['gross_bps']:+7.2f} vs "
+                f"null {t:+7.2f}"
+            )
     else:
         t2, thr = [], float("nan")
         print("Tier 2  beats null              : skipped, nothing reached it")
@@ -299,7 +392,7 @@ def main(argv=None) -> int:
     t3 = []
     cache_te: Dict[Tuple[float, float, int], Any] = {}
     for s, r in t2:
-        rt = evaluate_strategy(s, test, preds_te, regs_te, cache_te)
+        rt = evaluate_strategy(s, test, preds_te, regs_te, cache_te, args.bar_minutes)
         if rt and rt["gross_bps"] - COST_MAKER_BPS > 0:
             t3.append((s, r, rt))
     print(f"Tier 3  holds out of sample     : {len(t3)}/{len(t2)} pass")

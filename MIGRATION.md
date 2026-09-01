@@ -923,3 +923,59 @@ quoted BTC's best as **+24.08bps**. That was a 6-trade strategy -- precisely
 what Tier 0 exists to exclude -- and it was being reported in a summary line
 that ranked before the filter rather than after it. Fixed, and the ranking is
 now taken from Tier 0 survivors only.
+
+### Corrected: the first intraday run was measuring scalps
+
+The run above tested 1m bars with a stop-loss grid reaching down to 10bps.
+That was wrong, and the challenge that surfaced it was right: `hold` is only a
+*maximum*, so a 10bps stop exits in seconds regardless of what the holding
+parameter says. The evidence was in the output and went unread -- an 11.7% win
+rate on a "240 minute" strategy, and 21,310 trades over 20 months, about 35 a
+day. It was labelled intraday and measured scalping, because the geometry was
+carried over from the earlier scalping work.
+
+Corrected: 5m bars, stop-loss 50-200bps, take-profit 100-600bps, holds of
+1-8 hours. Plus a diagnostic reporting the **actual** median holding time
+rather than the configured ceiling, so the mislabel cannot recur silently.
+
+| | 1m + scalping geometry | 5m + intraday geometry |
+|---|---|---|
+| actual median hold | seconds | **110 min** |
+| trades per day | up to 35 | **2.6 (ETH) / 3.8 (BTC)** |
+| Tier 1: gross > 4bps | 0/53 | **8/29 (ETH), 4/40 (BTC)** |
+| best gross edge | +1.52bps | **+12.00 / +12.11bps** |
+
+**At genuine intraday horizons the gross edge does clear costs.** That is a
+real change from every previous result in this file, and it came from fixing
+the timeframe rather than from finding a better signal. The old `tp150`
+ceiling had appeared in four of the top seven -- a search pressed against its
+own boundary, looking below where the answer lived.
+
+It still fails, at Tier 2.
+
+A second bug had to be fixed before that could be said honestly. The null was
+being drawn from whichever geometry happened to be cached first and applied to
+every strategy, which made the bar arbitrary in exactly the tier that rejects
+everything. Per-trade dispersion depends heavily on tp/sl/hold, so each
+strategy is now measured against a null built from its own geometry and its
+own trade count.
+
+That correction sharpened the result rather than softening it:
+
+| strategy | trades | gross | its own null |
+|---|---|---|---|
+| ema5x30+ofi30 (ETH) | 206 | +12.00 | **+28.86** |
+| break60 (BTC) | 319 | +12.11 | **+23.48** |
+| mom60 (ETH) | 1001 | +9.68 | +11.29 |
+| busy60+mom15 (ETH) | 432 | +8.04 | +14.27 |
+
+The best-looking strategy on each instrument has the *highest* null, because a
+few hundred trades at tp300/sl150 is a small, high-variance sample and
+best-of-N selection produces +23 to +29bps there by luck alone. The single
+flat threshold had been flattering exactly the strategies least able to
+support the weight.
+
+Every one of the twelve strategies that cleared costs falls short of what
+random selection with its own trade count and geometry would have produced.
+None survives at taker cost either -- all twelve need all-maker execution
+merely to be positive before the null is considered.
