@@ -1180,3 +1180,51 @@ angle: `low300|any|tp600/sl200/240m` scores +8.63bps pooled, but +36.39 of that
 comes from FET on 249 trades while LINK and ARB are negative. Positive on 6 of
 10. A pooled average can be carried by one name, which is why the breakdown is
 printed rather than summarised.
+
+## The mid-cap band: the best result here, and it is one memecoin
+
+The move-to-cost ratio favours mid-caps -- 10.3x in the $20-100M daily volume
+band against 7.7x for the majors -- so the search was re-run there on 17 names,
+with liquidity measured on the training window only so selection could not peek
+at the test period, and with MATIC, FTM and RNDR included despite having
+delisted mid-period.
+
+It produced the strongest tier progression in this file:
+
+| tier | 20 L1-heavy | 10 diverse | **17 mid-cap** |
+|---|---|---|---|
+| Tier 1 gross > cost | 0/59 | 5/57 | **12/59** |
+| Tier 2 beats own null | 0 | 1 | **3/12** |
+| Tier 3 holds out of sample | -- | 0/1 | **2/3** |
+| Tier 4 survives taker cost | -- | -- | **0/2** |
+
+Two strategies survived out-of-sample testing, which nothing had managed
+before. Then the per-instrument breakdown settled it:
+
+| strategy | PEPE's share of the edge | from % of trades | edge without PEPE |
+|---|---|---|---|
+| low30+ofi10 | 75% | 18% | +15.78 -> **+4.76** |
+| low60+ofineg30 | **100%** | 9% | +5.35 -> **+0.02** |
+| low60+ofineg10 | 47% | 9% | +9.22 -> **+5.41** |
+
+`low60+ofineg30` is the clean illustration. It has the strongest out-of-sample
+t-statistic of the three at +3.45, and without PEPE its edge is **0.02bps**. It
+is not a strategy; it is a long position in one memecoin during an
+extraordinary run, wearing an entry rule as a disguise.
+
+Nothing survives taker cost. The best case after removing PEPE is
+`low60+ofineg10` at +5.41bps gross, **+1.41bps net** at all-maker execution,
+with an out-of-sample t of 1.95 -- below significance.
+
+This is a different failure from the earlier ones, and worth naming. The
+majors failed because no edge existed above costs. The mid-caps fail because
+the edge that does exist is **concentrated in a single instrument**, and a
+pooled average conceals that unless the breakdown is printed. A strategy
+positive on 12 of 17 names still had three quarters of its return from one of
+them.
+
+A survivorship bug was fixed to get here. The pooling code required an
+instrument to have *both* training and test data, which silently dropped every
+name that delisted between the two -- reintroducing exactly the bias the
+point-in-time universe exists to remove, in the band where delisting is most
+common. Train and test membership are now decided independently.

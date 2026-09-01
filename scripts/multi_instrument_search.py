@@ -155,15 +155,32 @@ def main(argv=None) -> int:
     cache = Path(args.data) / "bars"
     tr_panels, te_panels = {}, {}
     for sym in syms:
+        # Train and test membership are decided independently. Requiring both
+        # would drop any instrument that delisted between them -- which is
+        # exactly the survivorship bias the point-in-time universe exists to
+        # remove. A coin that traded during training and then died belongs in
+        # the training set, and its absence from the test set is a fact about
+        # the world rather than a reason to erase it from history.
         a = load_symbol(cache, sym, args.timeframe, args.train, args.train_end)
         b = load_symbol(cache, sym, args.timeframe, args.test, args.test_end)
-        if a and b:
-            tr_panels[sym], te_panels[sym] = a, b
+        if a:
+            tr_panels[sym] = a
+        if b:
+            te_panels[sym] = b
     if not tr_panels:
         print("no data loaded")
         return 1
     bars_tr = sum(len(p["bars"]) for p in tr_panels.values())
-    print(f"{len(tr_panels)} instruments, {bars_tr:,} training bars ({args.timeframe})")
+    died = sorted(set(tr_panels) - set(te_panels))
+    print(
+        f"{len(tr_panels)} instruments in train, {len(te_panels)} in test, "
+        f"{bars_tr:,} training bars ({args.timeframe})"
+    )
+    if died:
+        print(
+            f"  delisted between train and test, kept in train: "
+            f"{', '.join(d.replace('USDT', '') for d in died)}"
+        )
 
     rng = np.random.default_rng(args.seed)
     any_p = next(iter(tr_panels.values()))
