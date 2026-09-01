@@ -806,3 +806,64 @@ The criteria for the test itself are fixed in
 written. Given that four apparently-profitable results have already dissolved
 here and a fifty-signal screen produced a "top 5" that was pure selection
 bias, criteria written afterwards would not be worth reading.
+
+## The cross-sectional test: negative
+
+Run against `docs/CROSS_SECTIONAL_PREREGISTRATION.md`, committed before the
+script existed. Universe: the 103 unflagged names with data, point-in-time,
+survivorship included. 84 monthly periods, top decile equal-weighted, 14bps on
+realised turnover.
+
+| signal | excess/period | annualised | Sharpe |
+|---|---|---|---|
+| low_downside_vol | **+0.455%** | +5.5% | 0.10 |
+| volume_trend | -0.045% | -0.6% | -0.01 |
+| mom_12m | -0.174% | -2.1% | -0.04 |
+| mom_1m | -2.279% | -27.8% | -0.41 |
+| mom_6m | -2.666% | -32.5% | -0.62 |
+| mom_3m_volscaled | -3.088% | -37.6% | -0.56 |
+| mom_3m | -3.352% | -40.8% | -0.58 |
+| reversal_1w | -5.454% | -66.4% | -1.32 |
+
+Against the criteria:
+
+- **PASS** excess > 0 — best signal +0.455%/period
+- **FAIL** clears the best-of-8 null — null is +4.594%/period
+- **FAIL** Sharpe >= 0.8 — measured 0.10
+- **FAIL** positive in a majority of folds — 1 of 4
+
+Three of four fail, which the pre-registration defines as a negative result.
+No re-run with adjusted parameters.
+
+Notably, seven of eight signals *underperform* equal-weighting the universe,
+several by a wide margin. Momentum is not merely absent here; ranking on it
+and holding the top decile did materially worse than holding everything.
+
+### The harness was capable of showing a positive
+
+A negative result is worth nothing if the simulation was rigged to produce it,
+so that was checked directly: selecting names at random earns **-0.09%** excess
+per period against an expected zero, across 300 trials. The machinery is
+unbiased, and `test_random_selection_earns_no_excess` pins it.
+
+### A flaw in the pre-registration, stated rather than fixed
+
+The criteria fixed a top-decile portfolio but set no floor on universe size.
+The universe starts at 2 names and has a median of 37, so the top decile is
+frequently **3 names**. A 3-name portfolio is dominated by idiosyncratic noise:
+random selection alone has a standard deviation of 1.74% per period across
+trials, which is why the best-of-8 null sits at +4.6%.
+
+That makes this a weak test. Only an enormous edge could have cleared that
+bar, so "no edge" and "an edge too small to see through 3-name noise" are not
+distinguished by it.
+
+This is a real defect in how the test was specified, and the honest response is
+to record it, not to quietly re-run with a universe floor and present that as
+the result. A better-powered version -- a size floor, a wider slice, or both --
+would be a **new** pre-registered test, with its own criteria fixed in advance.
+
+Whether it is worth running is a separate question. The signals did not merely
+fail to clear a high bar; most were solidly negative against a benchmark that
+shares their drift and survivorship. That is not the shape of an edge hidden
+under noise.
