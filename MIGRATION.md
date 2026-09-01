@@ -1362,3 +1362,57 @@ months looking for exactly that. Without criteria fixed in advance -- and
 without the sentence saying the secondary cannot rescue the primary -- it would
 have been entirely natural to write it up as a defensive-factor discovery, with
 a plausible story about downside protection attached.
+
+## CTREND: the one literature claim that contradicted our cost measurement
+
+A survey of the crypto cross-section literature turned up one result that did
+not fit. Every documented anomaly draws its alpha from micro-caps -- size,
+volume and distress anomalies take their returns from coins representing under
+**0.3% of aggregate market capitalisation and 0.5% of volume**, which sits
+below the liquidity band where our own measurement puts the move-to-cost ratio
+at 1.3x. The exception was CTREND (*A Trend Factor for the Cross Section of
+Cryptocurrency Returns*, JFQA), reported to survive transaction costs and to
+persist **in big and liquid coins**.
+
+That is the one claim worth testing, because it contradicts our own arithmetic
+rather than confirming it.
+
+CTREND is also different in kind from the ~400 variants already tested here.
+Those were fixed rules. This is a *learned* factor: moving averages over many
+horizons combined by coefficients estimated from the cross-section, following
+Han, Zhou and Zhu (2016). Implemented with 7 price and 7 volume horizons, and
+weights taken as the mean of past cross-sectional regressions -- expanding
+window, so the weights at any rebalance date come only from periods that had
+already resolved.
+
+| universe | rebalance | excess/period | null | Sharpe | folds |
+|---|---|---|---|---|---|
+| full | 7d | -0.016% | +0.549% | -0.01 | 1/5 |
+| full | 30d | +2.460% | +2.680% | 0.45 | 1/5 |
+| **liquid50** | 7d | +0.001% | +0.086% | 0.00 | 3/5 |
+| **liquid50** | 30d | -1.043% | +0.639% | -0.46 | 3/5 |
+
+**Zero of four cells met the criteria**, and the paper's own claim -- big and
+liquid coins -- is where it performs worst: +0.001% weekly on the top-50 liquid
+subset, and -1.043% monthly. The closest approach is full-universe monthly at
++2.460% against a null of +2.680%, which does not clear its own null and is
+positive in 1 of 5 folds.
+
+The factor had every honest advantage: 14 signals, 343 weekly periods, and
+weights free to adapt to whichever horizons predicted. It still does not beat
+picking at random from the same universe.
+
+One caveat recorded: the paper aggregates with machine learning and this uses
+the regression construction it builds on. A better learner might combine the
+same 14 signals more effectively -- but it would have to find something the
+linear combination missed *and* clear a null that already prices in the search,
+using the same price and volume series that failed every prior test.
+
+### What this closes
+
+It removes the last inconsistency between the literature and our own
+measurements. The two now agree completely: **the documented alpha lives in
+coins too small to trade.** Our cost work found the move-to-cost ratio peaking
+at $20-100M daily volume and collapsing to 1.3x below $200k; the literature
+places the alpha below that line. Two independent lines of evidence, same
+boundary.
