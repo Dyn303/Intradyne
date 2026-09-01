@@ -1137,3 +1137,46 @@ nominal trade count.
 
 `multi_instrument_search.py` now clusters trades by day before computing
 significance, so correlated instruments cannot inflate a t-statistic again.
+
+## The diverse set: one strategy cleared the null, then died out of sample
+
+Running the same search over ten category-diverse instruments rather than
+twenty L1-heavy ones changed the picture at Tier 1 -- 5 of 57 cleared costs
+against 0 of 59 before -- and for the first time in this project something
+cleared the best-of-N null.
+
+`low30|vol_low|tp300/sl100/240m`, held 240 minutes, entered on a 30-bar low in
+a low-volatility regime:
+
+| | train (2024-01 to 2025-08) | test (2025-09 to 2026-07) |
+|---|---|---|
+| pooled trades | 8,061 | 4,680 |
+| gross | **+4.59 bps** | **-1.00 bps** |
+| t, day-clustered | **+4.58** | +1.29 |
+| positive on | **10 of 10 instruments** | 4 of 10 |
+| its own best-of-N null | +3.76 (cleared) | -- |
+
+In sample it passed every check available: a cluster-robust t of 4.58 that
+respects the 0.54 cross-correlation, an edge above its own best-of-N null, and
+a positive result on **every single instrument**. That is a stronger in-sample
+case than anything else produced here.
+
+Out of sample it is negative, and positive on fewer than half the instruments.
+
+This is the clearest demonstration in the file of why the held-out tier is not
+optional. Every in-sample guard -- the cost gate, the clustered t-statistic,
+the per-strategy null, consistency across ten instruments -- passed. None of
+them detected that the effect would not survive the next eleven months. Only
+running it on data the selection never touched did that.
+
+Worth noting what category diversity actually bought. It did not raise
+statistical power: effective breadth is 1.7 whether the set is ten diverse
+names or twenty L1s. What it changed was *which* strategies became reachable,
+because PAXG and FET behave differently enough to admit rules the L1-only set
+never triggered. That is a genuine effect, and it still was not enough.
+
+The per-instrument breakdown of the runner-up says the same thing from another
+angle: `low300|any|tp600/sl200/240m` scores +8.63bps pooled, but +36.39 of that
+comes from FET on 249 trades while LINK and ARB are negative. Positive on 6 of
+10. A pooled average can be carried by one name, which is why the breakdown is
+printed rather than summarised.
