@@ -867,3 +867,364 @@ Whether it is worth running is a separate question. The signals did not merely
 fail to clear a high bar; most were solidly negative against a benchmark that
 shares their drift and survivorship. That is not the shape of an edge hidden
 under noise.
+
+## 100 random intraday strategies: nothing reaches Tier 1
+
+Everything searched before this tested *single* entry signals.
+`scripts/random_strategy_search.py` samples whole strategies instead --
+entry predicate, confluence requirement, regime filter, exit geometry and
+holding period -- across 38 predicates and 4 regimes. Confluence is why it was
+worth running: requiring two or three conditions to agree trades far less
+often but more selectively, and trading less often is the only mechanism that
+can lift a per-trade edge toward the cost line.
+
+The filter was committed before the run, in `db82f61`, with the tiers in this
+order deliberately:
+
+    Tier 0  >= 200 non-overlapping trades
+    Tier 1  gross edge per trade exceeds the round trip
+    Tier 2  net edge beats the best-of-100 null
+    Tier 3  net edge still positive out of sample
+    Tier 4  still positive at taker cost
+
+Tier 1 sits first because nothing downstream can rescue a strategy whose gross
+edge does not clear its own costs. Ranking on win rate or Sharpe before that
+question is settled is how a search produces a confident, worthless top five.
+
+| | ETH | BTC |
+|---|---|---|
+| generated | 100 | 100 |
+| produced trades | 66 | 67 |
+| **Tier 0** (>=200 trades) | 53 | 59 |
+| **Tier 1** (gross > 4bps) | **0** | **0** |
+| Tier 2-4 | not reached | not reached |
+
+Best gross edge among strategies with a measurable trade count: **+1.52bps**
+(ETH, 22,851 trades) and **+2.18bps** (BTC, 3,327 trades). The round trip is
+4bps all-maker and 14bps taker. Nothing came within half of the cheapest
+possible cost.
+
+This is consistent with, and independent of, the earlier tick measurement:
+that put the intraday edge at ~0.5bps per trade at a two-minute horizon, real
+at 4-6 sigma. Confluence and regime filtering do lift it -- roughly three to
+four times -- and it is still not close. Three or four times too small instead
+of thirty.
+
+### Why no top five is reported
+
+A top five was requested. Producing one would have meant ranking the survivors
+of a filter that nothing reached, which is the exact failure this project has
+already made four times. The leaders are listed by gross edge so the shape of
+the result is visible, but every one of them loses money after costs, and the
+ordering among them is noise.
+
+One detail worth recording: the first version of this write-up would have
+quoted BTC's best as **+24.08bps**. That was a 6-trade strategy -- precisely
+what Tier 0 exists to exclude -- and it was being reported in a summary line
+that ranked before the filter rather than after it. Fixed, and the ranking is
+now taken from Tier 0 survivors only.
+
+### Corrected: the first intraday run was measuring scalps
+
+The run above tested 1m bars with a stop-loss grid reaching down to 10bps.
+That was wrong, and the challenge that surfaced it was right: `hold` is only a
+*maximum*, so a 10bps stop exits in seconds regardless of what the holding
+parameter says. The evidence was in the output and went unread -- an 11.7% win
+rate on a "240 minute" strategy, and 21,310 trades over 20 months, about 35 a
+day. It was labelled intraday and measured scalping, because the geometry was
+carried over from the earlier scalping work.
+
+Corrected: 5m bars, stop-loss 50-200bps, take-profit 100-600bps, holds of
+1-8 hours. Plus a diagnostic reporting the **actual** median holding time
+rather than the configured ceiling, so the mislabel cannot recur silently.
+
+| | 1m + scalping geometry | 5m + intraday geometry |
+|---|---|---|
+| actual median hold | seconds | **110 min** |
+| trades per day | up to 35 | **2.6 (ETH) / 3.8 (BTC)** |
+| Tier 1: gross > 4bps | 0/53 | **8/29 (ETH), 4/40 (BTC)** |
+| best gross edge | +1.52bps | **+12.00 / +12.11bps** |
+
+**At genuine intraday horizons the gross edge does clear costs.** That is a
+real change from every previous result in this file, and it came from fixing
+the timeframe rather than from finding a better signal. The old `tp150`
+ceiling had appeared in four of the top seven -- a search pressed against its
+own boundary, looking below where the answer lived.
+
+It still fails, at Tier 2.
+
+A second bug had to be fixed before that could be said honestly. The null was
+being drawn from whichever geometry happened to be cached first and applied to
+every strategy, which made the bar arbitrary in exactly the tier that rejects
+everything. Per-trade dispersion depends heavily on tp/sl/hold, so each
+strategy is now measured against a null built from its own geometry and its
+own trade count.
+
+That correction sharpened the result rather than softening it:
+
+| strategy | trades | gross | its own null |
+|---|---|---|---|
+| ema5x30+ofi30 (ETH) | 206 | +12.00 | **+28.86** |
+| break60 (BTC) | 319 | +12.11 | **+23.48** |
+| mom60 (ETH) | 1001 | +9.68 | +11.29 |
+| busy60+mom15 (ETH) | 432 | +8.04 | +14.27 |
+
+The best-looking strategy on each instrument has the *highest* null, because a
+few hundred trades at tp300/sl150 is a small, high-variance sample and
+best-of-N selection produces +23 to +29bps there by luck alone. The single
+flat threshold had been flattering exactly the strategies least able to
+support the weight.
+
+Every one of the twelve strategies that cleared costs falls short of what
+random selection with its own trade count and geometry would have produced.
+None survives at taker cost either -- all twelve need all-maker execution
+merely to be positive before the null is considered.
+
+## Pre-specified signals from the literature: both negative
+
+Every search here has died in the same place -- a strategy clears its costs,
+then fails to beat the best-of-N null for its own trade count. That penalty is
+the price of *searching*. A signal specified in advance by someone else does
+not pay it, so two were taken from the literature as published and tested
+without tuning.
+
+### Intraday momentum (Gao, Han, Li & Zhou, JFE 2018; Shen et al. 2022)
+
+The first half-hour return of the day predicts the last half-hour return.
+20 instruments, 18,860 day-observations.
+
+| | published (SPY) | measured (crypto) |
+|---|---|---|
+| R^2 | 0.016 | **0.00203** |
+| effect | slope +6.94, sig. at 1% | difference +0.73bps, **t = 1.79** |
+
+The sign is consistent -- positive on 18 of 20 instruments -- but the effect is
+roughly eight times weaker in R^2 than the equity original, and t = 1.79 is
+below even the conventional 1.96, let alone the 3.4-3.8 the multiple-testing
+literature requires. Net of a 4bps all-maker round trip it is **-1.09bps**.
+
+This is what the stated prior expected. In equities the effect is attributed to
+opening auctions and late-day portfolio rebalancing. Crypto trades continuously
+with neither, and the UTC day boundary used here is a convention rather than a
+market event. The correlation survives the move weakly; the mechanism does not.
+
+One reporting correction worth recording: the first version of this test put
+t = 4.89 on the raw mean of the position. That number was almost entirely
+drift -- these instruments rise, so any long position shows a large t whether
+or not the rule discriminates. Testing the *difference* between days following
+a positive first window and days following a negative one gives t = 1.79, and
+that is the statistic the claim actually makes.
+
+### Short-horizon cross-sectional momentum
+
+The crypto momentum literature places the effect at 1-4 week formation with
+persistence limited to about a week, unlike the 12-month effect in equities.
+The cross-sectional test run earlier in this project used 1, 3, 6 and 12 month
+formation -- mostly outside that window, which was a real gap.
+
+Tested at the window the literature points at, 402 weekly periods, 583
+instruments, point-in-time with survivorship:
+
+| formation | excess/week | t | positive weeks |
+|---|---|---|---|
+| 1 week | -0.654% | -1.96 | 41% |
+| 2 weeks | -0.394% | -1.16 | 46% |
+| 3 weeks | -0.392% | -1.15 | 44% |
+| 4 weeks | -0.704% | -2.14 | 42% |
+
+All four are negative, and the two endpoints approach significantly so. The
+gap in the earlier test is now closed, and closing it did not help: at the
+window the literature identifies, ranking on trailing return and holding the
+top decile does worse than holding the universe, not better.
+
+## Pooling across twenty instruments: the cleanest result in this file
+
+The single-instrument search failed at the null, not at the cost gate, and the
+diagnosis was statistical power: 206 trades at tp300/sl150 is a small,
+high-variance sample where best-of-N selection produces +28bps by luck. The
+remedy is more *trades*, not more strategies -- pooling one strategy across
+twenty instruments raises n without raising the number of things selected over,
+so the null falls as 1/sqrt(n) while a real edge does not.
+
+20 instruments, 3.5M five-minute bars, same tiers, 75-minute median hold:
+
+| | single instrument (ETH) | pooled (20) |
+|---|---|---|
+| trades | 206-1,856 | median **13,775**, max 154,984 |
+| Tier 0 | 29/55 | 59/68 |
+| **Tier 1: gross > 4bps** | 8/29 | **0/59** |
+
+**Nothing clears costs once the sample is honest.** And the reason is the
+single most useful number produced here:
+
+| `mom60\|liquid\|tp400/sl50/240m` | gross edge |
+|---|---|
+| on ETH alone (1,001 trades) | **+9.68 bps** |
+| pooled over 20 instruments (25,946 trades) | **+2.99 bps** |
+
+The same strategy, the same geometry, the same period. The single-instrument
+figure was roughly three times too optimistic, and pooling removed the
+inflation rather than confirming it. That is precisely what the best-of-N null
+had been warning about, now demonstrated directly instead of argued from
+simulation.
+
+Note what did *not* happen: the signal did not vanish. At 25,946 trades it
+carries **t = 3.91**, which clears even the 3.4-3.8 hurdle the multiple-testing
+literature demands. It is a real, statistically strong effect of **+2.99bps**
+against a **4bps** floor on round-trip costs. Real, and too small -- the same
+verdict reached at two-minute horizons (+0.5bps against 4bps), reached again
+independently at 75 minutes with a hundred times the sample.
+
+A display flaw was fixed here too: the top-5 table originally ranked over every
+strategy rather than over Tier 0 passers, which put a one-trade, 100%-win
+artifact (+63.47bps, PROMUSDT, n=1) at the top. That is exactly the impression
+the filter exists to prevent, and it should not have been printed above the
+real rows.
+
+## There are not twenty independent crypto assets
+
+The pooled result was reported with **t = 3.91** across 25,946 trades, and that
+number was wrong. It treated every pooled trade as an independent observation.
+
+Measured at hourly horizons across the twenty instruments used:
+
+| | |
+|---|---|
+| mean pairwise correlation | **0.563** |
+| effective independent instruments | **1.7 of 20** |
+| pooled sample worth | **~9%** of its trade count |
+
+Correcting for that puts the strategy nearer **t = 1.2**, not 3.91 -- below the
+conventional 1.96, never mind the 3.4-3.8 the multiple-testing literature asks
+for. The claim that it "clears even the multiple-testing hurdle" was false.
+
+The instrument set was chosen by volume, and volume in crypto concentrates in
+Layer 1 blockchains: fourteen of the twenty were L1s. So the obvious remedy was
+category diversity. It does almost nothing.
+
+| set | mean correlation | effective independent |
+|---|---|---|
+| 20 names, L1-heavy | 0.563 | 1.7 of 20 |
+| 10 names spanning distinct categories | 0.469 | **1.8 of 6 measured so far** |
+
+Deliberately spanning memecoin, exchange token, oracle, lending, DEX, L2 and
+privacy moved the correlation from 0.56 to 0.47 and effective breadth from 1.7
+to 1.8. The per-name detail explains why:
+
+| instrument | category | correlation with BTC |
+|---|---|---|
+| LTC | privacy / old L1 | +0.666 |
+| DOGE | memecoin | +0.636 |
+| LINK | oracle | +0.619 |
+| BNB | exchange token | +0.608 |
+| **PAXG** | **tokenised gold** | **+0.141** |
+
+A memecoin, an oracle token and an exchange token all move with Bitcoin at
+about 0.62. **Category labels in crypto describe what a token claims to do, not
+what drives its price.** At intraday horizons the whole asset class is close to
+one trade with different volatility multipliers.
+
+The exception proves the rule: PAXG is a claim on physical gold, the only
+instrument here with an anchor outside crypto, and the only one that
+diversifies.
+
+This reframes the pooling strategy rather than refining it. Statistical power
+in crypto cannot be bought by adding names, because the names are not
+independent -- there are roughly two effective assets available, and one of
+them is gold. Every pooled figure in this file, including the ones reported as
+improvements, has to be read against an effective sample about a tenth of its
+nominal trade count.
+
+`multi_instrument_search.py` now clusters trades by day before computing
+significance, so correlated instruments cannot inflate a t-statistic again.
+
+## The diverse set: one strategy cleared the null, then died out of sample
+
+Running the same search over ten category-diverse instruments rather than
+twenty L1-heavy ones changed the picture at Tier 1 -- 5 of 57 cleared costs
+against 0 of 59 before -- and for the first time in this project something
+cleared the best-of-N null.
+
+`low30|vol_low|tp300/sl100/240m`, held 240 minutes, entered on a 30-bar low in
+a low-volatility regime:
+
+| | train (2024-01 to 2025-08) | test (2025-09 to 2026-07) |
+|---|---|---|
+| pooled trades | 8,061 | 4,680 |
+| gross | **+4.59 bps** | **-1.00 bps** |
+| t, day-clustered | **+4.58** | +1.29 |
+| positive on | **10 of 10 instruments** | 4 of 10 |
+| its own best-of-N null | +3.76 (cleared) | -- |
+
+In sample it passed every check available: a cluster-robust t of 4.58 that
+respects the 0.54 cross-correlation, an edge above its own best-of-N null, and
+a positive result on **every single instrument**. That is a stronger in-sample
+case than anything else produced here.
+
+Out of sample it is negative, and positive on fewer than half the instruments.
+
+This is the clearest demonstration in the file of why the held-out tier is not
+optional. Every in-sample guard -- the cost gate, the clustered t-statistic,
+the per-strategy null, consistency across ten instruments -- passed. None of
+them detected that the effect would not survive the next eleven months. Only
+running it on data the selection never touched did that.
+
+Worth noting what category diversity actually bought. It did not raise
+statistical power: effective breadth is 1.7 whether the set is ten diverse
+names or twenty L1s. What it changed was *which* strategies became reachable,
+because PAXG and FET behave differently enough to admit rules the L1-only set
+never triggered. That is a genuine effect, and it still was not enough.
+
+The per-instrument breakdown of the runner-up says the same thing from another
+angle: `low300|any|tp600/sl200/240m` scores +8.63bps pooled, but +36.39 of that
+comes from FET on 249 trades while LINK and ARB are negative. Positive on 6 of
+10. A pooled average can be carried by one name, which is why the breakdown is
+printed rather than summarised.
+
+## The mid-cap band: the best result here, and it is one memecoin
+
+The move-to-cost ratio favours mid-caps -- 10.3x in the $20-100M daily volume
+band against 7.7x for the majors -- so the search was re-run there on 17 names,
+with liquidity measured on the training window only so selection could not peek
+at the test period, and with MATIC, FTM and RNDR included despite having
+delisted mid-period.
+
+It produced the strongest tier progression in this file:
+
+| tier | 20 L1-heavy | 10 diverse | **17 mid-cap** |
+|---|---|---|---|
+| Tier 1 gross > cost | 0/59 | 5/57 | **12/59** |
+| Tier 2 beats own null | 0 | 1 | **3/12** |
+| Tier 3 holds out of sample | -- | 0/1 | **2/3** |
+| Tier 4 survives taker cost | -- | -- | **0/2** |
+
+Two strategies survived out-of-sample testing, which nothing had managed
+before. Then the per-instrument breakdown settled it:
+
+| strategy | PEPE's share of the edge | from % of trades | edge without PEPE |
+|---|---|---|---|
+| low30+ofi10 | 75% | 18% | +15.78 -> **+4.76** |
+| low60+ofineg30 | **100%** | 9% | +5.35 -> **+0.02** |
+| low60+ofineg10 | 47% | 9% | +9.22 -> **+5.41** |
+
+`low60+ofineg30` is the clean illustration. It has the strongest out-of-sample
+t-statistic of the three at +3.45, and without PEPE its edge is **0.02bps**. It
+is not a strategy; it is a long position in one memecoin during an
+extraordinary run, wearing an entry rule as a disguise.
+
+Nothing survives taker cost. The best case after removing PEPE is
+`low60+ofineg10` at +5.41bps gross, **+1.41bps net** at all-maker execution,
+with an out-of-sample t of 1.95 -- below significance.
+
+This is a different failure from the earlier ones, and worth naming. The
+majors failed because no edge existed above costs. The mid-caps fail because
+the edge that does exist is **concentrated in a single instrument**, and a
+pooled average conceals that unless the breakdown is printed. A strategy
+positive on 12 of 17 names still had three quarters of its return from one of
+them.
+
+A survivorship bug was fixed to get here. The pooling code required an
+instrument to have *both* training and test data, which silently dropped every
+name that delisted between the two -- reintroducing exactly the bias the
+point-in-time universe exists to remove, in the band where delisting is most
+common. Train and test membership are now decided independently.
