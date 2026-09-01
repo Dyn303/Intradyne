@@ -770,3 +770,39 @@ This is the most precise statement the whole effort supports: **the signal is
 real, it is roughly half a basis point, and the cheapest way to trade it costs
 several basis points.** The gap is not a tuning problem or a fee-negotiation
 problem. It is an order of magnitude.
+
+## A universe that includes the dead
+
+The cross-sectional test needs a universe, and the obvious way to build one is
+wrong twice. `scripts/point_in_time_universe.py` recomputes membership at each
+rebalance date from data available on that date only.
+
+**583 names have entered the universe since 2018; 180 of them no longer
+trade** -- 31% mortality. Those names stay in every snapshot they belonged to,
+so a strategy holding one takes the loss it actually took. The dates line up
+with real events rather than data artifacts: SRM leaves on 2022-11-28 with
+FTX, MATIC on 2024-09-10 at the POL migration, OCEAN and AGIX together on
+2024-07-01 when both folded into FET.
+
+Concretely, SRM is a member from 2021-02-27 to 2022-11-19 and absent
+thereafter. A survivorship-biased universe contains it on no date at all, and
+a momentum strategy run against one never has the chance to lose money on it.
+
+Liquidity is judged the same way -- median quote volume over a window ending
+at the rebalance date, never today's volume. Using current liquidity to decide
+what was tradeable in 2022 leaks the future as surely as using current
+listings.
+
+| date | names in universe |
+|---|---|
+| 2018-02 | 2 |
+| 2020-02 | 36 |
+| 2022-01 | 237 |
+| 2024-01 | 339 |
+| 2026-01 | 327 |
+
+The criteria for the test itself are fixed in
+`docs/CROSS_SECTIONAL_PREREGISTRATION.md`, committed before the test was
+written. Given that four apparently-profitable results have already dissolved
+here and a fifty-signal screen produced a "top 5" that was pure selection
+bias, criteria written afterwards would not be worth reading.
