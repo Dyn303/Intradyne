@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 import os as _os
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from intradyne.api.health import router as health_router
 from intradyne.api.routes.orders import router as orders_router
 from intradyne.api.routes.risk import router as risk_router
@@ -18,11 +20,12 @@ from intradyne.api.routes.ws import router as ws_router
 from intradyne.api.routes.research import router as research_router
 from fastapi import Response
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
+from intradyne.api import telegram_auth
 from intradyne.api.deps import (
     api_auth_required,
     configured_api_key,
     is_prod,
-    require_api_key,
+    require_api_key_or_telegram,
 )
 from intradyne.api.deps import get_execution_manager
 from intradyne.api.models import FrontendConfig
@@ -97,15 +100,18 @@ def create_app() -> FastAPI:
     )
     # API auth: default-on in production, else env-driven (see deps.py).
     _auth_required = api_auth_required()
-    if _auth_required and not configured_api_key():
+    if _auth_required and not configured_api_key() and not telegram_auth.enabled():
         # Fail closed at boot rather than serving unauthenticated traffic or
-        # 503-ing every request once deployed.
+        # 503-ing every request once deployed. Either credential satisfies
+        # this: a Mini App deployment may reasonably configure only Telegram
+        # and never mint an API key at all.
         raise RuntimeError(
-            "API auth is required (APP_ENV=prod or API_AUTH_REQUIRED=1) but "
-            "X_API_KEY is not set. Set X_API_KEY, or explicitly set "
-            "API_AUTH_REQUIRED=0 to run without authentication."
+            "API auth is required (APP_ENV=prod or API_AUTH_REQUIRED=1) but no "
+            "credential is configured. Set X_API_KEY, or configure the Mini App "
+            "with TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS, or "
+            "explicitly set API_AUTH_REQUIRED=0 to run without authentication."
         )
-    deps_auth = [Depends(require_api_key)] if _auth_required else []
+    deps_auth = [Depends(require_api_key_or_telegram)] if _auth_required else []
     deps_common = deps_auth + [Depends(general_rate_limit)]
 
     # Apply general rate limit to HTTP routers; WS router excluded
@@ -146,3 +152,29 @@ def frontend_config() -> FrontendConfig:
         ai_summary="/ai/summarize",
         enable_ai=bool(_os.getenv("OPENAI_API_KEY")),
     )
+
+
+def mount_dashboard(target: FastAPI) -> bool:
+    """Serve the dashboard at "/", after every API route is registered.
+
+    Order matters and is the whole reason this is a function called at the
+    end of the module rather than a line inside `create_app`. Starlette
+    matches routes in registration order, and a mount at "/" matches
+    everything beneath it -- so mounting before `/metrics` and
+    `/frontend/config` are declared silently shadows them into 404s. That is
+    the same failure that once had `/metrics` hidden behind the risk router.
+
+    The mount is deliberately outside `deps_common`: the page carries no data
+    and has to load before a key can be supplied, while every endpoint it
+    calls stays behind exactly the auth it had before.
+    """
+    static_dir = Path(__file__).parent / "static"
+    if not static_dir.is_dir():
+        return False
+    target.mount(
+        "/", StaticFiles(directory=str(static_dir), html=True), name="dashboard"
+    )
+    return True
+
+
+mount_dashboard(app)

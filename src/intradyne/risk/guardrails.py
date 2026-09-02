@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from intradyne.core.ledger import Ledger
+from intradyne.core.alerts import alert
 from intradyne.risk.kill_switch import halt_reason, is_halted
 from intradyne.risk.shariah import ShariahPolicy
 from prometheus_client import Counter
@@ -133,6 +134,19 @@ class Guardrails:
         payload = {"type": btype}
         payload.update(fields)
         self.ledger.append("guardrail_breach", payload)
+        # Every halting breach passes through here, so this is the one place
+        # that needs to alert -- the kill switch and the drawdown halt both
+        # arrive as _breach(..., action="halt"). Hooking each call site
+        # separately would mean a future guardrail silently not alerting.
+        if str(fields.get("action", "")) == "halt":
+            event = (
+                "kill_switch_fired"
+                if btype == "kill_switch"
+                else "drawdown_breach"
+                if btype.startswith("dd")
+                else "halt_engaged"
+            )
+            alert(event, payload)
         try:
             _BREACH_COUNTER.labels(
                 type=btype, action=str(fields.get("action", ""))

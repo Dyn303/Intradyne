@@ -1,0 +1,48 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "intradyne",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "intradyne.api.app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8011"
+      ],
+      "port": 8011,
+      "env": {
+        "PYTHONPATH": "src",
+        "ENGINE_ENABLED": "false",
+        "API_AUTH_REQUIRED": "0",
+        "APP_ENV": "development"
+      }
+    },
+    {
+      "name": "intradyne-miniapp",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "intradyne.api.app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8016"
+      ],
+      "port": 8016,
+      "env": {
+        "PYTHONPATH": "src",
+        "ENGINE_ENABLED": "false",
+        "APP_ENV": "development",
+        "API_AUTH_REQUIRED": "1",
+        "X_API_KEY": "localkey",
+        "TELEGRAM_BOT_TOKEN": "8387457203:TEST-ONLY-NOT-A-REAL-CREDENTIAL",
+        "TELEGRAM_ALLOWED_USER_IDS": "5150"
+      }
+    }
+  ]
+}
