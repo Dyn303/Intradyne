@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from intradyne.core.alerts import alert
 from intradyne.core.config import Settings
 from .data_ws import DataFeed
 from .execution import ExecutionManager
@@ -278,6 +279,13 @@ async def supervise(
             # printed -- `settings` carries the broker credentials.
             logger.opt(exception=True).error(
                 f"engine: loop crashed ({exc!r}); restarting in {restart_delay}s"
+            )
+            # The supervisor restarts, so a crash loop is otherwise invisible
+            # until someone reads the logs. Only the exception type is sent:
+            # the message can carry venue responses and request URLs.
+            alert(
+                "engine_crashed",
+                {"error": type(exc).__name__, "restart_in_s": restart_delay},
             )
         try:
             await asyncio.sleep(restart_delay)
