@@ -561,16 +561,14 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
 - **No deflated Sharpe, White's Reality Check or Hansen's SPA.** The best-of-N
   null approximates them by simulation, which is defensible but not the same
   thing.
-- **Equity tickers bypass the Shariah gate entirely.** `risk/shariah.py:112`
-  guards the allow-list and blocked-tag screen with `if
-  is_crypto_symbol(symbol)`, and that function is `"/" in symbol`. An order for
-  `AAPL` therefore skips business screening and **fails open, not closed** --
-  and every test passes, because all of them use `BTC/USDT`-shaped symbols.
-  `config.py:198` also appends `/USDT` to any bare ticker in `ALLOWED_SYMBOLS`,
-  and `api/routes/data.py:33` rejects slash-free symbols with `400
-  invalid_symbol` before the allow-list is consulted. **No equity order may be
-  placed until this is fixed.** It is why the screener below produces a
-  worksheet rather than a live allow-list.
+- **No route to permit an approved equity yet.** The gate now refuses any
+  equity without a current screen record, but nothing loads approved records
+  into it. `config.py:198` appends `/USDT` to any bare ticker in
+  `ALLOWED_SYMBOLS`, and `api/routes/data.py:33` rejects slash-free symbols
+  with `400 invalid_symbol` before the allow-list is consulted. Both need doing
+  before an equity can trade -- and neither is urgent while there is no ruling
+  to load, which is why the screener produces a worksheet rather than a live
+  allow-list.
 - **No point-in-time equity universe.** A3 still needs one, built from
   `LISTING_STATUS` with delisted names retained --
   `scripts/point_in_time_universe.py:67` is the direct analogue, and takes the
