@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Intradyne</title>
+<!-- Telegram's Mini App bridge. `defer` is deliberate: this is the only
+     external resource on the page, and without it a blocking <script> in the
+     head stalls rendering whenever telegram.org is slow or unreachable -- on
+     localhost, where the bridge is not needed at all, and on the flaky
+     connections this system is expected to run over. The page authenticates
+     without it either way; see initDataFromHash below. -->
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 <style>
   :root {
     --bg: #0e1116; --panel: #161b22; --line: #21262d;
@@ -92,6 +99,7 @@
   <span class="pill" id="p-mode">—</span>
   <span class="pill" id="p-engine">—</span>
   <span class="spacer"></span>
+  <span class="pill" id="p-user" hidden></span>
   <span class="pill" id="p-conn">connecting</span>
 </header>
 
@@ -129,11 +137,43 @@
 <script type="module">
 const $ = (id) => document.getElementById(id);
 
-// The API key, when the server requires one, is supplied by the page host
-// rather than stored here. On localhost the server runs with auth off; when
-// this is later wrapped as a Telegram Mini App, initData replaces it entirely.
+// Two ways in, and the page holds no credential of its own either way.
+//
+// Inside Telegram, `initData` is a string Telegram signed with the bot's
+// credential. The page forwards it and the server verifies the signature, so
+// nothing confidential is ever present in JavaScript a reader could lift.
+// Outside Telegram the page falls back to a key supplied in the query string
+// by whoever opened it -- acceptable on localhost, which is the only place
+// that path is meant to be used.
+const TG = window.Telegram && window.Telegram.WebApp;
+
+// The bridge defines window.Telegram wherever it loads, so its mere presence
+// proves nothing. It reports platform "unknown" outside Telegram. Today that
+// also leaves themeParams empty, which makes the theming below inert by
+// accident; this makes it inert on purpose, so a future bridge shipping light
+// defaults cannot repaint the localhost dashboard into unreadability.
+const IN_TELEGRAM = !!(TG && TG.platform && TG.platform !== "unknown");
+
+/** Read initData straight out of the URL, without the bridge.
+ *
+ * Telegram puts the signed payload in the fragment as `tgWebAppData` -- it is
+ * where the bridge itself reads it from. Parsing it here means authentication
+ * does not depend on a remote script having loaded, so a failed or blocked
+ * telegram.org leaves the dashboard working with only the theming lost.
+ */
+function initDataFromHash() {
+  try {
+    return new URLSearchParams(location.hash.slice(1)).get("tgWebAppData") || "";
+  } catch (_) {
+    return "";
+  }
+}
+
+const INIT = (TG && TG.initData) || initDataFromHash();
 const KEY = new URLSearchParams(location.search).get("key") || "";
-const headers = KEY ? { "X-API-Key": KEY } : {};
+const headers = INIT
+  ? { "X-Telegram-Init-Data": INIT }
+  : (KEY ? { "X-API-Key": KEY } : {});
 
 async function get(path) {
   const r = await fetch(path, { headers });
@@ -177,6 +217,37 @@ function setPill(el, text, cls) {
   el.className = "pill" + (cls ? " " + cls : "");
 }
 
+/** Repaint in the host's colours when running inside Telegram.
+ *
+ * The dashboard is dark by default. Telegram users choose their own theme, and
+ * a light-theme user would otherwise get this page's near-white text on their
+ * near-white background -- unreadable, and invisible to anyone testing on a
+ * dark phone. Mapping the host palette onto the same CSS variables keeps one
+ * stylesheet for both.
+ */
+function adoptTelegramTheme() {
+  if (!IN_TELEGRAM) return;
+  TG.ready();
+  TG.expand();
+  const t = TG.themeParams || {};
+  const set = (k, v) => v && document.documentElement.style.setProperty(k, v);
+  set("--bg", t.bg_color);
+  set("--panel", t.secondary_bg_color || t.bg_color);
+  set("--fg", t.text_color);
+  set("--dim", t.hint_color);
+  set("--faint", t.hint_color);
+  set("--accent", t.link_color);
+  set("--line", t.section_separator_color || t.hint_color);
+  set("--bad", t.destructive_text_color);
+  // Telegram paints its own chrome above the page; matching it stops a band of
+  // the wrong colour sitting across the top.
+  try { TG.setHeaderColor(t.secondary_bg_color || t.bg_color); } catch (_) {}
+  try { TG.setBackgroundColor(t.bg_color); } catch (_) {}
+}
+
+adoptTelegramTheme();
+if (IN_TELEGRAM) TG.onEvent("themeChanged", adoptTelegramTheme);
+
 async function refresh() {
   try {
     const [health, ready, engine, portfolio, risk, ledger] = await Promise.all([
@@ -184,6 +255,14 @@ async function refresh() {
       get("/portfolio"), get("/risk/status"), get("/ledger/tail").catch(() => []),
     ]);
     setPill($("p-conn"), "live", "ok");
+    // Whose session this is. Worth showing: the allowlist is the only thing
+    // between this page and the open internet, so a name that is not yours is
+    // the signal that something is wrong.
+    const who = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
+    if (who) {
+      $("p-user").hidden = false;
+      setPill($("p-user"), who.username ? "@" + who.username : "id " + who.id);
+    }
 
     // -- header ---------------------------------------------------------
     setPill($("p-version"), health.version || "—");

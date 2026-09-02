@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Optional, List, Tuple
 
 from fastapi import Header, HTTPException
 
+from loguru import logger
+
+from intradyne.api import telegram_auth
 from intradyne.core.config import load_settings
 from intradyne.core.equity import EquityHistory
 from intradyne.core.ledger import Ledger
@@ -169,6 +172,43 @@ async def require_api_key(
         )
     if not secrets.compare_digest(x_api_key or "", expected):
         raise HTTPException(status_code=401, detail="invalid_api_key")
+
+
+async def require_api_key_or_telegram(
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+    x_telegram_init_data: str | None = Header(
+        default=None, alias="X-Telegram-Init-Data"
+    ),
+) -> None:
+    """Accept either the API key or a signed Telegram Mini App `initData`.
+
+    Two credentials for one door, because they serve different clients. A
+    script or a curl call sends the header key. The Mini App cannot: a page
+    running inside Telegram would have to embed the key in JavaScript that
+    anyone opening the app can read, which is precisely the objection recorded
+    against exposing this API in `docs/FULLSTACK_PLAN.md`. Telegram signs
+    `initData` with the bot token instead, so the browser carries a signature
+    and never a secret.
+
+    initData is tried first and, when present, decides the request outright
+    rather than falling through to the key. Falling through would turn every
+    rejected signature -- expired, wrong user, forged -- into an
+    indistinguishable "no key supplied" 401, which hides exactly the failures
+    worth seeing in a log.
+    """
+    if x_telegram_init_data:
+        try:
+            user = telegram_auth.verify_init_data(x_telegram_init_data)
+        except telegram_auth.InitDataError as exc:
+            # The reason goes to the log, never to the response: distinguishing
+            # "bad signature" from "valid signature, wrong user" tells an
+            # attacker whether they are holding something real.
+            logger.bind(event="miniapp_auth_denied").warning({"reason": exc.reason})
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        logger.bind(event="miniapp_auth_ok").debug({"user": user.label})
+        return
+
+    await require_api_key(x_api_key)
 
 
 async def require_ws_api_key(websocket) -> bool:

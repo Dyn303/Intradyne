@@ -111,3 +111,30 @@ def test_mounting_reports_whether_the_directory_exists(tmp_path, monkeypatch):
     # With no static directory present the mount is skipped, not fatal.
     assert mount_dashboard(fresh) in (True, False)
     assert os.path.exists(str(tmp_path)) or True
+
+
+# ---- the page stays a single file with one optional dependency -----------
+
+
+def test_the_only_external_resource_is_telegram_and_it_is_deferred(client):
+    """The dashboard was built as one self-contained file precisely so it
+    works on a bad connection. The Telegram bridge is the sole exception, and
+    a blocking <script> in the head would give that exception the power to
+    stall the whole page whenever telegram.org is slow."""
+    import re
+
+    body = client.get("/").text
+    external = re.findall(r'<(?:script|link)[^>]+(?:src|href)="(https?://[^"]+)"', body)
+    assert external == ["https://telegram.org/js/telegram-web-app.js"], (
+        f"unexpected external resources on the page: {external}"
+    )
+    tag = next(ln for ln in body.splitlines() if "telegram-web-app.js" in ln)
+    assert "defer" in tag, f"the Telegram bridge must not block rendering: {tag}"
+
+
+def test_authentication_does_not_depend_on_the_remote_bridge(client):
+    """initData is in the URL fragment, so the page can authenticate even if
+    telegram.org never loads. Losing the bridge should cost theming, not
+    access."""
+    body = client.get("/").text
+    assert "tgWebAppData" in body, "no fallback path to initData without the bridge"

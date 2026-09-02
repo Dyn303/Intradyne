@@ -176,3 +176,33 @@ widths.
       python -m uvicorn intradyne.api.app:app --port 8011
 
 Then open `http://localhost:8011`. With auth enabled, pass the key as `?key=`.
+
+---
+
+## Phase 3, done early: the Mini App
+
+Phase 3 was research views. The Mini App got built first because it changes
+the security model, and doing that before Phase 2 adds write controls is the
+cheaper order.
+
+The dashboard needed no rewrite -- a Mini App is a web page, and choosing a
+single self-contained file over a React app in Phase 1 turned out to be exactly
+the right shape. What was added is `api/telegram_auth.py`: Telegram signs an
+`initData` payload with the bot credential, the page forwards it, the server
+verifies it. The credential never reaches the browser, which answers the
+objection this plan raised against exposing the API at all.
+
+It only answers half of it. **A Mini App cannot be local-only** -- Telegram
+will not open localhost, so the URL must be public HTTPS. A valid signature
+then proves only that the request came from *a* Telegram user, any of them. So
+`TELEGRAM_ALLOWED_USER_IDS` is mandatory, and an unset allowlist disables Mini
+App auth entirely rather than defaulting to open: a configured bot with no
+allowlist is the genuinely dangerous state, because it verifies signatures
+perfectly and admits everyone.
+
+The tunnel recommendation in this plan still stands and is now required rather
+than optional. See `TELEGRAM_MINI_APP.md`.
+
+This does not change the "what this is and is not for" section above. The
+dashboard still mostly shows a system correctly declining to trade; it can now
+do so from a phone.
