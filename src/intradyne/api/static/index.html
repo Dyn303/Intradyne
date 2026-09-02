@@ -112,6 +112,32 @@
   td { padding: 5px 8px 5px 0; border-top: 1px solid #21262d80; vertical-align: top; }
   td.num { text-align: right; }
   .empty { color: var(--faint); font-style: italic; padding: 10px 0; }
+
+  /* Research record. Collapsed by default: this dashboard is a status tool
+     first, and the record is a few hundred kilobytes of settled history. */
+  h2 .toggle {
+    float: right; font: 500 10px/1 var(--mono); text-transform: none;
+    letter-spacing: 0; padding: 4px 8px; min-height: 0; border-radius: 5px;
+    flex: 0 0 auto;
+  }
+  .rec { border-top: 1px solid #21262d80; padding: 10px 0; }
+  .rec:first-child { border-top: 0; }
+  .rec-head { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+  .rec-title { font-weight: 600; flex: 1; }
+  .rec-sum { color: var(--dim); font-size: 12px; margin: 3px 0 0; }
+  /* The verdict is styled like a warning rather than a footnote. Every search
+     here concluded negative, and several have one flattering cell. */
+  .verdict {
+    margin: 6px 0 0; padding: 7px 9px; border-radius: 6px; font-size: 12px;
+    background: #d2992212; border-left: 2px solid var(--warn); color: var(--warn);
+  }
+  .rec-body { margin-top: 10px; }
+  .pass { color: var(--ok); } .fail { color: var(--bad); }
+  pre {
+    background: #0d1117; border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px; overflow-x: auto; font-size: 11px; margin: 0;
+  }
+  .spark { display: block; width: 100%; height: 40px; margin: 8px 0 4px; }
   footer { color: var(--faint); font-size: 11px; text-align: center; padding: 4px 0 24px; }
   @media (max-width: 560px) { main { padding: 12px; gap: 12px; } header { padding: 12px; } }
 </style>
@@ -154,6 +180,11 @@
   <section>
     <h2>Health</h2>
     <div id="health"></div>
+  </section>
+
+  <section class="wide">
+    <h2>Research record <button class="toggle" id="r-toggle">show</button></h2>
+    <div id="research" hidden></div>
   </section>
 
   <section class="wide">
@@ -388,6 +419,199 @@ function renderControls(halted) {
       "/engine/params/revert"
     );
 }
+
+// ---- research record ---------------------------------------------------
+//
+// Read-only and lazily loaded. The dashboard is a status tool first, and
+// these files are settled history nobody needs on every poll.
+
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ESCAPES[c]);
+
+const MAX_ROWS = 200;
+
+/** Format one value for the column it sits in.
+ *
+ * The column name matters for booleans. Only a field actually named "pass" is
+ * a verdict; the screening worksheet has a `known` flag, and rendering
+ * `known: false` as a red "fail" states something the data does not -- an
+ * unknown coin was not screened and rejected.
+ */
+function cell(v, col) {
+  if (v === true || v === false) {
+    if (col === "pass") {
+      return v ? '<span class="pass">pass</span>' : '<span class="fail">fail</span>';
+    }
+    return v ? "yes" : "no";
+  }
+  if (typeof v === "number") {
+    const a = Math.abs(v);
+    return esc(a >= 1000 || (a < 0.001 && a > 0) ? v.toExponential(2) : v.toFixed(4));
+  }
+  if (Array.isArray(v)) {
+    return esc(v.map((x) => (x === true ? "Y" : x === false ? "n" : x)).join(" "));
+  }
+  if (v === null || v === undefined) return "-";
+  if (typeof v === "object") return esc(JSON.stringify(v).slice(0, 60));
+  return esc(v);
+}
+
+/** A table, plus an explicit note when rows were dropped.
+ *
+ * Long artifacts are capped so a phone is not asked to lay out a thousand
+ * rows. Capping silently would be worse than not showing them: the screening
+ * worksheet has 265 entries, and a table that stops at 200 with no comment
+ * reads as the complete record.
+ */
+function rowsTable(rows, total) {
+  const cols = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+  const head = cols.map((c) => "<th>" + esc(c) + "</th>").join("");
+  const body = rows
+    .map(
+      (r) => "<tr>" + cols.map((c) => "<td>" + cell(r[c], c) + "</td>").join("") + "</tr>"
+    )
+    .join("");
+  const note =
+    total > rows.length
+      ? '<p class="rec-sum">Showing the first ' + rows.length + " of " + total +
+        " rows. The full record is in " + '<span class="v">' + "the source file" +
+        "</span>.</p>"
+      : "";
+  return (
+    '<div style="overflow-x:auto"><table><tr>' + head + "</tr>" + body + "</table></div>" + note
+  );
+}
+
+/** Render whatever shape the artifact happens to be.
+ *
+ * These files were written by separate scripts over months and share no
+ * schema: some are {cell: {metrics}}, some {train: [rows], test: [rows]},
+ * some flat. Detecting the shape beats pretending they agree, and anything
+ * unrecognised falls back to formatted JSON rather than an empty panel.
+ */
+function renderData(data) {
+  if (Array.isArray(data)) {
+    if (!data.length) return '<div class="empty">empty</div>';
+    if (typeof data[0] === "object") {
+      return rowsTable(data.slice(0, MAX_ROWS), data.length);
+    }
+    return (
+      "<pre>" + esc(JSON.stringify(data.slice(0, MAX_ROWS), null, 1)) + "</pre>" +
+      (data.length > MAX_ROWS
+        ? '<p class="rec-sum">Showing the first ' + MAX_ROWS + " of " + data.length + " entries.</p>"
+        : "")
+    );
+  }
+  if (data && typeof data === "object") {
+    const vals = Object.values(data);
+    const isRow = (v) => v && typeof v === "object" && !Array.isArray(v);
+    // {name: {metrics}} -- the common results shape. Keep the name as a column.
+    if (vals.length && vals.every(isRow)) {
+      const rows = Object.entries(data).map(([k, v]) => ({ "": k, ...v }));
+      return rowsTable(rows.slice(0, MAX_ROWS), rows.length);
+    }
+    // {train: [rows], test: [rows]}
+    if (vals.length && vals.every(Array.isArray)) {
+      return Object.entries(data)
+        .map(([k, v]) => '<h2 style="margin-top:12px">' + esc(k) + "</h2>" + renderData(v))
+        .join("");
+    }
+  }
+  return "<pre>" + esc(JSON.stringify(data, null, 1)) + "</pre>";
+}
+
+/** Universe size over time. */
+function sparkline(points) {
+  if (points.length < 2) return "";
+  const sizes = points.map((p) => p.size);
+  const max = Math.max(...sizes, 1);
+  const d = sizes
+    .map((v, i) => (i / (sizes.length - 1)) * 100 + "," + (40 - (v / max) * 36))
+    .join(" ");
+  return (
+    '<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none">' +
+    '<polyline points="' + d + '" fill="none" stroke="var(--accent)" ' +
+    'stroke-width="1" vector-effect="non-scaling-stroke"/></svg>'
+  );
+}
+
+async function openRecord(key, el) {
+  if (el.dataset.open === "1") {
+    el.innerHTML = "";
+    el.dataset.open = "0";
+    return;
+  }
+  el.innerHTML = '<div class="empty">loading...</div>';
+  el.dataset.open = "1";
+  try {
+    const r = await get("/research/record/" + encodeURIComponent(key));
+    el.innerHTML = renderData(r.data);
+  } catch (err) {
+    el.innerHTML = '<div class="empty">' + esc(err.message || err) + "</div>";
+  }
+}
+
+async function loadResearch() {
+  const root = $("research");
+  root.innerHTML = '<div class="empty">loading...</div>';
+  try {
+    const [index, universe] = await Promise.all([
+      get("/research/record"),
+      get("/research/universe/timeline").catch(() => null),
+    ]);
+
+    let html = "";
+    if (universe) {
+      // The gap between ever-listed and current IS the survivorship bias a
+      // backtest over today's symbols would absorb silently, so it is stated
+      // rather than left to be inferred from the line.
+      html +=
+        '<div class="rec"><div class="rec-title">Universe over time</div>' +
+        sparkline(universe.points) +
+        '<div class="row"><span class="k">snapshots</span><span class="v">' + universe.dates + "</span></div>" +
+        '<div class="row"><span class="k">listed at some point</span><span class="v">' + universe.ever_listed + "</span></div>" +
+        '<div class="row"><span class="k">in the universe now</span><span class="v">' + universe.current + "</span></div>" +
+        '<div class="row"><span class="k">since delisted</span><span class="v warn">' + universe.delisted.length + "</span></div>" +
+        '<p class="rec-sum">The last two differ, and that difference is the ' +
+        "survivorship bias a backtest over today's symbols would absorb " +
+        "without saying so.</p></div>";
+    }
+
+    html += index.records
+      .map(
+        (r, i) =>
+          '<div class="rec"><div class="rec-head" data-i="' + i + '">' +
+          '<span class="rec-title">' + esc(r.title) + "</span>" +
+          '<span class="v" style="color:var(--faint)">' +
+          (r.available ? (r.bytes / 1024).toFixed(0) + "kB" : "not generated") +
+          "</span></div>" +
+          '<p class="rec-sum">' + esc(r.summary) + "</p>" +
+          (r.verdict ? '<p class="verdict">' + esc(r.verdict) + "</p>" : "") +
+          '<div class="rec-body" id="rec-' + i + '" data-open="0"></div></div>'
+      )
+      .join("");
+    root.innerHTML = html;
+
+    index.records.forEach((r, i) => {
+      const head = root.querySelector('.rec-head[data-i="' + i + '"]');
+      if (!head) return;
+      if (r.available) head.onclick = () => openRecord(r.key, $("rec-" + i));
+      else head.style.cursor = "default";
+    });
+  } catch (err) {
+    root.innerHTML = '<div class="empty">' + esc(err.message || err) + "</div>";
+  }
+}
+
+$("r-toggle").onclick = () => {
+  const el = $("research");
+  el.hidden = !el.hidden;
+  $("r-toggle").textContent = el.hidden ? "show" : "hide";
+  if (!el.hidden && !el.dataset.loaded) {
+    el.dataset.loaded = "1";
+    loadResearch();
+  }
+};
 
 async function refresh() {
   try {

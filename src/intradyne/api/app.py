@@ -19,6 +19,9 @@ from intradyne.api.routes.data import router as data_router
 from intradyne.api.routes.engine import router as engine_router
 from intradyne.api.routes.ws import router as ws_router
 from intradyne.api.routes.research import router as research_router
+from intradyne.api.routes.research_record import (
+    router as research_record_router,
+)
 from fastapi import Response
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 from intradyne.api import telegram_auth
@@ -139,6 +142,9 @@ def create_app() -> FastAPI:
     app.include_router(engine_router, dependencies=deps_common, tags=["Engine"])
     app.include_router(ws_router, tags=["WebSocket"])
     app.include_router(research_router, dependencies=deps_common, tags=["Research"])
+    app.include_router(
+        research_record_router, dependencies=deps_common, tags=["Research"]
+    )
 
     return app
 

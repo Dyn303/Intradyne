@@ -180,3 +180,41 @@ def test_the_stop_control_is_not_harder_to_reach_than_the_start(client):
     body = client.get("/").text
     assert "button.stop" in body, "no distinct styling for the stop control"
     assert "flex-basis: 100%" in body, "the stop control is not full width"
+
+
+# ---- Phase 3: the research record is a reader, not a research tool -------
+
+
+def test_the_page_never_calls_a_compute_endpoint(client):
+    """routes/research.py exposes optimize and backtest endpoints that kick
+    off work. The plan names scope creep back into strategy search as this
+    project's most likely failure mode, and a browsable results view is
+    exactly what invites re-running one. The page must reach only the
+    read-only record.
+    """
+    body = client.get("/").text
+    for compute in (
+        "/research/optimize",
+        "/research/backtest",
+        "/research/profile/apply",
+    ):
+        assert compute not in body, (
+            f"the dashboard reaches a compute endpoint: {compute}"
+        )
+    assert "/research/record" in body
+
+
+def test_the_research_section_is_collapsed_and_lazily_loaded(client):
+    """It is a few hundred kilobytes of settled history. Fetching it on every
+    poll would make a status dashboard expensive to keep open on a phone."""
+    body = client.get("/").text
+    assert '<div id="research" hidden>' in body, "the record is expanded by default"
+    assert "dataset.loaded" in body, "the record is not lazily loaded"
+
+
+def test_truncated_tables_say_that_they_are_truncated(client):
+    """The screening worksheet has 265 rows and the table caps at 200. Capping
+    silently reads as the complete record."""
+    body = client.get("/").text
+    assert "MAX_ROWS" in body
+    assert "Showing the first" in body, "rows can be dropped with no notice"
