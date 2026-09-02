@@ -314,6 +314,66 @@ def test_the_app_boots_with_only_mini_app_auth_configured(monkeypatch):
         )
 
 
+@pytest.fixture
+def telegram_only(monkeypatch):
+    """The realistic Mini App deployment: no API key was ever minted."""
+    monkeypatch.setenv("API_AUTH_REQUIRED", "1")
+    monkeypatch.delenv("X_API_KEY", raising=False)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", TOKEN)
+    monkeypatch.setenv("TELEGRAM_ALLOWED_USER_IDS", str(OWNER))
+    monkeypatch.setenv("ENGINE_ENABLED", "false")
+    from intradyne.api.app import create_app
+
+    with TestClient(create_app()) as c:
+        yield c
+
+
+def test_telegram_only_refuses_an_anonymous_request_with_401(telegram_only):
+    """Found by running it, not by reading it.
+
+    This used to answer 503 "api_auth_misconfigured: X_API_KEY is not set".
+    Both halves were wrong: the caller is unauthorized rather than the server
+    broken, and it named a missing credential that this deployment was never
+    supposed to have, which is a bad hour of debugging."""
+    r = telegram_only.get("/risk/status")
+    assert r.status_code == 401
+    assert "X_API_KEY" not in r.text
+    assert "misconfigured" not in r.text
+
+
+def test_telegram_only_still_admits_a_signed_request(telegram_only):
+    r = telegram_only.get(
+        "/risk/status", headers={"X-Telegram-Init-Data": make_init_data()}
+    )
+    assert r.status_code == 200
+
+
+def test_telegram_only_refuses_a_stranger(telegram_only):
+    r = telegram_only.get(
+        "/risk/status",
+        headers={"X-Telegram-Init-Data": make_init_data(user_id=STRANGER)},
+    )
+    assert r.status_code == 401
+
+
+def test_a_missing_key_is_still_503_when_that_is_genuinely_the_problem(monkeypatch):
+    """The 503 path must survive for the case it was written for: auth wanted,
+    no credential of any kind present. The boot check normally prevents this,
+    so reach the dependency directly."""
+    import asyncio
+
+    from fastapi import HTTPException
+
+    from intradyne.api.deps import require_api_key_or_telegram
+
+    monkeypatch.delenv("X_API_KEY", raising=False)
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_ALLOWED_USER_IDS", raising=False)
+    with pytest.raises(HTTPException) as e:
+        asyncio.run(require_api_key_or_telegram(None, None))
+    assert e.value.status_code == 503
+
+
 def test_the_app_still_refuses_to_boot_with_no_credential_at_all(monkeypatch):
     monkeypatch.setenv("API_AUTH_REQUIRED", "1")
     monkeypatch.delenv("X_API_KEY", raising=False)
