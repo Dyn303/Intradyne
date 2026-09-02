@@ -1,0 +1,58 @@
+symbol,name,exchange,assetType,ipoDate,delistingDate,status
+GFAIW,Guardforce AI Co Ltd - Warrants (01/09/2026),NASDAQ,Stock,2021-09-29,null,Active
+PARAW,Banzai International Inc - Warrants (14/12/2028),NASDAQ,Stock,2021-02-12,null,Active
+LCFYW,Locafy Ltd - Warrants (23/03/2027),NASDAQ,Stock,2022-03-25,null,Active
+ASTLW,Algoma Steel Group Inc - Warrants (19/10/2026),NASDAQ,Stock,2021-10-20,null,Active
+RDACR,Rising Dragon Acquisition Corp,NASDAQ,Stock,2024-12-02,null,Active
+FLYE,Fly-E Group Inc,NASDAQ,Stock,2024-06-06,null,Active
+ARBEW,Arbe Robotics Ltd - Warrants (07/10/2026),NASDAQ,Stock,2021-10-08,null,Active
+CINGW,Cingulate Inc - Warrants (03/12/2026),NASDAQ,Stock,2021-12-08,null,Active
+PAACW,Proem Acquisition Corp I - Warrants (29/01/2031),NASDAQ,Stock,2026-04-06,null,Active
+BIAFW,BioAffinity Technologies Inc - Warrants(23/06/2027),NASDAQ,Stock,2022-09-01,null,Active
+BIAF,BioAffinity Technologies Inc,NASDAQ,Stock,2022-09-01,null,Active
+RDAC,Rising Dragon Acquisition Corp,NASDAQ,Stock,2024-12-02,null,Active
+SCLXW,Scilex Holding Company - Warrants (10/11/2027),NASDAQ,Stock,2021-03-08,null,Active
+GPRO,GoPro Inc - Class A,NASDAQ,Stock,2014-06-26,null,Active
+NRSNW,NeuroSense Therapeutics Ltd - Warrants (09/11/2026),NASDAQ,Stock,2021-12-09,null,Active
+NWGL,Nature Wood Group Ltd,NASDAQ,Stock,2023-09-12,null,Active
+GIXXR,GigCapital9 Corp Rights,NASDAQ,Stock,2026-03-19,null,Active
+OBAWW,Oxley Bridge Acquisition Ltd - Warrants (17/06/2030),NASDAQ,Stock,2025-08-15,null,Active
+ALMS,Alumis Inc,NASDAQ,Stock,2024-06-28,null,Active
+PMI,Picard Medical Inc,NYSE MKT,Stock,2025-08-29,null,Active
+RCKTW,Rocket Pharmaceuticals Inc - Warrants (02/09/2026),NASDAQ,Stock,2023-02-27,null,Active
+DAICW,CID HoldCo Inc Warrants,NASDAQ,Stock,2025-06-23,null,Active
+HKPD,Hong Kong Pharma Digital Technology Holdings Ltd,NASDAQ,Stock,2025-01-15,null,Active
+CUBWW,Lionheart Holdings - Warrants (01/06/2031),NASDAQ,Stock,2024-08-09,null,Active
+GIPRW,Generation Income Properties Inc - Warrants (03/09/2026),NASDAQ,Stock,2021-10-05,null,Active
+BFRGW,Bullfrog AI Holdings Inc - Warrants(18/01/2028),NASDAQ,Stock,2023-02-14,null,Active
+SPWRW,Complete Solaria Inc - Warrants (31/07/2028),NASDAQ,Stock,2021-04-19,null,Active
+VWAVW,VisionWave Holdings Inc Warrant,NASDAQ,Stock,2025-07-15,null,Active
+GCLWW,GCL Global Holdings Ltd Warrants,NASDAQ,Stock,2025-02-14,null,Active
+KIDZW,Classover Holdings Inc Warrants,NASDAQ,Stock,2025-04-07,null,Active
+MRNOW,Murano Global Investments PLC - Warrants (20/03/2029),NASDAQ,Stock,2022-03-14,null,Active
+BZFDW,BuzzFeed Inc - Warrants (01/12/2026),NASDAQ,Stock,2021-03-05,null,Active
+VWAV,VisionWave Holdings Inc,NASDAQ,Stock,2025-07-15,null,Active
+LHSW,Lianhe Sowell International Group Ltd,NASDAQ,Stock,2025-04-03,null,Active
+FGIWW,FGI Industries Ltd - Warrants (21/01/2027),NASDAQ,Stock,2022-01-25,null,Active
+PCG,PG&E Corp,NYSE,Stock,1972-06-01,null,Active
+LIDR,AEye Inc - Class A,NASDAQ,Stock,2021-01-11,null,Active
+NVDA,NVIDIA Corp,NASDAQ,Stock,1999-01-22,null,Active
+TSLL,DIREXION DAILY TSLA BULL 2X SHARES ,NASDAQ,ETF,2022-08-09,null,Active
+NVD,GRANITESHARES 2X SHORT NVDA DAILY ETF ,NASDAQ,ETF,2023-08-22,null,Active
+RITR,Reitar Logtech Holdings Ltd - Class A,NASDAQ,Stock,2024-08-23,null,Active
+NIO,NIO Inc,NYSE,Stock,2018-09-12,null,Active
+INTC,Intel Corp,NASDAQ,Stock,1980-03-17,null,Active
+ONDS,Ondas Holdings Inc,NASDAQ,Stock,2018-10-25,null,Active
+NU,Nu Holdings Ltd Class A,NYSE,Stock,2021-12-09,null,Active
+BITO,PROSHARES BITCOIN STRATEGY ETF ,NYSE,ETF,2021-10-19,null,Active
+SNXX,Tradr 2X Long SNDK Daily,BATS,Stock,2026-01-27,null,Active
+RZLV,Rezolve AI Ltd,NASDAQ,Stock,2024-08-16,null,Active
+PATH,UiPath Inc - Class A,NYSE,Stock,2021-04-21,null,Active
+AAL,American Airlines Group Inc,NASDAQ,Stock,2005-09-27,null,Active
+SOXL,DIREXION DAILY SEMICONDUCTOR BULL 3X SHARES ,NYSE,ETF,2010-03-11,null,Active
+NOK,Nokia Corp,NYSE,Stock,1994-01-03,null,Active
+LOW,Lowe`s Cos. Inc,NYSE,Stock,1985-07-01,null,Active
+AMCR,Amcor Plc,NYSE,Stock,2019-06-11,null,Active
+BKR,Baker Hughes Co - Class A,NASDAQ,Stock,2017-07-05,null,Active
+R,Ryder System Inc,NYSE,Stock,1980-01-02,null,Active
+CR,Crane Company,NYSE,Stock,2023-03-29,null,Active
