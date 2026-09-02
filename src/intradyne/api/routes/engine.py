@@ -66,6 +66,18 @@ def engine_state() -> Dict[str, Any]:
     }
 
 
+def _record_applied(runtime: Dict[str, Any]) -> None:
+    """Remember what is running, so the next apply can back it up."""
+    try:
+        with open(
+            _params_path("production_params.applied.json"), "w", encoding="utf-8"
+        ) as f:
+            json.dump(runtime, f, indent=2)
+    except OSError:
+        # Losing this only costs revertibility of the *next* apply.
+        pass
+
+
 def _apply(runtime: Dict[str, Any], source: str) -> Dict[str, Any]:
     try:
         applied = engine_loop.apply_params(runtime)
@@ -84,7 +96,8 @@ def _apply(runtime: Dict[str, Any], source: str) -> Dict[str, Any]:
 def apply_profile() -> Dict[str, Any]:
     """Apply artifacts/production_params.json to the running engine.
 
-    The previous copy is kept so it can be reverted.
+    Snapshots the previously applied configuration first, so /revert has
+    something real to return to.
     """
     path = _params_path("production_params.json")
     if not os.path.exists(path):
@@ -92,34 +105,65 @@ def apply_profile() -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         runtime = json.load(f)
 
+    # What is running right now, recorded by the previous apply.
+    #
+    # This used to copy production_params.json into the backup -- but that file
+    # already holds the *new* values, so the backup was a copy of what was
+    # being applied rather than of what it replaced, and revert re-applied the
+    # current configuration while reporting success. The engine cannot be asked
+    # what it is running (apply_params mutates the router in place and returns
+    # no snapshot), so the applied configuration is tracked here instead.
+    applied_path = _params_path("production_params.applied.json")
     prev = _params_path("production_params.prev.json")
     try:
-        if os.path.exists(path):
+        if os.path.exists(applied_path):
             with (
-                open(path, "r", encoding="utf-8") as src,
+                open(applied_path, "r", encoding="utf-8") as src,
                 open(prev, "w", encoding="utf-8") as dst,
             ):
                 dst.write(src.read())
+        else:
+            # First apply of this process: there is no earlier configuration,
+            # so leave no backup rather than one that points at the present.
+            if os.path.exists(prev):
+                os.remove(prev)
     except OSError:
         # A missing backup only costs the ability to revert; do not fail the
         # apply over it.
         pass
 
     result = _apply(runtime, "production_params.json")
+    _record_applied(runtime)
     result["applied_at"] = datetime.utcnow().isoformat() + "Z"
+    result["revertible"] = os.path.exists(prev)
     return result
 
 
 @router.post("/engine/params/revert")
 def revert_profile() -> Dict[str, Any]:
+    """Restore the configuration that was running before the last apply.
+
+    One level of undo. The backup is consumed, so a second revert reports
+    nothing to do instead of flip-flopping between two configurations.
+    """
     prev = _params_path("production_params.prev.json")
     if not os.path.exists(prev):
         return {"reverted": False, "reason": "no_backup"}
     with open(prev, "r", encoding="utf-8") as f:
         runtime = json.load(f)
+
     result = _apply(runtime, "production_params.prev.json")
+
+    # The file has to move back too. Reverting the engine while leaving
+    # production_params.json holding the rejected values puts the next apply
+    # straight back onto them.
     with open(_params_path("production_params.json"), "w", encoding="utf-8") as f:
         json.dump(runtime, f, indent=2)
+    _record_applied(runtime)
+    try:
+        os.remove(prev)
+    except OSError:
+        pass
     return {"reverted": True, "detail": result["detail"]}
 
 
