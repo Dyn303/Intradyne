@@ -1297,3 +1297,122 @@ prospectively -- months of it -- or buying the data.
 What is tested is well-proxied: VWAP directly, order flow and CVD through the
 taker-buy split, volatility and volume directly. Those four are the measurable
 core of the design, and all four are negative.
+
+## The final crypto test: negative
+
+Run against `docs/CROSS_SECTIONAL_V2_PREREGISTRATION.md`, committed before the
+script existed. This was the one avenue left open: the v1 cross-sectional test
+held 3-name portfolios and could not distinguish "no edge" from "an edge too
+small to see". v2 fixes the power problem -- full universe (median 292 rather
+than 37), 20% slice with a 15-name floor, a 30-name floor on scoring a period.
+
+| cell | best signal | excess/period | null | verdict |
+|---|---|---|---|---|
+| **full, 30d** (primary) | mom_1m | +1.999% | +2.319% | FAIL |
+| **full, 90d** (primary) | low_downside_vol | +3.708% | +11.742% | FAIL |
+| unflagged, 30d (secondary) | low_downside_vol | +1.672% | +1.437% | **passed all four** |
+| unflagged, 90d (secondary) | low_downside_vol | +1.103% | +5.945% | FAIL |
+
+**The primary test failed on both horizons.** One cell met all four criteria,
+and it is the secondary universe -- the one the pre-registration described in
+advance as "strictly less powerful than the primary, so if the primary fails
+the secondary cannot rescue it; it is reported for completeness, not as a
+second chance."
+
+That sentence was written before the run, and it decides this.
+
+### Why the pre-registration was right to say so
+
+Three diagnostics, each independently sufficient:
+
+**The sign flips.** `low_downside_vol` scores +1.672% per period in the
+unflagged universe and **-0.595%** in the full universe -- same signal, same
+30-day horizon, same period. An effect that reverses when the universe widens
+is not an effect.
+
+**It is a bear-market artifact.** The equal-weight benchmark fell **84.6%**
+over the period. Splitting the excess by benchmark direction:
+
+| | periods | excess |
+|---|---|---|
+| benchmark rose | 22 | +0.280% |
+| benchmark fell | 37 | **+2.499%** |
+
+Nearly all of it is losing less during a collapse. In rising periods the edge
+is 0.28% per month, which is noise. Beta is 0.99, so this is not simple
+de-risking -- it is avoiding the specific names that blew up, in a sample
+dominated by blow-ups.
+
+**Multiplicity.** Four cells were tested at a 95% threshold, so the chance at
+least one passes by luck is about 19%. Exactly one did.
+
+### What this closes
+
+Crypto is answered. Eight approaches now: seven intraday and cross-sectional
+searches, plus this properly-powered final test. The caveat that motivated v2 --
+that v1 might have missed a real effect through lack of power -- is resolved.
+Power was added, the primary test still failed, and the one cell that passed
+fails every robustness check applied to it.
+
+Per the pre-registration, the search stops here.
+
+The result is also a demonstration of why the discipline is worth its cost. A
+"PASS on all four criteria" appeared on screen, in a project that has spent
+months looking for exactly that. Without criteria fixed in advance -- and
+without the sentence saying the secondary cannot rescue the primary -- it would
+have been entirely natural to write it up as a defensive-factor discovery, with
+a plausible story about downside protection attached.
+
+## CTREND: the one literature claim that contradicted our cost measurement
+
+A survey of the crypto cross-section literature turned up one result that did
+not fit. Every documented anomaly draws its alpha from micro-caps -- size,
+volume and distress anomalies take their returns from coins representing under
+**0.3% of aggregate market capitalisation and 0.5% of volume**, which sits
+below the liquidity band where our own measurement puts the move-to-cost ratio
+at 1.3x. The exception was CTREND (*A Trend Factor for the Cross Section of
+Cryptocurrency Returns*, JFQA), reported to survive transaction costs and to
+persist **in big and liquid coins**.
+
+That is the one claim worth testing, because it contradicts our own arithmetic
+rather than confirming it.
+
+CTREND is also different in kind from the ~400 variants already tested here.
+Those were fixed rules. This is a *learned* factor: moving averages over many
+horizons combined by coefficients estimated from the cross-section, following
+Han, Zhou and Zhu (2016). Implemented with 7 price and 7 volume horizons, and
+weights taken as the mean of past cross-sectional regressions -- expanding
+window, so the weights at any rebalance date come only from periods that had
+already resolved.
+
+| universe | rebalance | excess/period | null | Sharpe | folds |
+|---|---|---|---|---|---|
+| full | 7d | -0.016% | +0.549% | -0.01 | 1/5 |
+| full | 30d | +2.460% | +2.680% | 0.45 | 1/5 |
+| **liquid50** | 7d | +0.001% | +0.086% | 0.00 | 3/5 |
+| **liquid50** | 30d | -1.043% | +0.639% | -0.46 | 3/5 |
+
+**Zero of four cells met the criteria**, and the paper's own claim -- big and
+liquid coins -- is where it performs worst: +0.001% weekly on the top-50 liquid
+subset, and -1.043% monthly. The closest approach is full-universe monthly at
++2.460% against a null of +2.680%, which does not clear its own null and is
+positive in 1 of 5 folds.
+
+The factor had every honest advantage: 14 signals, 343 weekly periods, and
+weights free to adapt to whichever horizons predicted. It still does not beat
+picking at random from the same universe.
+
+One caveat recorded: the paper aggregates with machine learning and this uses
+the regression construction it builds on. A better learner might combine the
+same 14 signals more effectively -- but it would have to find something the
+linear combination missed *and* clear a null that already prices in the search,
+using the same price and volume series that failed every prior test.
+
+### What this closes
+
+It removes the last inconsistency between the literature and our own
+measurements. The two now agree completely: **the documented alpha lives in
+coins too small to trade.** Our cost work found the move-to-cost ratio peaking
+at $20-100M daily volume and collapsing to 1.3x below $200k; the literature
+places the alpha below that line. Two independent lines of evidence, same
+boundary.
