@@ -253,3 +253,54 @@ so the Mini App cannot halt and the panel says so on the 401 rather than
 failing silently. Leave it unset when using the Mini App: the router already
 sits behind API auth plus the Telegram allowlist, which is a stronger gate than
 a shared secret.
+
+---
+
+## Phase 3, properly: the research record
+
+The Mini App took Phase 3's slot earlier; this is the phase as written --
+rendering what already exists rather than computing anything new.
+
+`routes/research_record.py` is deliberately a separate module from
+`routes/research.py` next door, which *computes*: `/research/optimize_ma`,
+`/research/optimize_params` and friends all kick off work. This plan names
+scope creep back into strategy search as the project's most likely failure
+mode, and a browsable results view is precisely the thing that invites "let me
+just re-run that one". A test asserts the dashboard never reaches a compute
+endpoint.
+
+Every path is fixed in a registry and the client selects a key. No filesystem
+path appears in any request, so traversal is unrepresentable rather than
+filtered -- a test puts a file exactly where a traversal would land and
+confirms no key reaches it.
+
+### Verdicts are part of the data
+
+Each record carries a verdict alongside its numbers, styled as a warning rather
+than a footnote. Several of these results have one flattering cell: the
+cross-sectional v2 artifact contains a cell with Sharpe 0.94 that the
+pre-registration written beforehand had already ruled out. Showing figures
+without the conclusion is how a closed question gets reopened.
+
+### The universe view states the bias
+
+583 symbols were listed at some point, 267 are in the universe now, 316 have
+since delisted. That gap is the survivorship bias a backtest over today's
+symbols absorbs without saying so, and the panel says it in words rather than
+leaving it to be inferred from the line.
+
+The timeline is summarised server-side -- the file is a quarter of a megabyte
+of per-date symbol lists, and the view needs size and churn.
+
+### Two things the rendering had to be honest about
+
+Artifacts share no schema; they were written by separate scripts over months.
+The renderer detects the shape (`{cell: {metrics}}`, `{train: [...], test:
+[...]}`, a flat list) and falls back to formatted JSON rather than an empty
+panel.
+
+Long tables cap at 200 rows, and say so. The screening worksheet has 265
+entries, and a table that stops at 200 with no comment reads as the complete
+record. Booleans render as pass/fail only in a column actually named `pass`:
+the worksheet has a `known` flag, and showing `known: false` as a red "fail"
+would state something the data does not.
