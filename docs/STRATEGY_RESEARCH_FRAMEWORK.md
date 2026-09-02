@@ -417,18 +417,50 @@ survivors, is the only ordering that respects that.
 The source framework assumes 24/7 spot crypto without saying so. Moving to
 equities changes more than the data source.
 
-**Breadth is the reason to move.** The source's §20-§22 -- diversification
-across strategy families, a correlation matrix, portfolio-level testing -- are
-sound in principle and were fitting noise here. At 1.7 effective assets, a
-five-strategy correlation matrix is mostly estimation error. Hundreds of
-genuinely independent names is what makes those sections mean something, and it
-is the single strongest argument for the change of market.
+**Breadth is the reason to move, but it is finite.** The source's §20-§22 --
+diversification across strategy families, a correlation matrix, portfolio-level
+testing -- are sound in principle and were fitting noise here. At 1.7 effective
+assets, a five-strategy correlation matrix is mostly estimation error.
 
-**Costs amortise over a longer horizon.** This moves the research off the
-source's "recommended initial execution timeframe: 5-minute" default. The
+An earlier draft of this section claimed equities offer "hundreds of genuinely
+independent names". **That is wrong, and measurement corrects it.** Effective
+breadth saturates: `N_eff = N / (1 + (N-1) * rho_bar)` tends to `1/rho_bar` as
+names are added, so the ceiling is set by correlation, not by universe size.
+
+| rho_bar | N=13 | N=50 | N=200 | ceiling |
+|---|---|---|---|---|
+| 0.097 (measured, 8 diverse large caps, 30-min) | 5.4 | 7.4 | 8.2 | **10.3** |
+| 0.30 (broad universe, more same-sector pairs) | 2.8 | 3.2 | 3.3 | **3.3** |
+| 0.563 (crypto, hourly) | 1.7 | 1.8 | 1.8 | **1.78** |
+
+So equities buy roughly **3 to 10 effective assets, not hundreds** -- real, and
+2-6x crypto, but a far more modest claim. The same table sharpens the crypto
+result: at a ceiling of 1.78, twenty coins already delivered 1.71. **Crypto was
+saturated.** Adding instruments was not merely inefficient, it was
+arithmetically incapable of helping, which is why widening the universe was
+never going to answer a power problem.
+
+Measured by `scripts/equity_breadth.py`: 8 names, 194 sessions, day-clustered
+standard error 0.009 on rho_bar. Two caveats travel with the number -- it is a
+deliberately diverse handful rather than a real universe, and it covers one
+regime with no crisis in it, while equity correlations rise sharply in
+drawdowns, which is when breadth is worth most.
+
+**Costs amortise over a longer horizon -- and clear at short ones too.** The
 breakeven arithmetic that killed the crypto work -- a 14 bps round trip against
-a 3.5 bps expected move at the two-minute horizon -- reverses when the holding
-period is weeks.
+a 3.5 bps expected move at the two-minute horizon, so cost was four times the
+entire move -- reverses in equities. `scripts/equity_feasibility.py` measures a
+round trip near 4.3 bps against two-minute moves of 5.9 to 13.4 bps across the
+same 8 names: **1.4x to 3.1x in favour**, where crypto was 4x against.
+Breakeven holding period is seconds, against the ~31 minutes crypto needed.
+
+That means the source's "recommended initial execution timeframe: 5-minute"
+default is not automatically disqualifying here, as it was for crypto. It does
+not make intraday *advisable*: US intraday equity is the most competed venue in
+finance, and a cash account -- required to avoid riba, since margin is not
+available -- caps round trips at roughly one per capital tranche per T+1
+settlement cycle. Cost stops being the binding constraint; competition and
+settlement replace it.
 
 **Shariah screening becomes point-in-time, and interacts with A3.** The crypto
 model in `src/intradyne/risk/shariah.py` is an allow-list plus tag exclusion,
@@ -529,6 +561,23 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
 - **No deflated Sharpe, White's Reality Check or Hansen's SPA.** The best-of-N
   null approximates them by simulation, which is defensible but not the same
   thing.
+- **No equity data fetcher.** `fetch_ohlc.py` and `fetch_klines_archive.py` are
+  crypto-only, so the CSVs under `data/equities/` that the A1 and A2 scripts
+  read were assembled by hand. Anything beyond a first pass needs a real
+  fetcher, and a point-in-time universe built from `LISTING_STATUS`-style
+  data with delisted names retained (A3).
+
+**The A1 and A2 gates are implemented.**
+
+| gate | script | artifact |
+|---|---|---|
+| A1 feasibility -- does the move clear the round trip? | `scripts/equity_feasibility.py` | `artifacts/equity_feasibility.json` |
+| A2 breadth -- how many independent bets exist? | `scripts/equity_breadth.py` | `artifacts/equity_breadth.json` |
+
+Both exit non-zero on a failed gate, so they can be wired into a check rather
+than read by eye. Both carry their own falsification: the breadth script
+verifies that independent input returns `N_eff ~ N` and a synthetic common
+factor at rho returns `~1/rho` before reporting anything (D1).
 
 ---
 
