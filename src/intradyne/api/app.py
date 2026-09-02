@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 import os as _os
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from intradyne.api.health import router as health_router
 from intradyne.api.routes.orders import router as orders_router
 from intradyne.api.routes.risk import router as risk_router
@@ -146,3 +148,29 @@ def frontend_config() -> FrontendConfig:
         ai_summary="/ai/summarize",
         enable_ai=bool(_os.getenv("OPENAI_API_KEY")),
     )
+
+
+def mount_dashboard(target: FastAPI) -> bool:
+    """Serve the dashboard at "/", after every API route is registered.
+
+    Order matters and is the whole reason this is a function called at the
+    end of the module rather than a line inside `create_app`. Starlette
+    matches routes in registration order, and a mount at "/" matches
+    everything beneath it -- so mounting before `/metrics` and
+    `/frontend/config` are declared silently shadows them into 404s. That is
+    the same failure that once had `/metrics` hidden behind the risk router.
+
+    The mount is deliberately outside `deps_common`: the page carries no data
+    and has to load before a key can be supplied, while every endpoint it
+    calls stays behind exactly the auth it had before.
+    """
+    static_dir = Path(__file__).parent / "static"
+    if not static_dir.is_dir():
+        return False
+    target.mount(
+        "/", StaticFiles(directory=str(static_dir), html=True), name="dashboard"
+    )
+    return True
+
+
+mount_dashboard(app)

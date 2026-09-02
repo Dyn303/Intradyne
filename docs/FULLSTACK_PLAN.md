@@ -126,3 +126,53 @@ CI already runs a secrets scan but does not audit npm.
 
 Phase 1 is the bulk of the setup and perhaps a day. Phases 2 and 3 are a few
 hours each on top. Phase 4 is under an hour. None of it is research.
+
+---
+
+## Phase 1: built, with one deviation
+
+Delivered as a **single self-contained HTML file** served by FastAPI, not the
+Vite + React + TypeScript app this plan originally specified. The reasons,
+recorded because the deviation is deliberate:
+
+- Five read-only polling panels for one user. React earns nothing at this size.
+- Phase 3 is a Telegram Mini App, which is a web page. A single file is the
+  ideal shape for that, and the work transfers with no rewrite.
+- A PR in this project removed twelve `undici` advisories from the only npm
+  dependency here. Adding ~200 packages back for five panels is a poor trade.
+- A zero-install page works on a connection that drops regularly.
+
+The API contract is unchanged, so React can replace this later if the
+dashboard ever outgrows it.
+
+### What it shows
+
+A status strip (version, mode, engine state, connection), then panels for
+engine, risk, portfolio, health, and the ledger tail. Risk values are drawn as
+bars against their own thresholds, because "0.4%" does not convey how close to
+a 20% halt limit it is and a bar does.
+
+The most prominent element is the gate banner: when the engine is not running
+it says so and gives the reason. A user should never have to wonder why nothing
+is happening.
+
+### Two bugs found by running it
+
+**`/metrics` returned 404.** The mount at `"/"` was inside `create_app`, but
+`/metrics` and `/frontend/config` are declared afterwards at module level, and
+Starlette matches routes in registration order -- so the mount shadowed them.
+This is the second time `/metrics` has been silently hidden in this project.
+`mount_dashboard()` is now called at the end of the module, and
+`test_dashboard_mount.py` asserts ten API routes still answer.
+
+**The page scrolled sideways on a narrow viewport.** `minmax(330px, 1fr)`
+forces a 330px column even when the viewport is 335px. Fixed with
+`minmax(min(330px, 100%), 1fr)`. Worth catching now: Phase 3 runs at phone
+widths.
+
+### Running it
+
+    PYTHONPATH=src ENGINE_ENABLED=false API_AUTH_REQUIRED=0 \
+      python -m uvicorn intradyne.api.app:app --port 8011
+
+Then open `http://localhost:8011`. With auth enabled, pass the key as `?key=`.

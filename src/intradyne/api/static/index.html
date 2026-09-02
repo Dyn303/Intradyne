@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intradyne</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --line: #21262d;
+    --fg: #e6edf3; --dim: #8b949e; --faint: #6e7681;
+    --ok: #3fb950; --warn: #d29922; --bad: #f85149; --accent: #58a6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+    background: var(--panel); position: sticky; top: 0; z-index: 10;
+  }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .01em; }
+  .spacer { flex: 1; }
+  .pill {
+    font: 500 11px/1 var(--mono); padding: 5px 9px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--dim); white-space: nowrap;
+  }
+  .pill.ok   { color: var(--ok);   border-color: #23863644; background: #23863618; }
+  .pill.warn { color: var(--warn); border-color: #d2992244; background: #d2992218; }
+  .pill.bad  { color: var(--bad);  border-color: #f8514944; background: #f8514918; }
+
+  main {
+    display: grid; gap: 14px; padding: 18px; max-width: 1180px; margin: 0 auto;
+    /* min() is load-bearing: a bare minmax(330px, 1fr) forces every column to
+       330px even when the viewport is narrower, so the page scrolls
+       sideways on a phone. This is the width a Telegram Mini App runs at. */
+    grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr));
+  }
+  section {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px 16px; min-width: 0;
+  }
+  section.wide { grid-column: 1 / -1; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--faint); margin: 0 0 12px; font-weight: 600;
+  }
+  .row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 6px 0; border-bottom: 1px solid #21262d80;
+  }
+  .row:last-child { border-bottom: 0; }
+  .k { color: var(--dim); }
+  .v { font-family: var(--mono); text-align: right; word-break: break-all; }
+  .v.ok { color: var(--ok); } .v.warn { color: var(--warn); } .v.bad { color: var(--bad); }
+
+  /* A threshold bar makes "how close to the limit" readable at a glance,
+     which a bare number does not. */
+  .meter { height: 4px; background: #21262d; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .meter > i { display: block; height: 100%; background: var(--ok); transition: width .3s, background .3s; }
+  .meter.warn > i { background: var(--warn); }
+  .meter.bad  > i { background: var(--bad); }
+
+  .banner {
+    grid-column: 1 / -1; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #d2992244; background: #d2992214; color: var(--warn);
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .banner.bad { border-color: #f8514944; background: #f8514914; color: var(--bad); }
+  .banner b { font-weight: 600; }
+  .banner p { margin: 4px 0 0; color: var(--dim); font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  th {
+    text-align: left; color: var(--faint); font-weight: 500; padding: 4px 8px 8px 0;
+    text-transform: uppercase; letter-spacing: .06em; font-size: 10px;
+  }
+  td { padding: 5px 8px 5px 0; border-top: 1px solid #21262d80; vertical-align: top; }
+  td.num { text-align: right; }
+  .empty { color: var(--faint); font-style: italic; padding: 10px 0; }
+  footer { color: var(--faint); font-size: 11px; text-align: center; padding: 4px 0 24px; }
+  @media (max-width: 560px) { main { padding: 12px; gap: 12px; } header { padding: 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Intradyne</h1>
+  <span class="pill" id="p-version">—</span>
+  <span class="pill" id="p-mode">—</span>
+  <span class="pill" id="p-engine">—</span>
+  <span class="spacer"></span>
+  <span class="pill" id="p-conn">connecting</span>
+</header>
+
+<main id="main">
+  <div class="banner" id="gate" hidden></div>
+
+  <section>
+    <h2>Engine</h2>
+    <div id="engine"></div>
+  </section>
+
+  <section>
+    <h2>Risk</h2>
+    <div id="risk"></div>
+  </section>
+
+  <section>
+    <h2>Portfolio</h2>
+    <div id="portfolio"></div>
+  </section>
+
+  <section>
+    <h2>Health</h2>
+    <div id="health"></div>
+  </section>
+
+  <section class="wide">
+    <h2>Ledger — most recent events</h2>
+    <div id="ledger"></div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+
+// The API key, when the server requires one, is supplied by the page host
+// rather than stored here. On localhost the server runs with auth off; when
+// this is later wrapped as a Telegram Mini App, initData replaces it entirely.
+const KEY = new URLSearchParams(location.search).get("key") || "";
+const headers = KEY ? { "X-API-Key": KEY } : {};
+
+async function get(path) {
+  const r = await fetch(path, { headers });
+  if (!r.ok) throw new Error(`${path} → ${r.status}`);
+  return r.json();
+}
+
+const fmt = {
+  num: (v, d = 2) => (v === null || v === undefined || Number.isNaN(v))
+    ? "—" : Number(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }),
+  pct: (v, d = 2) => (v === null || v === undefined) ? "—" : `${(Number(v) * 100).toFixed(d)}%`,
+  time: (t) => {
+    if (!t) return "—";
+    const n = Number(t);
+    const ms = Number.isFinite(n) ? (n > 1e12 ? n : n * 1000) : Date.parse(t);
+    return Number.isFinite(ms) ? new Date(ms).toLocaleString() : String(t);
+  },
+};
+
+function rows(el, items) {
+  el.innerHTML = items.map(([k, v, cls]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v ${cls || ""}">${v}</span></div>`
+  ).join("");
+}
+
+/** A value against its limit, shown as a bar. Colour follows proximity. */
+function meter(label, value, limit) {
+  const frac = limit > 0 ? Math.min(Number(value) / limit, 1) : 0;
+  const cls = frac >= 1 ? "bad" : frac >= 0.66 ? "warn" : "";
+  return `<div class="row" style="display:block">
+    <div style="display:flex;justify-content:space-between">
+      <span class="k">${label}</span>
+      <span class="v ${cls}">${fmt.pct(value)} <span style="color:var(--faint)">/ ${fmt.pct(limit)}</span></span>
+    </div>
+    <div class="meter ${cls}"><i style="width:${(frac * 100).toFixed(1)}%"></i></div>
+  </div>`;
+}
+
+function setPill(el, text, cls) {
+  el.textContent = text;
+  el.className = "pill" + (cls ? " " + cls : "");
+}
+
+async function refresh() {
+  try {
+    const [health, ready, engine, portfolio, risk, ledger] = await Promise.all([
+      get("/healthz"), get("/readyz"), get("/engine/status"),
+      get("/portfolio"), get("/risk/status"), get("/ledger/tail").catch(() => []),
+    ]);
+    setPill($("p-conn"), "live", "ok");
+
+    // -- header ---------------------------------------------------------
+    setPill($("p-version"), health.version || "—");
+    // Only say LIVE when it is actually live. Appending the paper state to a
+    // mode that already reads "paper" produced "paper · paper".
+    setPill($("p-mode"), engine.live_trading_enabled ? "LIVE TRADING" : (engine.mode || "?"),
+            engine.live_trading_enabled ? "bad" : "");
+    setPill($("p-engine"), engine.running ? "running" : engine.enabled ? "starting" : "stopped",
+            engine.running ? "ok" : engine.enabled ? "warn" : "");
+
+    // -- why it is not trading -------------------------------------------
+    // The most important thing on the page. A user should never have to
+    // wonder why nothing is happening.
+    const gate = $("gate");
+    if (risk.halted) {
+      gate.hidden = false;
+      gate.className = "banner bad";
+      gate.innerHTML = `<div><b>Trading halted</b><p>${risk.halt_reason || "no reason recorded"}</p></div>`;
+    } else if (!engine.enabled) {
+      gate.hidden = false;
+      gate.className = "banner";
+      gate.innerHTML = `<div><b>Engine not running</b><p>ENGINE_ENABLED is false, or the
+        strategy gate is shut because no edge has been demonstrated. See RUNBOOK.md.</p></div>`;
+    } else {
+      gate.hidden = true;
+    }
+
+    // -- panels -----------------------------------------------------------
+    rows($("engine"), [
+      ["enabled", engine.enabled ? "yes" : "no", engine.enabled ? "ok" : ""],
+      ["running", engine.running ? "yes" : "no", engine.running ? "ok" : ""],
+      ["mode", engine.mode || "—"],
+      ["live trading", engine.live_trading_enabled ? "ENABLED" : "disabled",
+        engine.live_trading_enabled ? "bad" : "ok"],
+      ["symbols", (engine.symbols || []).length ? engine.symbols.join(", ") : "—"],
+      ["open positions", Object.keys(engine.open_positions || {}).length],
+    ]);
+
+    const th = risk.thresholds || {};
+    $("risk").innerHTML =
+      meter("30d drawdown", risk.dd_30d || 0, th.dd_halt || 0.2) +
+      meter("1d VaR", risk.var_1d || 0, th.var_max || 0.05) +
+      `<div class="row"><span class="k">breaches (24h)</span>
+        <span class="v ${(risk.breaches_24h || 0) >= (th.kill_switch || 3) ? "bad"
+          : (risk.breaches_24h || 0) > 0 ? "warn" : ""}">
+        ${risk.breaches_24h || 0} <span style="color:var(--faint)">/ ${th.kill_switch ?? "—"}</span></span></div>` +
+      `<div class="row"><span class="k">halted</span>
+        <span class="v ${risk.halted ? "bad" : "ok"}">${risk.halted ? "yes" : "no"}</span></div>` +
+      `<div class="row"><span class="k">equity points (30d)</span>
+        <span class="v">${risk.equity?.points_30d ?? 0}</span></div>`;
+
+    const bal = portfolio.balances || {};
+    const pos = portfolio.positions || {};
+    rows($("portfolio"), [
+      ...Object.entries(bal).map(([k, v]) => [k, fmt.num(v)]),
+      ["positions", Object.keys(pos).length || "none"],
+      ...Object.entries(pos).map(([k, p]) => [
+        k, `${fmt.num(p.base, 6)} @ ${fmt.num(p.avg_price)}`]),
+    ]);
+
+    rows($("health"), [
+      ["api", health.status || "—", health.status === "ok" ? "ok" : "bad"],
+      ["ready", ready.ready ? "yes" : "no", ready.ready ? "ok" : "bad"],
+      ...Object.entries(ready.components || {}).map(
+        ([k, v]) => [k, v ? "ok" : "down", v ? "ok" : "bad"]),
+      ["build", health.build || "—"],
+    ]);
+
+    const evs = Array.isArray(ledger) ? ledger.slice(-25).reverse() : [];
+    $("ledger").innerHTML = evs.length
+      ? `<div style="overflow-x:auto"><table>
+          <tr><th>time</th><th>event</th><th>symbol</th><th class="num">qty</th><th class="num">px</th></tr>
+          ${evs.map(e => `<tr>
+            <td>${fmt.time(e.ts)}</td>
+            <td>${e.event || "—"}</td>
+            <td>${e.symbol || "—"}</td>
+            <td class="num">${e.qty != null ? fmt.num(e.qty, 6) : "—"}</td>
+            <td class="num">${e.px != null ? fmt.num(e.px) : "—"}</td>
+          </tr>`).join("")}
+        </table></div>`
+      : `<div class="empty">No events yet — the ledger is written when the engine trades.</div>`;
+
+    $("foot").textContent = "updated " + new Date().toLocaleTimeString();
+  } catch (err) {
+    // A failed poll must not blank the page: stale numbers with a clear
+    // "stale" marker are more useful than an empty dashboard.
+    setPill($("p-conn"), String(err.message || err).slice(0, 40), "bad");
+  }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

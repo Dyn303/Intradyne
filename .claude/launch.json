@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "intradyne",
+      "runtimeExecutable": "C:/Users/SURFAC~1/AppData/Local/Temp/claude/C--Users-Surface-Pro-7-GitHub-Intradyne--claude-worktrees-system-analysis-c6572e/baa4f6fe-ba59-4625-9a15-a1d02762cb20/scratchpad/v/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "intradyne.api.app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8011"
+      ],
+      "port": 8011,
+      "env": {
+        "PYTHONPATH": "src",
+        "ENGINE_ENABLED": "false",
+        "API_AUTH_REQUIRED": "0",
+        "APP_ENV": "development"
+      }
+    }
+  ]
+}
