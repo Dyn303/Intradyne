@@ -206,3 +206,50 @@ than optional. See `TELEGRAM_MINI_APP.md`.
 This does not change the "what this is and is not for" section above. The
 dashboard still mostly shows a system correctly declining to trade; it can now
 do so from a phone.
+
+---
+
+## Phase 2: controls, and two endpoints that were lying
+
+The UI half was small. The work was in the endpoints behind it, because two of
+the three controls this phase was meant to expose did not do what their names
+said -- and a control that reports success without acting is worse than no
+control, since the operator stops looking.
+
+**`/admin/kill-switch/toggle` could not stop trading.** It appended a ledger
+line and returned `{"ok": true}`. Its own comment called it a placeholder and
+deferred enforcement to "breach count" -- but that is the *automatic* kill
+switch inside `Guardrails`, a threshold of N breaches in 24h with no on/off
+control. So the endpoint named kill-switch was the only one in the system that
+could not halt anything, and it reported success for doing so. It now moves the
+same halt that `Guardrails.gate_trade` and the broker consult.
+
+**`/engine/params/revert` never reverted.** `apply` copied
+`production_params.json` into the `.prev` backup *before* applying it -- but
+that file already held the new values, so the backup was a copy of what was
+being applied rather than of what it replaced. Revert then re-applied the
+current configuration and returned `{"reverted": true}`. The engine cannot be
+asked what it is running, so the applied configuration is now tracked in
+`production_params.applied.json` and the backup is taken from that. One level
+of undo, and the backup is consumed so a second revert says so rather than
+flip-flopping.
+
+### The asymmetry in the UI
+
+Halt and Resume are never both on screen: one switch, one direction, nothing to
+misread under pressure. Stop is full-width and red; start is not. The
+confirmation on Halt is a formality against mis-taps, while the one on Resume
+actually warns, because the two directions are not equally safe -- halting a
+healthy system costs idle minutes, resuming one that should be stopped costs
+money.
+
+Inside Telegram the confirmations use the native dialog and success fires a
+haptic tap.
+
+### Known rough edge
+
+If `ADMIN_SECRET` is set, `/admin/halt` needs a header the browser cannot hold,
+so the Mini App cannot halt and the panel says so on the 401 rather than
+failing silently. Leave it unset when using the Mini App: the router already
+sits behind API auth plus the Telegram allowlist, which is a stronger gate than
+a shared secret.

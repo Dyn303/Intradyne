@@ -138,3 +138,45 @@ def test_authentication_does_not_depend_on_the_remote_bridge(client):
     access."""
     body = client.get("/").text
     assert "tgWebAppData" in body, "no fallback path to initData without the bridge"
+
+
+# ---- Phase 2 controls: nothing writes without asking first ---------------
+
+
+def test_every_write_goes_through_the_confirmation_path(client):
+    """The controls panel changes live trading state, so the guard that
+    matters is structural: there must be exactly one place in the page that
+    issues a POST, and it must ask before it does.
+
+    A future one-click write added straight into a click handler would slip
+    past review easily and is exactly what this catches.
+    """
+    body = client.get("/").text
+    assert body.count('method: "POST"') == 1, (
+        "more than one POST site on the page -- a write may be bypassing act()"
+    )
+    act = body[
+        body.index("async function act(") : body.index("function renderControls")
+    ]
+    assert "await confirmAction(" in act, "act() issues a write without confirming"
+    assert act.index("confirmAction") < act.index('method: "POST"'), (
+        "the write happens before the confirmation is awaited"
+    )
+
+
+def test_halt_and_resume_are_never_offered_together(client):
+    """One switch, one direction. Showing both invites the wrong tap in the
+    moment it matters most."""
+    body = client.get("/").text
+    render = body[body.index("function renderControls(") :]
+    render = render[: render.index("async function refresh()")]
+    assert "halted" in render and "?" in render, "controls are not state-dependent"
+    assert render.count("c-halt") >= 1 and render.count("c-resume") >= 1
+
+
+def test_the_stop_control_is_not_harder_to_reach_than_the_start(client):
+    """Halting a healthy system costs idle minutes; resuming one that should
+    be stopped costs money. The stop must be at least as prominent."""
+    body = client.get("/").text
+    assert "button.stop" in body, "no distinct styling for the stop control"
+    assert "flex-basis: 100%" in body, "the stop control is not full width"

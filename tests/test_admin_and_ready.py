@@ -75,3 +75,38 @@ def test_readyz_fails_when_the_database_is_unusable(monkeypatch):
     reset_settings_cache()
     r = client.get("/readyz")
     assert r.status_code in (503, 500) or r.json()["components"]["db"] is False
+
+
+def test_kill_switch_toggle_actually_stops_trading():
+    """It used to append a ledger line and return {"ok": true} having changed
+    nothing -- the one endpoint named kill-switch was the one that could not
+    stop trading, and it reported success for doing so."""
+    try:
+        r = client.post("/admin/kill-switch/toggle", params={"enabled": True})
+        assert r.status_code == 200
+        assert is_halted() is True, "the toggle reported success without halting"
+        assert r.json()["kill_switch_enabled"] is True
+
+        r = client.post("/admin/kill-switch/toggle", params={"enabled": False})
+        assert is_halted() is False
+        assert r.json()["kill_switch_enabled"] is False
+    finally:
+        from intradyne.risk.kill_switch import set_halt
+
+        set_halt(False)
+
+
+def test_kill_switch_toggle_and_halt_are_the_same_switch():
+    """Two endpoints, one piece of state. If they ever diverge, an operator
+    can release a halt from one and believe the other still holds."""
+    from intradyne.risk.kill_switch import set_halt
+
+    try:
+        client.post("/admin/kill-switch/toggle", params={"enabled": True})
+        assert client.get("/admin/halt").json()["enabled"] is True
+
+        client.post("/admin/halt", json={"enabled": False})
+        assert client.post("/admin/kill-switch/toggle", params={"enabled": False})
+        assert is_halted() is False
+    finally:
+        set_halt(False)

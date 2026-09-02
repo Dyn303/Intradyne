@@ -11,10 +11,23 @@ router = APIRouter()
 
 @router.post("/admin/kill-switch/toggle")
 def kill_switch_toggle(enabled: bool):
+    """Engage or release the operator halt. Same switch as POST /admin/halt.
+
+    This used to append a ledger line and return {"ok": true} while changing
+    nothing -- its comment called it a placeholder and deferred enforcement to
+    "breach count", but that is the *automatic* kill switch inside Guardrails,
+    a threshold of N breaches in 24h with no on/off control. So the endpoint
+    named kill-switch was the one thing in the system that could not stop
+    trading, and it reported success for doing so.
+
+    That is the worst way for a control to fail: an operator hits it, sees
+    {"ok": true}, believes the system is stopped and stops watching. It now
+    moves the halt that Guardrails.gate_trade and the broker actually consult.
+    """
+    set_halt(bool(enabled), reason="admin_kill_switch" if enabled else "")
     gr = get_guardrails()
-    # Placeholder: record intent in ledger; actual enforcement handled via breach count
     gr.ledger.append("admin_toggle", {"kill_switch_enabled": bool(enabled)})
-    return {"ok": True, "kill_switch_enabled": bool(enabled)}
+    return {"ok": True, "kill_switch_enabled": is_halted()}
 
 
 @router.get("/admin/halt")
