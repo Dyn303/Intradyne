@@ -208,6 +208,15 @@ async def require_api_key_or_telegram(
         logger.bind(event="miniapp_auth_ok").debug({"user": user.label})
         return
 
+    if not configured_api_key() and telegram_auth.enabled():
+        # Mini App auth is the only credential this deployment has, and this
+        # request did not use it. Delegating would hit require_api_key's
+        # fail-closed branch and answer 503 "misconfigured", which is both the
+        # wrong status -- the caller is unauthorized, the server is fine -- and
+        # a misleading one to debug, since it reports a missing X_API_KEY that
+        # was never meant to exist.
+        raise HTTPException(status_code=401, detail="unauthorized")
+
     await require_api_key(x_api_key)
 
 

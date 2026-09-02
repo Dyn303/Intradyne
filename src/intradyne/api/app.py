@@ -5,6 +5,7 @@ import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
+from dotenv import load_dotenv
 import os as _os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -36,6 +37,20 @@ from intradyne.core.config import (
     load_settings,
 )
 from intradyne.core.logging import setup_logging
+
+# Read .env into the process environment before anything reads it.
+#
+# core/config.py points pydantic-settings at .env, but that only populates a
+# Settings object -- it never touches os.environ. Auth does not go through
+# Settings: configured_api_key(), telegram_auth.bot_token() and the alerter all
+# call os.getenv directly. So without this, X_API_KEY and TELEGRAM_BOT_TOKEN in
+# .env were read by nothing, and the documented setup silently produced an app
+# that either refused to boot or ran with Mini App auth quietly disabled.
+#
+# The engine entrypoint has always done this; the API never did. load_dotenv
+# does not override variables already set, so an explicit environment -- Docker,
+# compose, CI, a test monkeypatch -- still wins.
+load_dotenv()
 
 
 @asynccontextmanager
