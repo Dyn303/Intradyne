@@ -561,23 +561,55 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
 - **No deflated Sharpe, White's Reality Check or Hansen's SPA.** The best-of-N
   null approximates them by simulation, which is defensible but not the same
   thing.
-- **No equity data fetcher.** `fetch_ohlc.py` and `fetch_klines_archive.py` are
-  crypto-only, so the CSVs under `data/equities/` that the A1 and A2 scripts
-  read were assembled by hand. Anything beyond a first pass needs a real
-  fetcher, and a point-in-time universe built from `LISTING_STATUS`-style
-  data with delisted names retained (A3).
+- **Equity tickers bypass the Shariah gate entirely.** `risk/shariah.py:112`
+  guards the allow-list and blocked-tag screen with `if
+  is_crypto_symbol(symbol)`, and that function is `"/" in symbol`. An order for
+  `AAPL` therefore skips business screening and **fails open, not closed** --
+  and every test passes, because all of them use `BTC/USDT`-shaped symbols.
+  `config.py:198` also appends `/USDT` to any bare ticker in `ALLOWED_SYMBOLS`,
+  and `api/routes/data.py:33` rejects slash-free symbols with `400
+  invalid_symbol` before the allow-list is consulted. **No equity order may be
+  placed until this is fixed.** It is why the screener below produces a
+  worksheet rather than a live allow-list.
+- **No point-in-time equity universe.** A3 still needs one, built from
+  `LISTING_STATUS` with delisted names retained --
+  `scripts/point_in_time_universe.py:67` is the direct analogue, and takes the
+  dead names from the archive precisely because the live listing knows only
+  about survivors.
+- **A1's cost model is a large-cap number.** 4.3 bps assumes penny-wide
+  spreads on liquid names. One cent is 20 bps on a $5 stock, so the gate must
+  be re-run per price band before trading below roughly $20.
 
-**The A1 and A2 gates are implemented.**
+**The A1 and A2 gates, and the data behind them, are implemented.**
 
-| gate | script | artifact |
+| gate | script | output |
 |---|---|---|
 | A1 feasibility -- does the move clear the round trip? | `scripts/equity_feasibility.py` | `artifacts/equity_feasibility.json` |
 | A2 breadth -- how many independent bets exist? | `scripts/equity_breadth.py` | `artifacts/equity_breadth.json` |
+| bars for both | `scripts/fetch_equity_bars.py` | `data/equities/{SYMBOL}_{interval}.csv` |
+| Shariah worksheet | `scripts/screen_equities.py` | `docs/EQUITY_SCREENING.md`, `docs/equity_screen.json` |
 
-Both exit non-zero on a failed gate, so they can be wired into a check rather
+Both gates exit non-zero on failure, so they can be wired into a check rather
 than read by eye. Both carry their own falsification: the breadth script
 verifies that independent input returns `N_eff ~ N` and a synthetic common
 factor at rho returns `~1/rho` before reporting anything (D1).
+
+The screener is a **worksheet, not a decision** -- the posture
+`scripts/build_universe.py` takes for crypto. It reports what each ticker is
+and which categories raise a question; which categories pass is a scholarly
+ruling, and the thresholds and excluded activities are configuration so that
+every record names the standard it was screened against.
+
+Its first job is filtering instrument type, because the movers lists are
+mostly derivatives: in the response it was written against, **14 of 20 top
+gainers and 16 of 20 top losers were warrants or rights**, and most-active
+carried leveraged and inverse products. Instrument type is decided from the
+listing *name* rather than the ticker suffix -- `assetType` reads "Stock" even
+for warrants, and a suffix rule would discard `LOW`, `BKR` and `AMCR`.
+
+It is also a **live screen, never a research universe**. Names selected by what
+already moved today cannot define a backtest universe without selecting on the
+outcome, which is what A3 exists to prevent.
 
 ---
 
