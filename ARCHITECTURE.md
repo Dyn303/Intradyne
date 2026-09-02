@@ -48,4 +48,6 @@ Notes
   subsystem is not wired into the API or the engine; whether to complete or
   drop it is an open product question.
 
-See `MIGRATION.md` for the consolidation plan and its remaining phases.
+See `MIGRATION.md` for the consolidation plan and its remaining phases, and
+`docs/STRATEGY_RESEARCH_FRAMEWORK.md` for the rules any strategy research must
+satisfy before it runs (with `docs/PREREGISTRATION_TEMPLATE.md` alongside it).
