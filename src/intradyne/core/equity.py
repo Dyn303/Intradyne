@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import os
 import sqlite3
+
+from loguru import logger
 import threading
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
@@ -49,6 +51,11 @@ def _epoch(dt: datetime) -> float:
     return dt.timestamp()
 
 
+#: Set once when the filesystem refuses WAL, so the fallback is not retried
+#: (and not re-logged) on every connection.
+_WAL_UNAVAILABLE = False
+
+
 class EquityHistory:
     def __init__(self, db_url: str = "sqlite:///data/trades.sqlite") -> None:
         self.path = sqlite_path_from_url(db_url)
@@ -63,7 +70,26 @@ class EquityHistory:
         # A connection per operation: sqlite connections are not shareable
         # across threads, and the write volume here is trivial.
         conn = sqlite3.connect(self.path, timeout=5.0)
-        conn.execute("PRAGMA journal_mode=WAL")
+        global _WAL_UNAVAILABLE
+        if not _WAL_UNAVAILABLE:
+            try:
+                conn.execute("PRAGMA journal_mode=WAL")
+            except sqlite3.OperationalError as exc:
+                # WAL needs -wal and -shm sidecar files and a filesystem that
+                # supports shared memory mapping. Docker bind mounts often
+                # provide neither, and the pragma fails with a bare "disk I/O
+                # error" that surfaces as a 500 from every risk and portfolio
+                # endpoint -- while /readyz, which only runs SELECT 1, keeps
+                # reporting the database healthy.
+                #
+                # WAL is a concurrency optimisation and this database takes a
+                # handful of writes a minute, so the rollback journal is a
+                # perfectly good fallback. Recorded once: it is a property of
+                # the filesystem, not of the connection.
+                _WAL_UNAVAILABLE = True
+                logger.bind(event="sqlite_wal_unavailable").info(
+                    {"path": self.path, "error": str(exc), "journal": "delete"}
+                )
         return conn
 
     def record(self, equity: float, ts: Optional[datetime] = None) -> None:

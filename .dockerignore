@@ -9,8 +9,10 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
-# Heavy runtime artifacts and data
-artifacts/
+# Heavy runtime artifacts and data. The exception mirrors .gitignore:
+# production_params.json is tracked and /engine/params/apply reads it.
+artifacts/*
+!artifacts/production_params.json
 data/
 reports/
 optuna.db
