@@ -67,13 +67,18 @@ ran", not as evidence.
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import hmac
 import json
 import os
 import sys
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 import httpx
 
@@ -197,9 +202,100 @@ def fetch_alpaca(
     return (bars or None), ("ok" if bars else "empty payload")
 
 
+# ---- webull ---------------------------------------------------------------
+
+#: Webull signs a canonical string rather than a bearer token, and the exact
+#: construction is theirs, not a convention -- see
+#: developer.webull.com.au/apis/docs/authentication/signature.
+WEBULL_SIGNED_HEADERS = (
+    "x-app-key",
+    "x-signature-algorithm",
+    "x-signature-nonce",
+    "x-signature-version",
+    "x-timestamp",
+)
+
+#: The bars path is the one piece of this adapter not confirmed from the
+#: published docs. Their reference lists "Historical Bars (Single Symbol)" and
+#: the snapshot example is `/openapi/market-data/stock/snapshot`, so this
+#: follows that shape -- but a guessed path 404s, and a 404 would be reported
+#: as "provider lacks history" when the truth is "we asked the wrong URL".
+#: Override with WEBULL_BARS_PATH once the API Reference confirms it.
+WEBULL_BARS_PATH = "/openapi/market-data/stock/bars"
+
+
+def _webull_sign(secret: str, path: str, params: Dict[str, str]) -> str:
+    """Canonical string, then base64(HMAC-SHA256).
+
+    Query parameters and the signing headers go into one list, sorted by name,
+    joined `name=value&...`. With no body the canonical string is
+    `path + "&" + that`. The key is the app secret with `&` appended -- an easy
+    detail to miss, and the signature silently fails without it.
+    """
+    merged = "&".join(f"{k}={params[k]}" for k in sorted(params))
+    canonical = quote(f"{path}&{merged}", safe="")
+    mac = hmac.new(
+        (secret + "&").encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
+    )
+    return base64.b64encode(mac.digest()).decode("ascii")
+
+
+def fetch_webull(
+    c: httpx.Client, key: str, symbol: str, start: str, end: str
+) -> Tuple[Optional[Bars], str]:
+    """Historical bars from the venue this project would execute against.
+
+    Worth probing even if another provider wins on history: research data and
+    execution data coming from different vendors makes the backtest/paper/live
+    comparison in the framework a comparison of two markets.
+    """
+    secret = os.getenv("WEBULL_APP_SECRET", "").strip()
+    host = os.getenv("WEBULL_HOST", "api.webull.com.my").strip()
+    path = os.getenv("WEBULL_BARS_PATH", WEBULL_BARS_PATH).strip()
+    query = {
+        "symbol": symbol,
+        "category": "US_STOCK",
+        "timespan": "M30",
+        "count": "1000",
+    }
+    headers = {
+        "x-app-key": key,
+        "x-signature-algorithm": "HMAC-SHA256",
+        "x-signature-version": "1.0",
+        "x-signature-nonce": uuid.uuid4().hex,
+        "x-timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "x-version": "1.0",
+    }
+    signed = {k: headers[k] for k in WEBULL_SIGNED_HEADERS}
+    signed["host"] = host
+    signed.update(query)
+    headers["x-signature"] = _webull_sign(secret, path, signed)
+
+    r = c.get(f"https://{host}{path}", params=query, headers=headers, timeout=60.0)
+    if r.status_code == 404:
+        return None, (
+            f"HTTP 404 on {path} -- confirm the bars path in the API Reference "
+            "and set WEBULL_BARS_PATH; this is not evidence about coverage"
+        )
+    if r.status_code != 200:
+        return None, f"HTTP {r.status_code}: {r.text[:60]}"
+    body = r.json()
+    rows = body.get("data") or body.get("bars") or []
+    bars: Bars = []
+    for b in rows:
+        ts = b.get("tradeTime") or b.get("t") or b.get("timestamp")
+        close = b.get("close") or b.get("c")
+        if ts is None or close is None:
+            continue
+        bars.append((str(ts), float(close), float(b.get("volume") or b.get("v") or 0)))
+    bars.sort()
+    return (bars or None), ("ok" if bars else "empty payload")
+
+
 PROVIDERS = {
     "twelvedata": (fetch_twelvedata, "TWELVEDATA_API_KEY"),
     "alpaca": (fetch_alpaca, "ALPACA_API_KEY"),
+    "webull": (fetch_webull, "WEBULL_APP_KEY"),
 }
 
 
