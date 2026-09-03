@@ -372,6 +372,13 @@ closed it:
 
 Add `PROGRAMME_CLOSED` to the lifecycle in Part 5.
 
+The equities programme's rule is committed at
+`docs/EQUITY_PROGRAMME_STOP_RULE.md`: **four approaches**, an early stop if A1
+fails on every tradeable band, and -- the clause crypto lacked -- an approach
+defined by its hypothesis rather than its implementation, so that changing the
+universe, slice, parameters or power of a failed approach does not create a new
+one.
+
 **D4. Report a negative with the detail a positive would get.**
 
 And never re-run silently after finding a bug. If a defect is found, report the
