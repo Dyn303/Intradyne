@@ -141,11 +141,16 @@ App, `/metrics`, and the hash-chained ledger.
 > never have to wonder why nothing is happening, and "correctly declining to
 > trade" is the state this system is usually in.
 
-### 8. Decision memo — **pattern exists, artifact does not**
+### 8. Decision memo — **built**
 
-The pre-registration format and the verdict field in `research_record.py` are
-the pattern. There is no per-decision artifact. See Part 3 — this is the stage
-worth designing carefully, because it is what a human signs.
+`docs/DECISION_MEMO_TEMPLATE.md`. Eight required sections, and a memo is
+refused if any is empty -- not filled in vaguely, empty, because a section
+nobody can complete is itself the finding.
+
+> **The rule:** the memo is committed in the same change as the flag it
+> justifies. A `STRATEGY_EDGE_DEMONSTRATED` diff with no memo beside it is a
+> one-line change with no attached reasoning, which is the state a `git pull`
+> can forget.
 
 ### 9. Execution — **built for paper, no equity broker**
 
@@ -193,7 +198,7 @@ is permitted to act**, and it is the artifact that accompanies flipping
 `STRATEGY_EDGE_DEMONSTRATED`. Without it, that flag is a one-line diff with no
 attached reasoning — which is exactly the state a `git pull` can forget.
 
-A memo is refused unless it contains all of:
+The template is `docs/DECISION_MEMO_TEMPLATE.md`. A memo is refused unless it contains all of:
 
 1. **The pre-registration it answers**, by commit hash. Criteria written after
    the fact are not criteria.
@@ -237,8 +242,8 @@ Sequenced by what unblocks the four approaches, not by pipeline order:
 
 1. ~~Stage 3's publication-date join~~ — **done**, see stage 3 above.
 2. ~~Stage 4's bridge~~ — **done**, see stage 4 above.
-3. **Stage 8's memo template** — needed at the *end* of approach one, so it can
-   be written before the numbers exist rather than around them.
+3. ~~Stage 8's memo template~~ — **done**, and written before any approach
+   produced numbers, which was the point of doing it early.
 4. Stages 5 and 9 stay as they are until an approach clears.
 
 The blocking precondition is unchanged and is not on this list, because no
