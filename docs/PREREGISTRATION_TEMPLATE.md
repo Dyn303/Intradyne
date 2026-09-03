@@ -149,7 +149,11 @@ approximately zero -- and the test that pins it.]
   numbers, never a silent re-run.
 - [Amendment D3, the stop rule. How many approaches this programme gets, and
   what ends it. If this is the last test, say so here: *"Whatever it shows, the
-  search stops."* That sentence is what makes a question closeable.]
+  search stops."* That sentence is what makes a question closeable.
+
+  State which slot of the programme's budget this test spends, and note that a
+  test abandoned partway after any result has been seen has still spent it.
+  `docs/EQUITY_PROGRAMME_STOP_RULE.md` is the worked example.]
 
 ## What a positive result would and would not mean
 
