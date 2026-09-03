@@ -131,6 +131,19 @@ development machine:**
 3. **Set the exposure caps.** They default to `0` (disabled). Live trading
    without them means the only bound on transacted volume is the risk
    thresholds.
+
+   `.env.example` now ships worked starting values with the derivation, for a
+   nominal 10,000 equity at `MAX_POS_PCT=0.015`. Scale them linearly to your
+   own equity. The point to carry across: **these cap turnover, not exposure**
+   — twenty round trips a day at 1.5% transacts 60% of equity in daily notional
+   while never holding more than 1.5% at once, so a daily cap set from
+   position-size intuition halts the engine within the hour. The caps therefore
+   sit *above* expected traffic; a cap that binds in normal operation is an
+   outage, not a backstop, and repeated breaches trip `KILL_SWITCH_BREACHES`.
+
+   Revise the turnover assumption after the soak, when it is measured rather
+   than guessed. `tests/test_exposure_cap_defaults.py` pins the example against
+   `MAX_POS_PCT` so the two cannot drift apart silently.
 4. **Rehearse the halt** under live conditions and time it.
 5. **Establish an edge after costs — the remaining blocker.** Every backtest
    summary now reports the measured win rate beside the breakeven it must
