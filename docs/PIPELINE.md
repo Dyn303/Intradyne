@@ -63,16 +63,26 @@ volume, liquidity floor, then the Shariah worksheet.
 > forward*. Using them to define a backtest universe is selection on the
 > outcome, and is the failure amendment A3 exists to prevent.
 
-### 3. Analyst — **thin**
+### 3. Analyst — **thin, but no longer leaking**
 
 Fundamentals are fetched inside the screener; there is no separate layer, and
 `NEWS_SENTIMENT` is available and unused.
 
+The look-ahead leak this section used to describe is closed.
+`scripts/fundamentals_asof.py` joins each `BALANCE_SHEET` period to its
+publication date from `EARNINGS.quarterlyEarnings`, and the screener now selects
+the newest report that was *public* on the screening date rather than the newest
+that exists. A post-market release rolls forward a day, because figures released
+after the close cannot inform that session. Where a publication date is missing
+the fallback is 90 days -- the SEC deadline for a non-accelerated filer's 10-K
+-- so unknown data becomes available later than it really did, never earlier.
+
 > **The rule:** every fundamental carries the date it *became public*, not its
-> fiscal period end. `BALANCE_SHEET` returns `fiscalDateEnding` and no
-> `reportedDate`; IBM's 2025-12-31 figures were not knowable on 2025-12-31.
-> Joining on the period end is a look-ahead leak, and it is the equity analogue
-> of judging 2022 liquidity by today's volume.
+> fiscal period end. IBM's 2025-12-31 figures were published 2026-01-28, so a
+> screen run on 2026-01-15 against the period end assumes a month of foresight.
+> Every screened record now carries three dates -- period end, known-from, and
+> the date screened against -- because a ratio cannot be audited from any one
+> of them.
 
 ### 4. Signal generator — **split in two, with no bridge**
 
@@ -213,8 +223,7 @@ and they are why crypto is closed rather than re-litigated.
 
 Sequenced by what unblocks the four approaches, not by pipeline order:
 
-1. **Stage 3's publication-date join** — an active look-ahead leak, and cheap
-   to fix. Needed before any approach uses fundamentals.
+1. ~~Stage 3's publication-date join~~ — **done**, see stage 3 above.
 2. **Stage 4's bridge** — one signal definition, both runtimes, with a test that
    replays a research rule through the engine and compares entries.
 3. **Stage 8's memo template** — needed at the *end* of approach one, so it can

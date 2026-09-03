@@ -54,12 +54,20 @@ import csv
 import io
 import json
 import os
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import httpx
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fundamentals_asof import (  # noqa: E402
+    Filing,
+    filings_from_earnings,
+    pick_report,
+)
 
 AV = "https://www.alphavantage.co/query"
 
@@ -396,18 +404,43 @@ def overview(
 
 def balance_sheet(
     c: httpx.Client, key: str, sym: str, cache: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+) -> List[Dict[str, Any]]:
+    """Every quarterly report, not just the newest one.
+
+    This used to return `reports[0]`. The newest report that *exists* is not
+    the newest that was *public* on a given date, and choosing between them
+    needs the whole list -- see `fundamentals_asof.pick_report`.
+    """
     hit = cache.get(sym, {}).get("balance")
     if hit:
-        return hit
+        # Caches written before this returned a list hold a single report.
+        return hit if isinstance(hit, list) else [hit]
     body = _get(c, {"function": "BALANCE_SHEET", "symbol": sym, "apikey": key})
     if not isinstance(body, dict):
-        return None
+        return []
     reports = body.get("quarterlyReports") or body.get("annualReports") or []
     if not reports:
-        return None
-    cache.setdefault(sym, {})["balance"] = reports[0]
-    return reports[0]
+        return []
+    cache.setdefault(sym, {})["balance"] = list(reports)
+    return list(reports)
+
+
+def earnings(
+    c: httpx.Client, key: str, sym: str, cache: Dict[str, Any]
+) -> List[Filing]:
+    """Publication dates for each reporting period.
+
+    One extra request per candidate, and it buys the only thing that turns a
+    fiscal period end into a date somebody could have acted on.
+    """
+    hit = cache.get(sym, {}).get("earnings")
+    if hit is not None:
+        return filings_from_earnings(hit)
+    body = _get(c, {"function": "EARNINGS", "symbol": sym, "apikey": key})
+    if not isinstance(body, dict):
+        return []
+    cache.setdefault(sym, {})["earnings"] = body
+    return filings_from_earnings(body)
 
 
 def _n(v: Any) -> Optional[float]:
@@ -426,8 +459,10 @@ def screen_one(
     cache: Dict[str, Any],
     max_debt: float,
     max_liquid: float,
+    as_of: Optional[date] = None,
 ) -> Dict[str, Any]:
     """Tiers 3 and 4 for one surviving candidate."""
+    as_of = as_of or datetime.now(timezone.utc).date()
     sym = rec["symbol"]
     ov = overview(c, key, sym, cache)
     if ov is None:
@@ -448,17 +483,24 @@ def screen_one(
     # No sector or industry at all is not the same as clean.
     rec["known"] = bool(tags)
 
-    bs = balance_sheet(c, key, sym, cache)
+    # The report that was *public* on as_of, not merely the newest that
+    # exists. `reports[0]` would use figures the market had not seen.
+    reports = balance_sheet(c, key, sym, cache)
+    bs = pick_report(reports, earnings(c, key, sym, cache), as_of) if reports else None
     if bs is None or not mcap:
         rec["ratios"] = None
-        rec["ratio_flags"] = ["NO_DATA"]
+        rec["ratio_flags"] = ["NO_DATA"] if not reports else ["NOT_YET_PUBLIC"]
         return rec
 
     debt = _n(bs.get("shortLongTermDebtTotal")) or 0.0
     liquid = _n(bs.get("cashAndShortTermInvestments")) or 0.0
     ratios = {"debt_over_mcap": debt / mcap, "liquid_over_mcap": liquid / mcap}
     rec["ratios"] = ratios
-    rec["ratio_as_of"] = bs.get("fiscalDateEnding", "")
+    # Three dates, because one is not enough to audit a ratio: the period the
+    # figures describe, when they became public, and the date screened against.
+    rec["fiscal_end"] = bs.get("fiscalDateEnding", "")
+    rec["known_from"] = bs.get("_known_from", "")
+    rec["ratio_as_of"] = bs.get("_as_of", "")
 
     breaches = []
     if ratios["debt_over_mcap"] > max_debt:
