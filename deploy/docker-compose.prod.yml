@@ -16,7 +16,10 @@ services:
       # are writable. The ledger default (a bare relative filename -> /app) is
       # unwritable here and fails on the first guardrail append.
       - EXPLAIN_LEDGER_PATH=${EXPLAIN_LEDGER_PATH:-/app/data/explainability_ledger.jsonl}
-      - DB_URL=${DB_URL:-sqlite:////app/data/trades.sqlite}
+      # Postgres, in the service below. Set DB_URL explicitly to
+      # sqlite:////app/data/trades.sqlite to go back; nothing else has to
+      # change, and the ../data mount that held it is still here.
+      - DB_URL=${DB_URL:-postgresql://${POSTGRES_USER:-intradyne}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-intradyne}}
       # Required in production: the app refuses to boot with a '*'
       # origin list, and with auth enforced but no key configured.
       - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:?set an explicit origin list}
@@ -31,6 +34,34 @@ services:
     mem_limit: 512m
     cpus: 0.50
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [web]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-intradyne}
+      - POSTGRES_USER=${POSTGRES_USER:-intradyne}
+      # No default here, unlike the base compose file. This stack is the
+      # one that gets a public hostname and a TLS certificate, and the
+      # same :? guard is already what stops it booting with a wildcard
+      # CORS list or no API key.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set a database password}
+      - TZ=Asia/Kuching
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Not published. Only the api service and caddy are on this network,
+    # and only caddy has a ports: entry.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-intradyne} -d ${POSTGRES_DB:-intradyne}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
     networks: [web]
 
   caddy:
@@ -89,3 +120,4 @@ networks:
 volumes:
   caddy_data: {}
   caddy_config: {}
+  pgdata: {}
