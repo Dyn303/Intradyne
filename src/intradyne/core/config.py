@@ -299,8 +299,9 @@ class Settings(BaseSettings):
             )
 
 
-# Phase 5 of MIGRATION.md opens live trading. Until the controls listed in
-# assert_live_trading_gate() exist, the system refuses to start in live mode.
+# Phase 5 of MIGRATION.md opens live trading. The controls it required are
+# built; what remains is operational validation that cannot be done from a
+# development machine, plus an edge. See RUNBOOK section 8.
 LIVE_TRADING_GATE_OPEN = False
 
 
@@ -310,16 +311,38 @@ def assert_live_trading_gate(settings: "Settings") -> None:
     Deliberately not overridable by an environment variable: an env override
     is exactly how this would get flipped by accident. Opening it is a code
     change to LIVE_TRADING_GATE_OPEN, which leaves a reviewable commit.
+
+    The message below used to name four controls as missing -- idempotency,
+    reconciliation, notional caps and halt alerting -- and all four had since
+    been built, wired, and covered by `tests/test_live_readiness.py`. RUNBOOK
+    section 8 had been updated; this had not. An operator reading it would
+    either distrust a system further along than it claimed, or go and build a
+    second copy of working machinery. A control that misinforms is the failure
+    this project keeps finding, and this one sat in the message an operator
+    sees at exactly the moment they try to go live.
+
+    `tests/test_live_gate_message.py` now ties each claim to the code, so the
+    message cannot drift from reality again without a test failing.
     """
     if LIVE_TRADING_GATE_OPEN:
         return
     if settings.mode == "live" and settings.live_trading_enabled:
         raise RuntimeError(
-            "Live trading is armed (MODE=live and LIVE_TRADING_ENABLED=true) but "
-            "the live-readiness work is not done. Still missing: idempotency keys "
-            "on order submission, reconciliation against exchange state on "
-            "restart, per-symbol and daily notional caps, and alerting on "
-            "halt/kill-switch. See MIGRATION.md phase 5. Run with MODE=paper."
+            "Live trading is armed (MODE=live and LIVE_TRADING_ENABLED=true) "
+            "but the gate is shut.\n\n"
+            "The phase 5 controls are built: idempotency claimed before the "
+            "venue is contacted (core/idempotency.py), restart reconciliation "
+            "that halts rather than guessing (engine/reconcile.py), per-order, "
+            "per-symbol and daily notional caps that fail closed "
+            "(core/limits.py), and alerting on halt (core/alerts.py).\n\n"
+            "What remains cannot be done from a development machine: a testnet "
+            "soak, confirming a page actually reaches a human, rehearsing the "
+            "halt under live conditions, and setting the exposure caps -- which "
+            "default to 0, meaning disabled, so arming live without configuring "
+            "them leaves transacted volume bounded only by the risk "
+            "thresholds.\n\n"
+            "And no edge has been demonstrated: STRATEGY_EDGE_DEMONSTRATED is "
+            "False. See RUNBOOK section 8. Run with MODE=paper."
         )
 
 
