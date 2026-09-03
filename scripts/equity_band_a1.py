@@ -40,7 +40,9 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from intradyne.backtester.costs import round_trip_cost_pct  # noqa: E402
+from research_ledger import Run, fingerprint, record  # noqa: E402
 
 BAR_SECONDS = 1800
 
@@ -328,6 +330,52 @@ def main(argv: Optional[List[str]] = None) -> int:
         encoding="utf-8",
     )
     print(f"wrote {out}")
+
+    # The run goes in the committed ledger as well as the gitignored artifact.
+    # An artifact says what the answer was; the ledger says which commit, which
+    # inputs and which parameters produced it, which is the difference between
+    # a result and a reproducible one.
+    verdicts = {
+        str(r["band"]): (
+            "no sample"
+            if not r["names"]
+            else (
+                "clears"
+                if r["horizons"]["1 day"]["ratio"] >= 3
+                else "marginal"
+                if r["horizons"]["1 day"]["ratio"] >= 1.5
+                else "fails"
+            )
+        )
+        for r in rows
+    }
+    overall = (
+        "fails"
+        if all(v == "fails" for v in verdicts.values() if v != "no sample")
+        else "clears"
+        if all(v == "clears" for v in verdicts.values() if v != "no sample")
+        else "mixed"
+    )
+    try:
+        rec = record(
+            Run(
+                script="equity_band_a1.py",
+                verdict=overall,
+                summary={"bands": verdicts, "names": len(names)},
+                params={
+                    "interval": args.interval,
+                    "slippage_bps": args.slippage_bps,
+                    "spread_ticks": args.spread_ticks,
+                },
+                inputs=fingerprint([str(f) for f in files]),
+            )
+        )
+        print(f"recorded run {rec.get('run_id', '?')} in docs/research_runs.jsonl")
+    except Exception as exc:  # noqa: BLE001
+        # A ledger failure must not discard a completed measurement. Say so
+        # loudly rather than swallowing it -- an unrecorded run is a real loss,
+        # just not one worth throwing the result away over.
+        print(f"WARNING: run not recorded ({type(exc).__name__}: {exc})", flush=True)
     return 0
 
 
