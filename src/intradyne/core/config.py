@@ -198,15 +198,66 @@ class Settings(BaseSettings):
                 out.append(f"{s}/USDT")
         return out
 
-    def load_symbols(self, markets: Optional[List[str]] = None) -> List[str]:
-        """Load the Shariah whitelist, optionally intersected with the venue's
-        tradable markets."""
+    def compliance_universe(self) -> List[str]:
+        """Every instrument the Shariah screen permits, from `whitelist.json`.
+
+        A **ceiling**, not a trading list. Nothing may be traded that is absent
+        here, but presence is permission rather than intent -- which of these
+        to actually trade is `allowed_crypto_list()`.
+        """
         whitelist_path = (
             Path(__file__).resolve().parent.parent / "engine" / "whitelist.json"
         )
         with open(whitelist_path, "r", encoding="utf-8") as f:
             wl = json.load(f)
-        syms = wl.get("symbols", [])
+        return list(wl.get("symbols", []))
+
+    def load_symbols(self, markets: Optional[List[str]] = None) -> List[str]:
+        """The instruments that may actually be traded.
+
+        Two lists used to feed two order paths independently, and they
+        disagreed. `whitelist.json` carried 15 pairs and drove the live loop
+        (`engine/loop.py`) and the backtester; `ALLOWED_SYMBOLS` carried 9 and
+        drove the API's `ExecutionManager` (`api/deps.py`). LINK, XLM, ATOM,
+        TRX, NEAR and ALGO were therefore tradeable by the loop and refused by
+        the API -- the stricter list did not govern the path that places
+        orders, which is the wrong way round for a fail-open to run.
+
+        They are not redundant, which is why the fix is not to delete one. The
+        whitelist is a *compliance* artifact saying what is permissible;
+        `ALLOWED_SYMBOLS` is *operator configuration* saying what to trade
+        today. The defect was that neither constrained the other. The effective
+        universe is now their intersection, so the compliance list is a ceiling
+        the operator cannot raise and the operator list is a selection within
+        it.
+
+        An operator entry absent from the compliance list is a configuration
+        error, not a silent no-op: it means someone tried to enable an
+        unscreened instrument, and it is logged rather than dropped quietly.
+        """
+        permitted = self.compliance_universe()
+        selected = self.allowed_crypto_list()
+
+        if selected:
+            # Matched case-insensitively. An operator writing `btc/usdt` means
+            # the same instrument as `BTC/USDT`, and dropping it for the case
+            # would be a silent refusal indistinguishable from a compliance
+            # one -- the two must not look alike.
+            by_upper = {s.upper(): s for s in permitted}
+            chosen = {by_upper[s.upper()] for s in selected if s.upper() in by_upper}
+            unscreened = [s for s in selected if s.upper() not in by_upper]
+            if unscreened:
+                logger.bind(event="unscreened_symbols_ignored").warning(
+                    "ALLOWED_SYMBOLS names instruments absent from the Shariah "
+                    f"whitelist and they will not be traded: {sorted(unscreened)}. "
+                    "Add them to engine/whitelist.json if they have been screened."
+                )
+            syms = [s for s in permitted if s in chosen]
+        else:
+            # No operator selection configured: the compliance list stands
+            # alone, which is its existing meaning.
+            syms = list(permitted)
+
         if markets:
             syms = [s for s in syms if s in markets]
         self.symbols = syms
