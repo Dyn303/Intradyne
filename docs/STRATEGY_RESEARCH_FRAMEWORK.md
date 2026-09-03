@@ -580,11 +580,20 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
   `scripts/equity_pit_universe.py` builds A3's membership half from
   `LISTING_STATUS` with delisted names retained: 23,246 symbols ever listed,
   38% of them now dead, and at a 2012 rebalance a current-ticker-list universe
-  would be missing 43% of what actually traded. A3 also asks for tradeability
-  judged at each rebalance date, and that needs per-symbol volume history --
-  tens of thousands of requests against a one-per-second quota. Apply the
-  liquidity floor downstream on a reduced candidate set, always on data
-  available at that date. See `docs/EQUITY_UNIVERSE_TIMELINE.md`.
+  would be missing 43% of what actually traded. See
+  `docs/EQUITY_UNIVERSE_TIMELINE.md`.
+- **The liquidity floor is built, and cannot see delisted names.**
+  `scripts/equity_liquidity.py` judges median dollar volume over a window
+  ending at the rebalance date, never on today's turnover. The blocker is the
+  data: this provider serves no delisted history, and fails two ways -- a clean
+  refusal for older names (`FXEN`, delisted 2015), and for recent ones a **flat
+  line at zero volume** (`ADVM` returns 100 sessions of `4.3600`) that a naive
+  screen would score as a real, very quiet stock. Quality is therefore asserted
+  before liquidity, and an unjudgeable name is recorded as `no_data`, never as
+  a liquidity failure -- collapsing those two is how a survivorship hole turns
+  into a finding about a stock. Coverage is reported per run and
+  `--require-coverage` fails the run when the hole is too large. **Closing it
+  needs a survivorship-free data provider: a purchase, not a code change.**
 - **A1 has been re-run per price band, and no band fails.**
   `scripts/equity_band_a1.py` derives the cost floor from the tick rather than
   assuming a spread: a penny is 20 bps of a $5 stock and 1.1 bps of a $90 one,
