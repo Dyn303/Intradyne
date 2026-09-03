@@ -554,10 +554,14 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
 
 **Known gaps, carried forward rather than solved here.**
 
-- **No results database or run lineage.** The research record is a fixed
-  registry over loose JSON; there are no run IDs, timestamps, parameter
-  provenance, or diffing between runs, and `artifacts/` is gitignored. This is
-  the source framework's §26-§28, and it is a fair criticism.
+- ~~No results database or run lineage.~~ **Closed.**
+  `scripts/research_ledger.py` writes an append-only, hash-chained JSONL to
+  `docs/research_runs.jsonl` -- committed, unlike `artifacts/`, which was the
+  actual complaint. Each run carries its commit, whether the tree was dirty,
+  the seed, the pre-registration it answers by hash, and a content fingerprint
+  of every input. Chained because the discipline depends on negatives
+  surviving: a chain cannot prevent deleting an inconvenient run, but
+  `verify_chain` reports the index where it happened.
 - **No bridge between the research path and the engine path.** Research
   strategies are vectorised numpy masks over `Bars`; engine strategies are
   classes implementing `on_tick`. A signal found in research must be
