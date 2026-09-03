@@ -1,0 +1,334 @@
+{
+ "meta": {
+  "generated": "2026-09-03 02:00 UTC",
+  "ever": 23246,
+  "active": 14409,
+  "dead": 8837,
+  "both": 619,
+  "mortality": 38.01514239008862,
+  "asset_types": "Stock",
+  "exchanges": "6 exchanges",
+  "coll": {
+   "max": 68,
+   "median": 21,
+   "dates": 44
+  },
+  "bias_rows": [
+   {
+    "date": "2005-01-01",
+    "pit": 3121,
+    "survivors": 1939,
+    "missing": 1182,
+    "bias": 37.87247677026594
+   },
+   {
+    "date": "2008-12-27",
+    "pit": 4032,
+    "survivors": 2317,
+    "missing": 1715,
+    "bias": 42.53472222222222
+   },
+   {
+    "date": "2012-12-22",
+    "pit": 4664,
+    "survivors": 2643,
+    "missing": 2021,
+    "bias": 43.33190394511149
+   },
+   {
+    "date": "2016-12-17",
+    "pit": 5856,
+    "survivors": 3361,
+    "missing": 2495,
+    "bias": 42.60587431693989
+   },
+   {
+    "date": "2020-12-12",
+    "pit": 6386,
+    "survivors": 4482,
+    "missing": 1904,
+    "bias": 29.815220795490134
+   },
+   {
+    "date": "2024-12-07",
+    "pit": 7390,
+    "survivors": 6500,
+    "missing": 890,
+    "bias": 12.043301759133964
+   }
+  ],
+  "n_dates": 44,
+  "multi": 619,
+  "concurrent": 232,
+  "universe": 16097,
+  "start": "2005-01-01",
+  "end": "2026-09-03",
+  "step_days": 182
+ },
+ "timeline": [
+  {
+   "date": "2005-01-01",
+   "size": 3121,
+   "added": 0,
+   "removed": 0
+  },
+  {
+   "date": "2005-07-02",
+   "size": 3203,
+   "added": 82,
+   "removed": 0
+  },
+  {
+   "date": "2005-12-31",
+   "size": 3327,
+   "added": 125,
+   "removed": 1
+  },
+  {
+   "date": "2006-07-01",
+   "size": 3412,
+   "added": 86,
+   "removed": 1
+  },
+  {
+   "date": "2006-12-30",
+   "size": 3636,
+   "added": 224,
+   "removed": 0
+  },
+  {
+   "date": "2007-06-30",
+   "size": 3769,
+   "added": 133,
+   "removed": 0
+  },
+  {
+   "date": "2007-12-29",
+   "size": 3907,
+   "added": 142,
+   "removed": 4
+  },
+  {
+   "date": "2008-06-28",
+   "size": 3979,
+   "added": 72,
+   "removed": 0
+  },
+  {
+   "date": "2008-12-27",
+   "size": 4032,
+   "added": 56,
+   "removed": 3
+  },
+  {
+   "date": "2009-06-27",
+   "size": 4061,
+   "added": 37,
+   "removed": 8
+  },
+  {
+   "date": "2009-12-26",
+   "size": 4105,
+   "added": 75,
+   "removed": 31
+  },
+  {
+   "date": "2010-06-26",
+   "size": 4205,
+   "added": 119,
+   "removed": 19
+  },
+  {
+   "date": "2010-12-25",
+   "size": 4306,
+   "added": 123,
+   "removed": 22
+  },
+  {
+   "date": "2011-06-25",
+   "size": 4406,
+   "added": 131,
+   "removed": 31
+  },
+  {
+   "date": "2011-12-24",
+   "size": 4443,
+   "added": 83,
+   "removed": 46
+  },
+  {
+   "date": "2012-06-23",
+   "size": 4556,
+   "added": 129,
+   "removed": 16
+  },
+  {
+   "date": "2012-12-22",
+   "size": 4664,
+   "added": 139,
+   "removed": 31
+  },
+  {
+   "date": "2013-06-22",
+   "size": 4776,
+   "added": 161,
+   "removed": 49
+  },
+  {
+   "date": "2013-12-21",
+   "size": 4878,
+   "added": 186,
+   "removed": 84
+  },
+  {
+   "date": "2014-06-21",
+   "size": 5034,
+   "added": 208,
+   "removed": 52
+  },
+  {
+   "date": "2014-12-20",
+   "size": 5415,
+   "added": 464,
+   "removed": 83
+  },
+  {
+   "date": "2015-06-20",
+   "size": 5480,
+   "added": 176,
+   "removed": 111
+  },
+  {
+   "date": "2015-12-19",
+   "size": 5544,
+   "added": 227,
+   "removed": 163
+  },
+  {
+   "date": "2016-06-18",
+   "size": 5831,
+   "added": 379,
+   "removed": 92
+  },
+  {
+   "date": "2016-12-17",
+   "size": 5856,
+   "added": 222,
+   "removed": 197
+  },
+  {
+   "date": "2017-06-17",
+   "size": 5907,
+   "added": 210,
+   "removed": 159
+  },
+  {
+   "date": "2017-12-16",
+   "size": 5864,
+   "added": 328,
+   "removed": 371
+  },
+  {
+   "date": "2018-06-16",
+   "size": 5838,
+   "added": 250,
+   "removed": 276
+  },
+  {
+   "date": "2018-12-15",
+   "size": 5826,
+   "added": 280,
+   "removed": 292
+  },
+  {
+   "date": "2019-06-15",
+   "size": 5866,
+   "added": 233,
+   "removed": 193
+  },
+  {
+   "date": "2019-12-14",
+   "size": 5942,
+   "added": 300,
+   "removed": 224
+  },
+  {
+   "date": "2020-06-13",
+   "size": 5928,
+   "added": 218,
+   "removed": 232
+  },
+  {
+   "date": "2020-12-12",
+   "size": 6386,
+   "added": 669,
+   "removed": 211
+  },
+  {
+   "date": "2021-06-12",
+   "size": 7364,
+   "added": 1291,
+   "removed": 313
+  },
+  {
+   "date": "2021-12-11",
+   "size": 7848,
+   "added": 943,
+   "removed": 459
+  },
+  {
+   "date": "2022-06-11",
+   "size": 8110,
+   "added": 526,
+   "removed": 264
+  },
+  {
+   "date": "2022-12-10",
+   "size": 7878,
+   "added": 195,
+   "removed": 427
+  },
+  {
+   "date": "2023-06-10",
+   "size": 7434,
+   "added": 203,
+   "removed": 647
+  },
+  {
+   "date": "2023-12-09",
+   "size": 7313,
+   "added": 240,
+   "removed": 361
+  },
+  {
+   "date": "2024-06-08",
+   "size": 7242,
+   "added": 239,
+   "removed": 310
+  },
+  {
+   "date": "2024-12-07",
+   "size": 7390,
+   "added": 326,
+   "removed": 178
+  },
+  {
+   "date": "2025-06-07",
+   "size": 7657,
+   "added": 389,
+   "removed": 122
+  },
+  {
+   "date": "2025-12-06",
+   "size": 8090,
+   "added": 564,
+   "removed": 131
+  },
+  {
+   "date": "2026-06-06",
+   "size": 8768,
+   "added": 862,
+   "removed": 184
+  }
+ ]
+}

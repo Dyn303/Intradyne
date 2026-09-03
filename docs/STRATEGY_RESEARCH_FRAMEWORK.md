@@ -576,11 +576,15 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
   before an equity can trade -- and neither is urgent while there is no ruling
   to load, which is why the screener produces a worksheet rather than a live
   allow-list.
-- **No point-in-time equity universe.** A3 still needs one, built from
-  `LISTING_STATUS` with delisted names retained --
-  `scripts/point_in_time_universe.py:67` is the direct analogue, and takes the
-  dead names from the archive precisely because the live listing knows only
-  about survivors.
+- **The point-in-time universe covers membership, not liquidity.**
+  `scripts/equity_pit_universe.py` builds A3's membership half from
+  `LISTING_STATUS` with delisted names retained: 23,246 symbols ever listed,
+  38% of them now dead, and at a 2012 rebalance a current-ticker-list universe
+  would be missing 43% of what actually traded. A3 also asks for tradeability
+  judged at each rebalance date, and that needs per-symbol volume history --
+  tens of thousands of requests against a one-per-second quota. Apply the
+  liquidity floor downstream on a reduced candidate set, always on data
+  available at that date. See `docs/EQUITY_UNIVERSE_TIMELINE.md`.
 - **A1's cost model is a large-cap number.** 4.3 bps assumes penny-wide
   spreads on liquid names. One cent is 20 bps on a $5 stock, so the gate must
   be re-run per price band before trading below roughly $20.
