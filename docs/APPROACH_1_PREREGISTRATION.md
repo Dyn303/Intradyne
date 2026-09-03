@@ -286,3 +286,80 @@ What running it buys is the same thing the final crypto test bought: **it
 converts a caveat into an answer.** The intraday direction is either worth the
 remaining three slots or it is not, and one properly-powered test on the
 best-supported signal in its own native market is the cheapest way to find out.
+
+---
+
+## Outcome: precondition failure — the slot was not spent
+
+**Recorded 2026-09-03, before any signal was computed.** No return, no
+t-statistic and no ranking was produced. The abort condition fired on data
+reachability, which is a statement about the provider and not about the
+hypothesis.
+
+### What was measured
+
+A seeded draw of 120 names from the 5,590 qualifying common stocks
+(`docs/approach1_sample.json`, seed 20191101), fetched at 30-minute bars over
+the ranking window 2019-11 to 2019-12:
+
+| | count | reachable |
+|---|---|---|
+| live today | 83 | **59 (71%)** |
+| delisted since | 37 | **2 (5%)** |
+| **total** | **120** | **61 (51%)** |
+
+**Lost to delisting: 29.2%**, against the 20% ceiling this document set.
+
+### Why the panel could not be made honest
+
+Half a random draw from the universe is unfetchable, and the missing half is
+not a random half. Three causes, none of them noise:
+
+- **Delisting.** 35 of 37 dead names return nothing, or the frozen-price
+  placeholder `equity_liquidity.py` records. These are, by construction, the
+  names that did worst.
+- **Rename and restructuring.** `FBIN` was FBHS until 2022, `CXT` is a 2023
+  Crane spin-off, `PLUR` was Pluristem, `VIVS` was Organovo, `SGLY` was
+  Sino-Global. `equity_listings.csv` holds one symbol per listing — today's —
+  so a company that changed ticker is unreachable under the name A3 knows it
+  by. Renames cluster around mergers and restructurings, so this too removes
+  names where something happened.
+- **Misclassification.** `SCHW-P-D`, `TRTN-P-C`, `TY-P` and `RILYP` are
+  preferred lines; `PDX` is a closed-end fund; `WX` and `DOYU` are ADRs. All
+  carry `assetType == "Stock"`. The name-based filter catches warrants and
+  units because their *names* say so; a preferred line whose name reads
+  "Charles Schwab Corp" defeats it, and the ticker suffix is the only
+  signal.
+
+A test on the surviving 51% would measure intraday behaviour among companies
+that stayed listed, kept their ticker, and were classified correctly. That is a
+different question from the one this document asks, and the difference runs in
+the flattering direction.
+
+### One bug found, and it moved the number
+
+The first run reported 43 of 83 live names reachable (52%). That was wrong.
+`fetch_twelvedata` returned `None` on any non-200 including **429**, and the
+caller printed it as "no data" — a throttle recorded as an absence, at 7.9
+requests a minute against an 8/minute ceiling. Rate limits are now retried and
+the sleep floor raised; the corrected figure is 59 of 83 (71%). The before and
+after are both stated here rather than the first number being quietly replaced.
+
+### What this does and does not settle
+
+It does **not** say anything about intraday predictability in US equities. The
+hypothesis is untested and the three signals were never computed.
+
+It does say that **this project cannot currently assemble a survivorship-honest
+equity panel at any horizon**, which is a stronger and more useful finding than
+one approach's verdict. It blocks the cross-sectional approach for the same
+reason, and more severely.
+
+### What would unblock it
+
+A survivorship-free intraday source — premium Alpha Vantage, Polygon, Databento
+or similar — with point-in-time symbology so a renamed company stays reachable.
+Until then the constraint is the data, not the ideas, and spending slots against
+it would spend the budget on measuring a provider.
+
+**Slot 1 returns to the budget. Four approaches remain.**
