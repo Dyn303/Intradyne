@@ -76,7 +76,9 @@ the survivorship bound computable.
   stock only, on a primary exchange.
 - Liquidity judged by `scripts/equity_liquidity.py` on a trailing window ending
   at the start date — never on today's volume.
-- The **30 most liquid** qualifying names by median dollar volume.
+- The **30 most liquid** names within a **seeded random sample of 120** drawn
+  from the qualifying set — see **Amendment 1** below, which replaced "the 30
+  most liquid qualifying names".
 - Every series is quality-checked before use: a run of identical closes, or
   sustained zero volume, is recorded as `no_data` and the name is dropped. This
   is the ADVM trap and it is asserted against, not hoped about.
@@ -89,6 +91,38 @@ reported as inconclusive rather than as a finding.
 30 names is chosen for a reason that is not statistical: it is what the data
 quota allows at the history length the power calculation demands. Stated so the
 number is not mistaken for a design choice.
+
+### Amendment 1 — how the 30 are chosen
+
+**Made before the test was written and before any result was seen.** Recorded
+here rather than edited in silently, because a pre-registration amended without
+a trace is not a pre-registration.
+
+The original clause — "the 30 most liquid qualifying names by median dollar
+volume" — **cannot be executed**. The qualifying set on 2019-11-01 is **5,957
+names**, and ranking them needs one request each: 12.6 hours of calls and 7.4
+days of the provider's daily quota. The clause specified a survey nobody was
+going to run, which is a defect in the document rather than in the data.
+
+Replaced by: **draw 120 names at random from the qualifying set with a recorded
+seed, fetch daily bars for those, and take the 30 most liquid within the
+sample.** Reproducible from the seed, mechanical, and — the property that
+matters — the draw cannot see returns, so nothing about it selects on
+performance.
+
+This is not merely the affordable option. The 30 most liquid US equities are
+mega-caps: the most analysed, most arbitraged, most institutionally-owned names
+in the market, and an unusual subset to generalise from. A random draw from the
+liquid universe is a better answer to "does this work in US equities" than the
+thirty biggest names would have been.
+
+What is lost is stated plainly: the panel is the top 30 **of 120**, not of
+5,957, so it is liquid relative to a sample rather than absolutely. The
+liquidity floor from A1's per-band work still applies, and any name whose band
+puts its costs outside what A1 cleared is dropped rather than traded.
+
+Nothing else in this document changes. The signals, criteria, Sharpe bar, null,
+abort condition and commitments all stand as committed.
 
 ---
 
