@@ -84,17 +84,29 @@ the fallback is 90 days -- the SEC deadline for a non-accelerated filer's 10-K
 > the date screened against -- because a ratio cannot be audited from any one
 > of them.
 
-### 4. Signal generator — **split in two, with no bridge**
+### 4. Signal generator — **bridged**
 
 `engine/strategies/{momentum,meanrev,ml}.py` implement `on_tick` for the live
 router. The research library in `scripts/strategy_search.py` is ~50 vectorised
-numpy masks over `Bars`. **They share no definition.**
+numpy masks over `Bars`.
 
-> **The rule:** one signal, two runtimes. A rule found in research must produce
-> the same entries when replayed through the engine, and nothing currently
-> checks that. Until it does, a validated research result cannot be traded
-> without a hand re-implementation nobody has verified — which is where an edge
-> quietly becomes a different strategy.
+`scripts/signal_bridge.py` removes the second implementation rather than
+verifying it. `VectorSignal` holds a rolling buffer and calls the research
+function itself, so the engine path *is* the research path and drift is
+impossible by construction. `minimum_buffer()` measures how many bars each
+signal needs before the streamed mask matches the offline one exactly — 60 for
+the finite-window families, up to 240 for the EMA ones, measured rather than
+assumed.
+
+The same harness is a **look-ahead detector**, which is the more valuable half.
+A streaming run has only the bars up to the current index by construction, so a
+signal that disagrees at *every* buffer length is reading the future. Nothing in
+this repo could previously test that mechanically, and the framework treats
+look-ahead as a rejection condition rather than a review note.
+
+> **The rule:** one signal, two runtimes, and a test that the second is the
+> first. A rule whose streamed entries differ from its researched ones is
+> either under-buffered or non-causal, and those need opposite responses.
 
 ### 5. Trade plan — **crypto-tuned**
 
@@ -224,8 +236,7 @@ and they are why crypto is closed rather than re-litigated.
 Sequenced by what unblocks the four approaches, not by pipeline order:
 
 1. ~~Stage 3's publication-date join~~ — **done**, see stage 3 above.
-2. **Stage 4's bridge** — one signal definition, both runtimes, with a test that
-   replays a research rule through the engine and compares entries.
+2. ~~Stage 4's bridge~~ — **done**, see stage 4 above.
 3. **Stage 8's memo template** — needed at the *end* of approach one, so it can
    be written before the numbers exist rather than around them.
 4. Stages 5 and 9 stay as they are until an approach clears.
