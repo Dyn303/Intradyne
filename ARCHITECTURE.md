@@ -51,3 +51,7 @@ Notes
 See `MIGRATION.md` for the consolidation plan and its remaining phases, and
 `docs/STRATEGY_RESEARCH_FRAMEWORK.md` for the rules any strategy research must
 satisfy before it runs (with `docs/PREREGISTRATION_TEMPLATE.md` alongside it).
+
+`docs/PIPELINE.md` maps the nine stages from data fetch to execution -- what
+exists, what is missing, the contract at each hop, and the three gates that
+refuse independently of one another.
