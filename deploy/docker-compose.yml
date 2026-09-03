@@ -14,19 +14,35 @@ services:
       # The container root is read-only in the prod compose; keep the ledger
       # and database on the writable mount here too so the two agree.
       - EXPLAIN_LEDGER_PATH=${EXPLAIN_LEDGER_PATH:-/app/data/explainability_ledger.jsonl}
-      # On a named volume, deliberately not on the ../data bind mount.
+      # Postgres, in the service below.
       #
-      # SQLite in WAL mode cannot be written through a Docker Desktop
-      # bind mount: WAL needs shared-memory mapping of the -shm sidecar,
-      # which the mount cannot provide. Reads succeed and writes fail
-      # with a bare "disk I/O error", so every risk and portfolio
-      # endpoint 500s while /readyz -- which only runs SELECT 1 --
-      # keeps reporting the database healthy.
+      # This used to be SQLite on the intradyne_state named volume, and
+      # the volume is still declared and still mounted so that switching
+      # back is one variable:
       #
-      # A host-owned database file is a bad idea here regardless: the
-      # container and anything running on the host would be two writers
-      # in two lock domains.
-      - DB_URL=${DB_URL:-sqlite:////app/state/trades.sqlite}
+      #   DB_URL=sqlite:////app/state/trades.sqlite
+      #
+      # It was on a named volume rather than the ../data bind mount
+      # because SQLite in WAL mode cannot be written through a Docker
+      # Desktop bind mount: WAL needs shared-memory mapping of the -shm
+      # sidecar, which the mount cannot provide. Reads succeed and
+      # writes fail with a bare "disk I/O error", so every risk and
+      # portfolio endpoint 500s while /readyz -- which only ran SELECT 1
+      # -- kept reporting the database healthy. A host-owned database
+      # file was a bad idea regardless: the container and anything on
+      # the host would be two writers in two lock domains.
+      #
+      # Postgres removes both problems: one writer, over a socket, in a
+      # volume the database owns. It also costs a network round trip per
+      # query where there used to be a local file read, which is only
+      # acceptable because nothing here is on a latency-sensitive path
+      # while the engine is gated.
+      #
+      # Migrate existing history BEFORE switching -- an empty equity
+      # table means dd_30d([]) == 0.0 and a re-armed drawdown halt:
+      #   docker compose exec api python scripts/migrate_sqlite_to_postgres.py \
+      #     --source sqlite:////app/state/trades.sqlite --target "$DB_URL"
+      - DB_URL=${DB_URL:-postgresql://${POSTGRES_USER:-intradyne}:${POSTGRES_PASSWORD:-intradyne}@postgres:5432/${POSTGRES_DB:-intradyne}}
       # The trading loop runs inside this service when enabled.
       - ENGINE_ENABLED=${ENGINE_ENABLED:-false}
     ports:
@@ -38,8 +54,18 @@ services:
       # production_params.json -- /engine/params/revert has to write
       # there, and the copy baked into the image is not writable.
       - ../artifacts:/app/artifacts
-      # The database lives here, owned by the container.
+      # The SQLite database lives here. Kept mounted after the move to
+      # Postgres: it holds the equity history the migration reads, and
+      # it is what DB_URL points back at on a rollback.
       - intradyne_state:/app/state
+      # Not in the image (the Dockerfile copies src, docs and artifacts
+      # only). Mounted read-only so the migration can be run in the
+      # container, where both databases are reachable and Postgres does
+      # not have to be published to the host.
+      - ../scripts:/app/scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz').read()"]
       interval: 30s
@@ -51,5 +77,44 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: intradyne-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-intradyne}
+      - POSTGRES_USER=${POSTGRES_USER:-intradyne}
+      # Defaulted so a local stack starts with one command. The database
+      # is not published to the host and is reachable only on the
+      # compose network, so this is a development convenience rather
+      # than a credential -- docker-compose.prod.yml requires a real one
+      # and refuses to start without it.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-intradyne}
+      - TZ=Asia/Kuching
+    volumes:
+      - intradyne_pgdata:/var/lib/postgresql/data
+    # No ports: entry, deliberately. The API reaches it by service name
+    # on the compose network. Publishing 5432 would put the database on
+    # the host's interfaces, and the Telegram Mini App setup already
+    # involves pointing a tunnel at this machine.
+    healthcheck:
+      # The api service waits on this. Without it the app starts first,
+      # fails to connect, and the first request 500s -- which looks like
+      # a code fault rather than a startup ordering one.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-intradyne} -d ${POSTGRES_DB:-intradyne}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
 volumes:
+  # The SQLite database. Kept after the move to Postgres: it is the
+  # rollback target and the migration source. Do not prune it until the
+  # equity history has been verified on the new side.
   intradyne_state: {}
+  intradyne_pgdata: {}

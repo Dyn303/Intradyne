@@ -14,15 +14,15 @@ import sqlite3
 
 import pytest
 
-from intradyne.core import equity as eq
+from intradyne.core import db
 from intradyne.core.equity import EquityHistory
 
 
 @pytest.fixture(autouse=True)
 def _reset_flag():
-    eq._WAL_UNAVAILABLE = False
+    db._WAL_UNAVAILABLE = False
     yield
-    eq._WAL_UNAVAILABLE = False
+    db._WAL_UNAVAILABLE = False
 
 
 @pytest.fixture
@@ -65,7 +65,7 @@ def wal_refused(monkeypatch):
 def test_the_database_opens_when_wal_is_refused(tmp_path, wal_refused):
     """This raised on construction, so nothing that touched equity worked."""
     h = EquityHistory(f"sqlite:///{tmp_path / 'trades.sqlite'}")
-    assert h.path.endswith("trades.sqlite")
+    assert h._db.path.endswith("trades.sqlite")
 
 
 def test_reads_and_writes_still_work_without_wal(tmp_path, wal_refused):
@@ -94,10 +94,10 @@ def test_the_pragma_is_not_retried_on_every_connection(tmp_path, wal_refused):
 def test_wal_is_still_used_where_it_works(tmp_path):
     """The fallback must not cost WAL on filesystems that support it."""
     h = EquityHistory(f"sqlite:///{tmp_path / 'trades.sqlite'}")
-    with h._connect() as conn:
+    with h._db.connect() as conn:
         mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
     assert mode.lower() == "wal"
-    assert eq._WAL_UNAVAILABLE is False
+    assert db._WAL_UNAVAILABLE is False
 
 
 def test_a_genuine_database_error_still_surfaces(tmp_path, monkeypatch):

@@ -13,18 +13,22 @@ independent defences, because either alone has a window.
 
 Paper trading does not use this: nothing is at stake and the paper broker is
 in-process.
+
+The backing store is chosen by ``DB_URL``; see :mod:`intradyne.core.db`. On
+either backend the primary key on ``key`` is what does the work -- the insert
+*is* the claim, so two concurrent submissions cannot both win.
 """
 
 from __future__ import annotations
 
 import hashlib
-import os
-import sqlite3
-import threading
 import time
-from typing import Optional
+from typing import Dict, Optional
 
-_SCHEMA = """
+from intradyne.core.db import open_backend
+
+_SCHEMA: Dict[str, str] = {
+    "sqlite": """
 CREATE TABLE IF NOT EXISTS order_keys (
     key        TEXT PRIMARY KEY,
     symbol     TEXT NOT NULL,
@@ -34,7 +38,23 @@ CREATE TABLE IF NOT EXISTS order_keys (
     status     TEXT NOT NULL,
     venue_id   TEXT
 );
-"""
+""",
+    # DOUBLE PRECISION for the same reason as the equity table: Postgres REAL
+    # is single precision, and an order quantity rounded in the seventh digit
+    # would make a replayed intent hash to a different key and defeat the
+    # duplicate check.
+    "postgres": """
+CREATE TABLE IF NOT EXISTS order_keys (
+    key        TEXT PRIMARY KEY,
+    symbol     TEXT NOT NULL,
+    side       TEXT NOT NULL,
+    qty        DOUBLE PRECISION NOT NULL,
+    ts         DOUBLE PRECISION NOT NULL,
+    status     TEXT NOT NULL,
+    venue_id   TEXT
+);
+""",
+}
 
 #: Orders with identical intent inside one bucket collapse to one key. Sized so
 #: a retry storm dedupes while genuinely repeated signals still get through.
@@ -66,20 +86,8 @@ class DuplicateOrder(Exception):
 
 class OrderKeyStore:
     def __init__(self, db_url: str = "sqlite:///data/trades.sqlite") -> None:
-        from intradyne.core.equity import sqlite_path_from_url
-
-        self.path = sqlite_path_from_url(db_url)
-        parent = os.path.dirname(self.path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        self._lock = threading.Lock()
-        with self._connect() as conn:
-            conn.executescript(_SCHEMA)
-
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.path, timeout=5.0)
-        conn.execute("PRAGMA journal_mode=WAL")
-        return conn
+        self._db = open_backend(db_url)
+        self._db.init_schema(_SCHEMA)
 
     def reserve(self, key: str, symbol: str, side: str, qty: float) -> None:
         """Claim a key before contacting the venue.
@@ -87,27 +95,31 @@ class OrderKeyStore:
         Raises DuplicateOrder if it is already claimed. The insert is the
         claim, so two concurrent submissions cannot both win.
         """
-        with self._lock, self._connect() as conn:
-            try:
+        try:
+            with self._db.connect() as conn:
                 conn.execute(
                     "INSERT INTO order_keys (key, symbol, side, qty, ts, status) "
                     "VALUES (?, ?, ?, ?, ?, 'in_flight')",
                     (key, str(symbol), str(side), float(qty), time.time()),
                 )
-            except sqlite3.IntegrityError:
-                row = conn.execute(
-                    "SELECT status, venue_id FROM order_keys WHERE key = ?", (key,)
-                ).fetchone()
-                status = row[0] if row else "unknown"
-                raise DuplicateOrder(
-                    f"order {key} already submitted (status={status})"
-                ) from None
+        except self._db.integrity_errors:
+            # The status lookup is deliberately *outside* the connect block
+            # above. In Postgres a failed statement aborts the transaction, so
+            # querying the same connection after catching the error raises
+            # InFailedSqlTransaction rather than returning the row -- the
+            # duplicate would surface as an unrelated driver error instead of
+            # as DuplicateOrder, and the caller would retry a live order it
+            # should have refused. Leaving the block first rolls back and
+            # returns a clean connection; the same code is correct on SQLite.
+            status = self.status(key) or "unknown"
+            raise DuplicateOrder(
+                f"order {key} already submitted (status={status})"
+            ) from None
 
     def complete(self, key: str, venue_id: Optional[str]) -> None:
-        with self._lock, self._connect() as conn:
+        with self._db.connect() as conn:
             conn.execute(
-                "UPDATE order_keys SET status = 'submitted', venue_id = ? "
-                "WHERE key = ?",
+                "UPDATE order_keys SET status = 'submitted', venue_id = ? WHERE key = ?",
                 (str(venue_id) if venue_id is not None else None, key),
             )
 
@@ -118,13 +130,13 @@ class OrderKeyStore:
         reached and the response was lost, the order may exist. A human
         reconciles; the system does not silently free the key for reuse.
         """
-        with self._lock, self._connect() as conn:
+        with self._db.connect() as conn:
             conn.execute(
                 "UPDATE order_keys SET status = 'failed' WHERE key = ?", (key,)
             )
 
     def status(self, key: str) -> Optional[str]:
-        with self._lock, self._connect() as conn:
+        with self._db.connect() as conn:
             row = conn.execute(
                 "SELECT status FROM order_keys WHERE key = ?", (key,)
             ).fetchone()
@@ -132,7 +144,7 @@ class OrderKeyStore:
 
     def in_flight(self) -> list[dict]:
         """Claims that never completed -- what a restart must reconcile."""
-        with self._lock, self._connect() as conn:
+        with self._db.connect() as conn:
             rows = conn.execute(
                 "SELECT key, symbol, side, qty, ts FROM order_keys "
                 "WHERE status = 'in_flight' ORDER BY ts"

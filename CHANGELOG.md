@@ -55,3 +55,37 @@
 - Core: clean allowed symbol builder to avoid self-pairs (e.g., USDT/USDT).
 - Core: deduplicate logging implementation; `src/intradyne/core/logging.py` now re-exports canonical `src/core/logging.py`.
 - CI: ensure ruff formatting applied repo-wide.
+
+## Unreleased
+- Storage: `DB_URL` now selects SQLite or Postgres. New `core/db.py` holds the
+  seam -- connection handling, `?` to `%s` placeholder rewriting, and the three
+  places the dialects genuinely differ (`REAL` is single precision in Postgres,
+  `date(ts,'unixepoch')` has no equivalent, and a failed statement aborts the
+  whole transaction). `equity.py`, `idempotency.py` and `limits.py` go through
+  it; their SQL is unchanged. An unrecognised scheme is refused, not defaulted.
+- Compose: added a `postgres` service to `docker-compose.yml` and
+  `docker-compose.prod.yml`, and pointed `DB_URL` at it. Not published to the
+  host in either file; the api service waits on its healthcheck. This is what
+  removes the WAL-on-bind-mount failure documented in the compose file, where
+  writes failed with a bare "disk I/O error" while `/readyz` reported healthy.
+  The `intradyne_state` volume holding the SQLite database is deliberately kept
+  and still mounted: setting `DB_URL` back to it is the rollback.
+- Fix: `/readyz` returned `db_ok = True` for any non-SQLite URL. Once `DB_URL`
+  can name a network service that is the same unfalsifiable check the SQLite
+  branch was written to fix -- the one deployment whose database can be down
+  independently was the one readiness could not report on. It now probes both.
+- Fix: `OrderKeyStore.reserve` looked the existing status up on the connection
+  whose INSERT had just failed. On Postgres that raises `InFailedSqlTransaction`
+  rather than returning the row, so a duplicate would surface as an unrelated
+  driver error instead of `DuplicateOrder` and the caller would retry a live
+  order it should have refused.
+- Added `scripts/migrate_sqlite_to_postgres.py` (`make db-migrate`). Copies the
+  three tables, verifies row counts, and refuses a non-empty target unless
+  `--replace` is passed, since these tables are append-only with no natural key.
+  Never writes to the SQLite side.
+- Tests: `tests/test_db_backends.py`. The dialect and classification tests run
+  everywhere; the store-behaviour tests need `TEST_POSTGRES_URL` and skip
+  without it, so the Postgres path is not covered by default CI.
+- Deps: `psycopg[binary,pool]==3.3.5`. Imported only when `DB_URL` names a
+  Postgres database.
+
