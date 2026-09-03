@@ -35,6 +35,29 @@ each other, which the next section refuses to let you count separately.
 
 ---
 
+## The ledger
+
+One place of record, so the budget cannot be lost track of. A slot is *spent*
+when its test runs to a verdict or any interim result is seen — not when its
+pre-registration is written.
+
+| slot | hypothesis | pre-registration | state |
+|---|---|---|---|
+| 1 | Intraday return predictability, flat at every close | `docs/APPROACH_1_PREREGISTRATION.md` | committed, not yet run |
+| 2 | — | — | unspent |
+| 3 | — | — | unspent |
+| 4 | — | — | unspent |
+
+Slot 1 does not test the strongest hypothesis available. Cross-sectional
+selection has the better prior and is what A2's breadth finding was built for,
+but it cannot be tested honestly: delisted names return either a hard error or
+a frozen price at zero volume, so a point-in-time backtest would score dead
+companies as zero-volatility assets. A strategy flat at every close barely
+touches that gap, which is why slot 1 is intraday. That is a data constraint
+being respected, not a preference.
+
+---
+
 ## What counts as an approach
 
 **An approach is a hypothesis about why an effect should exist -- not an
