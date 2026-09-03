@@ -585,9 +585,17 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
   tens of thousands of requests against a one-per-second quota. Apply the
   liquidity floor downstream on a reduced candidate set, always on data
   available at that date. See `docs/EQUITY_UNIVERSE_TIMELINE.md`.
-- **A1's cost model is a large-cap number.** 4.3 bps assumes penny-wide
-  spreads on liquid names. One cent is 20 bps on a $5 stock, so the gate must
-  be re-run per price band before trading below roughly $20.
+- **A1 has been re-run per price band, and no band fails.**
+  `scripts/equity_band_a1.py` derives the cost floor from the tick rather than
+  assuming a spread: a penny is 20 bps of a $5 stock and 1.1 bps of a $90 one,
+  so the round trip runs from 11.2 bps in $5-20 down to 2.6 bps above $200.
+  Cheap names move enough more to pay for it -- move/cost at a one-day hold is
+  26.6x in $5-20 against 46.6x above $200, and the low band still clears at
+  7.9x with a four-cent spread. The finding that matters is that **price band
+  is the wrong axis**: dispersion *within* a band exceeds the gap between
+  bands, and a volatile $90 name scores better than anything in $5-20. Band by
+  volatility relative to the tick, not by price. The $20-50 band rests on a
+  single name and is the weakest cell.
 
 **The A1 and A2 gates, and the data behind them, are implemented.**
 
