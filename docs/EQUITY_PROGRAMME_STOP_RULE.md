@@ -43,10 +43,15 @@ pre-registration is written.
 
 | slot | hypothesis | pre-registration | state |
 |---|---|---|---|
-| 1 | Intraday return predictability, flat at every close | `docs/APPROACH_1_PREREGISTRATION.md` | committed, not yet run |
+| 1 | Intraday return predictability, flat at every close | `docs/APPROACH_1_PREREGISTRATION.md` | **not spent** — precondition failure on data reachability |
 | 2 | — | — | unspent |
 | 3 | — | — | unspent |
 | 4 | — | — | unspent |
+
+Slot 1 was committed and then returned unspent: only 51% of a random draw
+from the qualifying universe proved fetchable, 29% of it lost to delisting
+against a 20% ceiling, so no signal was ever computed. The budget still
+stands at four.
 
 Slot 1 does not test the strongest hypothesis available. Cross-sectional
 selection has the better prior and is what A2's breadth finding was built for,

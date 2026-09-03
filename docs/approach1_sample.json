@@ -1,0 +1,981 @@
+{
+ "seed": 20191101,
+ "start": "2019-11-01",
+ "universe": 5590,
+ "universe_pre_filter": 5957,
+ "sample": [
+  {
+   "symbol": "NBL",
+   "listing_id": "NBL@1982-01-04",
+   "name": "Noble Energy Inc",
+   "ipo": "1982-01-04",
+   "delisted": "2020-10-06",
+   "reachable": false
+  },
+  {
+   "symbol": "DAN",
+   "listing_id": "DAN@2008-01-02",
+   "name": "Dana Inc",
+   "ipo": "2008-01-02",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "TULP",
+   "listing_id": "TULP@1993-03-18",
+   "name": "Bloomia Holdings Inc",
+   "ipo": "1993-03-18",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "LMIBL",
+   "listing_id": "LMIBL@2016-08-16",
+   "name": "Legg Mason Inc",
+   "ipo": "2016-08-16",
+   "delisted": "2020-08-21",
+   "reachable": false
+  },
+  {
+   "symbol": "PXD",
+   "listing_id": "PXD@1997-08-08",
+   "name": "Pioneer Natural Resources Company",
+   "ipo": "1997-08-08",
+   "delisted": "2024-05-03",
+   "reachable": false
+  },
+  {
+   "symbol": "MCEP",
+   "listing_id": "MCEP@2011-12-15",
+   "name": "Mid-Con Energy Partners LP",
+   "ipo": "2011-12-15",
+   "delisted": "2021-01-21",
+   "reachable": false
+  },
+  {
+   "symbol": "MCF",
+   "listing_id": "MCF@1994-04-04",
+   "name": "Contango Oil & Gas Company",
+   "ipo": "1994-04-04",
+   "delisted": "2021-12-07",
+   "reachable": false
+  },
+  {
+   "symbol": "GSKY",
+   "listing_id": "GSKY@2018-05-24",
+   "name": "GreenSky Inc - Class A",
+   "ipo": "2018-05-24",
+   "delisted": "2022-03-29",
+   "reachable": false
+  },
+  {
+   "symbol": "FBIN",
+   "listing_id": "FBIN@2011-09-16",
+   "name": "Fortune Brands Innovations Inc",
+   "ipo": "2011-09-16",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "CXT",
+   "listing_id": "CXT@1984-11-01",
+   "name": "Crane NXT Company",
+   "ipo": "1984-11-01",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "MUFG",
+   "listing_id": "MUFG@2001-04-02",
+   "name": "Mitsubishi UFJ Financial Group Inc",
+   "ipo": "2001-04-02",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "JFKKR",
+   "listing_id": "JFKKR@2019-05-16",
+   "name": "Eqonex Ltd",
+   "ipo": "2019-05-16",
+   "delisted": "2020-09-30",
+   "reachable": false
+  },
+  {
+   "symbol": "ATSG",
+   "listing_id": "ATSG@2003-07-23",
+   "name": "Air Transport Services Group Inc",
+   "ipo": "2003-07-23",
+   "delisted": "2025-04-11",
+   "reachable": false
+  },
+  {
+   "symbol": "WYNN",
+   "listing_id": "WYNN@2002-10-25",
+   "name": "Wynn Resorts Ltd",
+   "ipo": "2002-10-25",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SCHW-P-D",
+   "listing_id": "SCHW-P-D@2016-03-09",
+   "name": "Charles Schwab Corp",
+   "ipo": "2016-03-09",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "BTOG",
+   "listing_id": "BTOG@2019-08-14",
+   "name": "Bit Origin Ltd",
+   "ipo": "2019-08-14",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "MET",
+   "listing_id": "MET@2000-04-05",
+   "name": "Metlife Inc",
+   "ipo": "2000-04-05",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "POWI",
+   "listing_id": "POWI@1997-12-12",
+   "name": "Power Integrations Inc",
+   "ipo": "1997-12-12",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "MARA",
+   "listing_id": "MARA@2012-05-04",
+   "name": "MARA Holdings Inc",
+   "ipo": "2012-05-04",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SRXH",
+   "listing_id": "SRXH@2017-09-22",
+   "name": "SRX Global Inc",
+   "ipo": "2017-09-22",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "DWSN",
+   "listing_id": "DWSN@1990-03-26",
+   "name": "Dawson Geophysical Company",
+   "ipo": "1990-03-26",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CPT",
+   "listing_id": "CPT@1993-07-22",
+   "name": "Camden Property Trust",
+   "ipo": "1993-07-22",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "COGT",
+   "listing_id": "COGT@2018-03-29",
+   "name": "Cogent Biosciences Inc",
+   "ipo": "2018-03-29",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "TDW",
+   "listing_id": "TDW@1987-12-30",
+   "name": "Tidewater Inc - New",
+   "ipo": "1987-12-30",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "WX",
+   "listing_id": "WX@2007-08-15",
+   "name": "WuXi PharmaTech Cayman Inc. ADR",
+   "ipo": "2007-08-15",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "BXC",
+   "listing_id": "BXC@2004-12-14",
+   "name": "Bluelinx Hldgs Inc",
+   "ipo": "2004-12-14",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "AKTX",
+   "listing_id": "AKTX@2015-09-21",
+   "name": "Akari Therapeutics Plc",
+   "ipo": "2015-09-21",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "MTDR",
+   "listing_id": "MTDR@2012-02-02",
+   "name": "Matador Resources Company",
+   "ipo": "2012-02-02",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "UEC",
+   "listing_id": "UEC@2007-04-05",
+   "name": "Uranium Energy Corp",
+   "ipo": "2007-04-05",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "PLUR",
+   "listing_id": "PLUR@2003-06-30",
+   "name": "Pluri Inc",
+   "ipo": "2003-06-30",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "CFG",
+   "listing_id": "CFG@2014-09-24",
+   "name": "Citizens Financial Group Inc",
+   "ipo": "2014-09-24",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "HUT",
+   "listing_id": "HUT@2018-03-08",
+   "name": "Hut 8 Corp",
+   "ipo": "2018-03-08",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "CNVS",
+   "listing_id": "CNVS@2003-11-10",
+   "name": "Cineverse Corp - Class A",
+   "ipo": "2003-11-10",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "HAPN",
+   "listing_id": "HAPN@2014-12-11",
+   "name": "Happen Inc",
+   "ipo": "2014-12-11",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "CTMX",
+   "listing_id": "CTMX@2015-10-08",
+   "name": "CytomX Therapeutics Inc",
+   "ipo": "2015-10-08",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CXO",
+   "listing_id": "CXO@2007-08-03",
+   "name": "Concho Resources Inc",
+   "ipo": "2007-08-03",
+   "delisted": "2021-01-15",
+   "reachable": false
+  },
+  {
+   "symbol": "PATK",
+   "listing_id": "PATK@1990-03-27",
+   "name": "Patrick Industries Inc",
+   "ipo": "1990-03-27",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "BAYN",
+   "listing_id": "BAYN@2000-06-15",
+   "name": "Bay National Corp",
+   "ipo": "2000-06-15",
+   "delisted": "2021-07-21",
+   "reachable": false
+  },
+  {
+   "symbol": "IDA",
+   "listing_id": "IDA@1986-10-17",
+   "name": "Idacorp Inc",
+   "ipo": "1986-10-17",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SPLK",
+   "listing_id": "SPLK@2012-04-19",
+   "name": "Splunk Inc",
+   "ipo": "2012-04-19",
+   "delisted": "2026-09-02",
+   "reachable": false
+  },
+  {
+   "symbol": "ACAD",
+   "listing_id": "ACAD@2004-05-27",
+   "name": "Acadia Pharmaceuticals Inc",
+   "ipo": "2004-05-27",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "WHLRP",
+   "listing_id": "WHLRP@2014-09-24",
+   "name": "Wheeler Real Estate Investment Trust Inc",
+   "ipo": "2014-09-24",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "FTNW",
+   "listing_id": "FTNW@2016-05-26",
+   "name": "FTE Networks Inc",
+   "ipo": "2016-05-26",
+   "delisted": "2022-01-07",
+   "reachable": false
+  },
+  {
+   "symbol": "SEED",
+   "listing_id": "SEED@2004-05-05",
+   "name": "Origin Agritech Ltd",
+   "ipo": "2004-05-05",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "PMCB",
+   "listing_id": "PMCB@2010-09-17",
+   "name": "PharmaCyte Biotech Inc",
+   "ipo": "2010-09-17",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "PDX",
+   "listing_id": "PDX@2019-01-30",
+   "name": "PIMCO Energy and Tactical Credit Opportunities Fund",
+   "ipo": "2019-01-30",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "UGI",
+   "listing_id": "UGI@1988-01-05",
+   "name": "UGI Corp",
+   "ipo": "1988-01-05",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "UBP-P-K",
+   "listing_id": "UBP-P-K@2019-09-27",
+   "name": "Urstadt Biddle Properties Inc",
+   "ipo": "2019-09-27",
+   "delisted": "2023-08-18",
+   "reachable": false
+  },
+  {
+   "symbol": "GDL-P-C",
+   "listing_id": "GDL-P-C@2018-03-27",
+   "name": "GDL Fund",
+   "ipo": "2018-03-27",
+   "delisted": "2025-03-25",
+   "reachable": false
+  },
+  {
+   "symbol": "GAINM",
+   "listing_id": "GAINM@2016-09-21",
+   "name": "Gladstone Investment Corporation",
+   "ipo": "2016-09-21",
+   "delisted": "2021-03-02",
+   "reachable": false
+  },
+  {
+   "symbol": "MERC",
+   "listing_id": "MERC@1990-03-26",
+   "name": "Mercer International Inc",
+   "ipo": "1990-03-26",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CY",
+   "listing_id": "CY@1989-04-05",
+   "name": "Cypress Semiconductor Corp",
+   "ipo": "1989-04-05",
+   "delisted": "2020-04-16",
+   "reachable": false
+  },
+  {
+   "symbol": "BANC",
+   "listing_id": "BANC@2002-10-01",
+   "name": "Banc of California Inc",
+   "ipo": "2002-10-01",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "VIVS",
+   "listing_id": "VIVS@2012-02-14",
+   "name": "VivoSim Labs Inc",
+   "ipo": "2012-02-14",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "FL",
+   "listing_id": "FL@1970-01-02",
+   "name": "Foot Locker Inc",
+   "ipo": "1970-01-02",
+   "delisted": "2026-09-02",
+   "reachable": false
+  },
+  {
+   "symbol": "LIN",
+   "listing_id": "LIN@2018-10-01",
+   "name": "Linde Plc.",
+   "ipo": "2018-10-01",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "OIIM",
+   "listing_id": "OIIM@2000-08-31",
+   "name": "O2 Micro International",
+   "ipo": "2000-08-31",
+   "delisted": "2023-03-03",
+   "reachable": false
+  },
+  {
+   "symbol": "XLRN",
+   "listing_id": "XLRN@2013-09-19",
+   "name": "Acceleron Pharma Inc",
+   "ipo": "2013-09-19",
+   "delisted": "2021-11-22",
+   "reachable": false
+  },
+  {
+   "symbol": "TRTN-P-C",
+   "listing_id": "TRTN-P-C@2019-11-01",
+   "name": "Triton International Ltd",
+   "ipo": "2019-11-01",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "MCHB",
+   "listing_id": "MCHB@2012-07-25",
+   "name": "Mechanics Bank",
+   "ipo": "2012-07-25",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "HEI",
+   "listing_id": "HEI@1992-03-17",
+   "name": "Heico Corp",
+   "ipo": "1992-03-17",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "JXG",
+   "listing_id": "JXG@2013-03-07",
+   "name": "JX Luxventure Group Inc",
+   "ipo": "2013-03-07",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "GSS",
+   "listing_id": "GSS@2001-09-26",
+   "name": "Golden Star Resources Ltd",
+   "ipo": "2001-09-26",
+   "delisted": "2022-02-03",
+   "reachable": false
+  },
+  {
+   "symbol": "LANDP",
+   "listing_id": "LANDP@2016-08-12",
+   "name": "Gladstone Land Corp",
+   "ipo": "2016-08-12",
+   "delisted": "2021-02-11",
+   "reachable": true
+  },
+  {
+   "symbol": "MDGL",
+   "listing_id": "MDGL@2007-02-06",
+   "name": "Madrigal Pharmaceuticals Inc",
+   "ipo": "2007-02-06",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SY",
+   "listing_id": "SY@2019-05-02",
+   "name": "So-Young International Inc",
+   "ipo": "2019-05-02",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "ZEAL",
+   "listing_id": "ZEAL@2017-08-09",
+   "name": "Zealand Pharma A/S.",
+   "ipo": "2017-08-09",
+   "delisted": "2022-10-07",
+   "reachable": false
+  },
+  {
+   "symbol": "IMAX",
+   "listing_id": "IMAX@1994-06-10",
+   "name": "Imax Corp",
+   "ipo": "1994-06-10",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "TY-P",
+   "listing_id": "TY-P@2014-09-22",
+   "name": "Tri-Continental Corp",
+   "ipo": "2014-09-22",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "NICE",
+   "listing_id": "NICE@1996-01-25",
+   "name": "NICE Ltd",
+   "ipo": "1996-01-25",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "NOVA",
+   "listing_id": "NOVA@2019-07-25",
+   "name": "Sunnova Energy International Inc",
+   "ipo": "2019-07-25",
+   "delisted": "2025-06-09",
+   "reachable": false
+  },
+  {
+   "symbol": "IEP",
+   "listing_id": "IEP@1987-07-24",
+   "name": "Icahn Enterprises L P",
+   "ipo": "1987-07-24",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "PZG",
+   "listing_id": "PZG@2006-05-08",
+   "name": "Paramount Gold Nevada Corp",
+   "ipo": "2006-05-08",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "DGICA",
+   "listing_id": "DGICA@2001-04-24",
+   "name": "Donegal Group Inc - Class A",
+   "ipo": "2001-04-24",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SMRTQ",
+   "listing_id": "SMRTQ@1992-04-27",
+   "name": "Stein Mart Inc",
+   "ipo": "1992-04-27",
+   "delisted": "2020-10-01",
+   "reachable": false
+  },
+  {
+   "symbol": "LMB",
+   "listing_id": "LMB@2016-01-21",
+   "name": "Limbach Holdings Inc",
+   "ipo": "2016-01-21",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "AXR",
+   "listing_id": "AXR@1973-05-03",
+   "name": "AMREP Corp",
+   "ipo": "1973-05-03",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "ACRS",
+   "listing_id": "ACRS@2015-10-07",
+   "name": "Aclaris Therapeutics Inc",
+   "ipo": "2015-10-07",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "TFC-P-F",
+   "listing_id": "TFC-P-F@2012-10-26",
+   "name": "Truist Financial Corporation",
+   "ipo": "2012-10-26",
+   "delisted": "2021-02-26",
+   "reachable": false
+  },
+  {
+   "symbol": "DNR",
+   "listing_id": "DNR@1995-09-06",
+   "name": "Denbury Resources Inc",
+   "ipo": "1995-09-06",
+   "delisted": "2020-07-30",
+   "reachable": false
+  },
+  {
+   "symbol": "APOG",
+   "listing_id": "APOG@1973-05-03",
+   "name": "Apogee Enterprises Inc",
+   "ipo": "1973-05-03",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SLNO",
+   "listing_id": "SLNO@2014-11-13",
+   "name": "Soleno Therapeutics Inc",
+   "ipo": "2014-11-13",
+   "delisted": "2026-05-19",
+   "reachable": false
+  },
+  {
+   "symbol": "MNSB",
+   "listing_id": "MNSB@2016-01-04",
+   "name": "MainStreet Bancshares Inc",
+   "ipo": "2016-01-04",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "DOYU",
+   "listing_id": "DOYU@2019-07-17",
+   "name": "DouYu International Holdings Ltd",
+   "ipo": "2019-07-17",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "KMI",
+   "listing_id": "KMI@2011-02-11",
+   "name": "Kinder Morgan Inc - Class P",
+   "ipo": "2011-02-11",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "QRHC",
+   "listing_id": "QRHC@2010-01-05",
+   "name": "Quest Resource Holding Corp",
+   "ipo": "2010-01-05",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CSLT",
+   "listing_id": "CSLT@2014-03-14",
+   "name": "Castlight Health Inc - Class B",
+   "ipo": "2014-03-14",
+   "delisted": "2022-02-17",
+   "reachable": true
+  },
+  {
+   "symbol": "CCNE",
+   "listing_id": "CCNE@1996-05-30",
+   "name": "CNB Financial Corp (PA)",
+   "ipo": "1996-05-30",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "RCM",
+   "listing_id": "RCM@2016-01-04",
+   "name": "R1 RCM Inc",
+   "ipo": "2016-01-04",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "LYV",
+   "listing_id": "LYV@2005-12-21",
+   "name": "Live Nation Entertainment Inc",
+   "ipo": "2005-12-21",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "AME",
+   "listing_id": "AME@1984-07-19",
+   "name": "Ametek Inc",
+   "ipo": "1984-07-19",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SGLY",
+   "listing_id": "SGLY@2008-05-21",
+   "name": "Singularity Future Technology Ltd",
+   "ipo": "2008-05-21",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "WMS",
+   "listing_id": "WMS@2014-07-25",
+   "name": "Advanced Drainage Systems Inc",
+   "ipo": "2014-07-25",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "ESNT",
+   "listing_id": "ESNT@2013-10-31",
+   "name": "Essent Group Ltd",
+   "ipo": "2013-10-31",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "ZVZZC",
+   "listing_id": "ZVZZC@2016-01-29",
+   "name": "ZVZZC",
+   "ipo": "2016-01-29",
+   "delisted": "2022-10-28",
+   "reachable": false
+  },
+  {
+   "symbol": "EWBC",
+   "listing_id": "EWBC@1999-02-03",
+   "name": "East West Bancorp Inc",
+   "ipo": "1999-02-03",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "LAUR",
+   "listing_id": "LAUR@2017-02-01",
+   "name": "Laureate Education Inc",
+   "ipo": "2017-02-01",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CMD",
+   "listing_id": "CMD@1993-02-19",
+   "name": "Cantel Medical Corp",
+   "ipo": "1993-02-19",
+   "delisted": "2021-06-02",
+   "reachable": false
+  },
+  {
+   "symbol": "ANTE",
+   "listing_id": "ANTE@2007-11-07",
+   "name": "AirNet Technology Inc",
+   "ipo": "2007-11-07",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "QTNT",
+   "listing_id": "QTNT@2014-04-25",
+   "name": "Quotient Ltd",
+   "ipo": "2014-04-25",
+   "delisted": "2023-06-09",
+   "reachable": false
+  },
+  {
+   "symbol": "DAIO",
+   "listing_id": "DAIO@1990-03-26",
+   "name": "Data io Corp",
+   "ipo": "1990-03-26",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "BTAI",
+   "listing_id": "BTAI@2018-03-08",
+   "name": "BioXcel Therapeutics Inc",
+   "ipo": "2018-03-08",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CATO",
+   "listing_id": "CATO@1987-04-23",
+   "name": "Cato Corp - Class A",
+   "ipo": "1987-04-23",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "BJ",
+   "listing_id": "BJ@2018-06-28",
+   "name": "BJ`s Wholesale Club Holdings Inc",
+   "ipo": "2018-06-28",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "MAYS",
+   "listing_id": "MAYS@1992-02-26",
+   "name": "J.W. Mays Inc",
+   "ipo": "1992-02-26",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "IPM",
+   "listing_id": "IPM@2018-03-12",
+   "name": "Paltalk Inc",
+   "ipo": "2018-03-12",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "TECD",
+   "listing_id": "TECD@1990-03-26",
+   "name": "Tech Data Corp",
+   "ipo": "1990-03-26",
+   "delisted": "2020-06-30",
+   "reachable": false
+  },
+  {
+   "symbol": "BTRS",
+   "listing_id": "BTRS@2019-08-06",
+   "name": "BTRS Holdings Inc - Class 1",
+   "ipo": "2019-08-06",
+   "delisted": "2023-01-03",
+   "reachable": false
+  },
+  {
+   "symbol": "PCSB",
+   "listing_id": "PCSB@2017-04-21",
+   "name": "PCSB Financial Corp",
+   "ipo": "2017-04-21",
+   "delisted": "2022-12-30",
+   "reachable": false
+  },
+  {
+   "symbol": "KKR-P-B",
+   "listing_id": "KKR-P-B@2016-06-27",
+   "name": "KKR & Co. Inc",
+   "ipo": "2016-06-27",
+   "delisted": "2021-09-14",
+   "reachable": false
+  },
+  {
+   "symbol": "STEX",
+   "listing_id": "STEX@2014-10-30",
+   "name": "Streamex Corp",
+   "ipo": "2014-10-30",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "SNN",
+   "listing_id": "SNN@1999-11-16",
+   "name": "Smith & Nephew plc",
+   "ipo": "1999-11-16",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "CLXT",
+   "listing_id": "CLXT@2017-07-20",
+   "name": "Calyxt Inc",
+   "ipo": "2017-07-20",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "RARX",
+   "listing_id": "RARX@2016-10-26",
+   "name": "Ra Pharmaceuticals Inc",
+   "ipo": "2016-10-26",
+   "delisted": "2020-04-02",
+   "reachable": false
+  },
+  {
+   "symbol": "SCNI",
+   "listing_id": "SCNI@2015-05-12",
+   "name": "Scinai Immunotherapeutics Ltd",
+   "ipo": "2015-05-12",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "DPLO",
+   "listing_id": "DPLO@2014-10-10",
+   "name": "Diplomat Pharmacy Inc",
+   "ipo": "2014-10-10",
+   "delisted": "2020-02-07",
+   "reachable": false
+  },
+  {
+   "symbol": "TDS",
+   "listing_id": "TDS@1991-09-18",
+   "name": "Telephone And Data Systems Inc",
+   "ipo": "1991-09-18",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "RILYP",
+   "listing_id": "RILYP@2019-10-04",
+   "name": "B. Riley Financial Inc",
+   "ipo": "2019-10-04",
+   "delisted": null,
+   "reachable": false
+  },
+  {
+   "symbol": "HMY",
+   "listing_id": "HMY@1996-09-30",
+   "name": "Harmony Gold Mining Co Ltd",
+   "ipo": "1996-09-30",
+   "delisted": null,
+   "reachable": true
+  },
+  {
+   "symbol": "SHO",
+   "listing_id": "SHO@2004-10-21",
+   "name": "Sunstone Hotel Investors Inc",
+   "ipo": "2004-10-21",
+   "delisted": null,
+   "reachable": true
+  }
+ ],
+ "reachability": {
+  "window": "2019-11..2019-12",
+  "interval": "30min",
+  "provider": "twelvedata",
+  "sample": 120,
+  "reachable": 61,
+  "live": 83,
+  "live_reachable": 59,
+  "delisted": 37,
+  "delisted_reachable": 2,
+  "lost_to_delisting_pct": 29.2
+ },
+ "verdict": "precondition failure -- slot not spent"
+}

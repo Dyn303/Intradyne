@@ -69,7 +69,7 @@ TD = "https://api.twelvedata.com/time_series"
 #: bars is ~273 rows, so months are batched into year-long chunks: 7 requests
 #: per symbol for the ~6.8 years of history the provider serves, rather than 82.
 TD_CHUNK_MONTHS = 12
-TD_SLEEP_S = 7.6  # 60/8, plus a margin
+TD_SLEEP_S = 9.0  # 8/min ceiling; 7.6 sat on it and tripped 429s
 
 INTERVALS = ("1min", "5min", "15min", "30min", "60min")
 
@@ -114,30 +114,54 @@ def fetch_twelvedata(
     JSON rather than CSV: the CSV form is semicolon-delimited and a company
     name containing one would shift every field, which is the trap
     `screen_equities.py` already records for the listing endpoint.
+
+    **A throttle is not an absence.** The first version of this returned None on
+    any non-200, so a 429 was printed as "no data" and the symbol was dropped.
+    Running at 7.9 requests a minute against an 8/minute ceiling, that silently
+    discarded roughly half a sample of live companies -- MetLife among them --
+    and the run looked like a coverage limit rather than a bug. Rate limits are
+    now retried, and only an empty payload from a successful response is
+    allowed to mean the symbol has no bars.
     """
     start, end = month_span(chunk)
     interval_td = interval.replace("60min", "1h")
-    try:
-        r = c.get(
-            TD,
-            params={
-                "symbol": symbol,
-                "interval": interval_td,
-                "start_date": start,
-                "end_date": end,
-                "outputsize": "5000",
-                "format": "JSON",
-                "apikey": key,
-            },
-            timeout=120.0,
-        )
-    except Exception:  # noqa: BLE001
+    for attempt in range(5):
+        try:
+            r = c.get(
+                TD,
+                params={
+                    "symbol": symbol,
+                    "interval": interval_td,
+                    "start_date": start,
+                    "end_date": end,
+                    "outputsize": "5000",
+                    "format": "JSON",
+                    "apikey": key,
+                },
+                timeout=120.0,
+            )
+        except Exception:  # noqa: BLE001
+            time.sleep(3 * (attempt + 1))
+            continue
+        if r.status_code == 429:
+            time.sleep(TD_SLEEP_S * 2)
+            continue
+        if r.status_code != 200:
+            return None
+        body = r.json()
+        if not isinstance(body, dict):
+            return None
+        if body.get("status") == "error":
+            # 429 also arrives as a 200 with an error body on this provider,
+            # so the code has to be read rather than the status line trusted.
+            if int(body.get("code") or 0) == 429:
+                time.sleep(TD_SLEEP_S * 2)
+                continue
+            return None
+        break
+    else:
         return None
-    if r.status_code != 200:
-        return None
-    body = r.json()
-    if not isinstance(body, dict) or body.get("status") == "error":
-        return None
+
     values = body.get("values") or []
     rows: List[Tuple[str, str, str, str, str, str]] = []
     for rec in values:
