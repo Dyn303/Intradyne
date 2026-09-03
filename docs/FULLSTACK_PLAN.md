@@ -304,3 +304,66 @@ entries, and a table that stops at 200 with no comment reads as the complete
 record. Booleans render as pass/fail only in a column actually named `pass`:
 the worksheet has a `known` flag, and showing `known: false` as a red "fail"
 would state something the data does not.
+
+---
+
+## Phase 4: packaging, and a stack that only looked like it worked
+
+The plan's deliverable was `docker compose up` giving a working system. It
+did not, and neither the image build nor the health checks said so.
+
+**The image had no research data.** `.dockerignore` excludes `artifacts/`
+wholesale and the Dockerfile copied only `src`, so every Phase 3 record
+rendered as "not generated" -- which reads as "the test was never run" rather
+than "the file was never copied". The tracked data is now baked in
+(`docs/*.json`, `artifacts/production_params.json`) and locally generated
+results arrive through a volume mount, so the image stays reproducible while a
+developer still sees their own artifacts.
+
+**Every risk and portfolio endpoint returned 500 in the stack.** SQLite in WAL
+mode cannot be written through a Docker Desktop bind mount: WAL needs
+shared-memory mapping of the `-shm` sidecar, which the mount cannot provide.
+Reads succeed, writes fail with a bare `disk I/O error`.
+
+`/readyz` reported the database healthy throughout, because its check opens the
+file and runs `SELECT 1` -- a read. That is the whole reason this phase exists:
+a health check that passes while the system is broken is worse than none, and
+only an end-to-end check across the real endpoints catches it.
+
+The fix is a named volume rather than a bind mount for the database. Sharing a
+SQLite file between host and container is a bad idea regardless -- two writers
+in two lock domains -- and a named volume is a real Linux filesystem where WAL
+works normally.
+
+A related trap on the way: a fresh named volume inherits ownership from the
+image path it shadows, so `/app/state` has to exist in the image and be owned
+by `appuser` before the volume is created. Missing that yields a root-owned
+volume the application cannot write to.
+
+Separately, `EquityHistory` no longer dies when the WAL pragma is refused. That
+does not fix the case above -- a database already in WAL mode cannot be
+switched back without writing -- but it does let a *fresh* database work on a
+bind mount, and it records the fallback instead of failing opaquely.
+
+### The smoke test earns its place
+
+`scripts/e2e_smoke.py` now checks ten endpoints rather than three, and each
+addition is a bug this repo has actually had:
+
+* the dashboard is served, and is the dashboard -- it ships inside the Python
+  package, so a wrong `COPY` gives a healthy API and no UI
+* `/metrics` answers *with Prometheus text* -- it has been silently shadowed
+  twice, once behind the risk router and once behind the static mount, and a
+  200 alone would not have caught the second
+* `/risk/status` and `/portfolio` -- the endpoints the WAL bug broke
+* credentials are sent when `X_API_KEY` is set, so the check can pass against a
+  correctly configured production instance rather than reporting it broken
+
+CI now runs the image and smokes it, so "the container serves the UI" is
+checked on every push rather than assumed.
+
+### Running it
+
+    make stack-up      # build and start; dashboard on http://localhost:8080
+    make stack-smoke   # verify it
+    make stack-down

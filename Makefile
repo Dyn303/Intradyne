@@ -53,3 +53,20 @@ api-logs:
 
 clean-artifacts:
 	powershell -NoProfile -Command "if (Test-Path artifacts) { Remove-Item -Recurse -Force artifacts }"
+
+smoke:
+	# Check a running instance actually serves what it claims to: the API, the
+	# dashboard, /metrics as Prometheus text, and the research record.
+	# Override API_BASE for the compose stack (it publishes on 8080).
+	API_BASE=$${API_BASE:-http://localhost:8000} python scripts/e2e_smoke.py
+
+stack-up:
+	# One command from a clean checkout to a working system.
+	docker compose -f deploy/docker-compose.yml up -d --build
+	@echo "dashboard: http://localhost:8080"
+
+stack-smoke:
+	API_BASE=http://localhost:8080 python scripts/e2e_smoke.py
+
+stack-down:
+	docker compose -f deploy/docker-compose.yml down

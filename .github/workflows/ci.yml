@@ -53,6 +53,34 @@ jobs:
       - name: Docker build
         run: docker build -t intradyne-lite:ci .
 
+      # Building the image proves it builds, not that it serves anything. The
+      # dashboard ships inside the Python package and the research record is
+      # copied in separately, so a Dockerfile that misses a path yields a
+      # perfectly healthy API serving a 404 for every page -- which is exactly
+      # what happened before these COPY lines existed.
+      - name: Smoke test the image
+        run: |
+          docker run -d --name intradyne-ci -p 8000:8000 \
+            -e API_AUTH_REQUIRED=0 \
+            -e ENGINE_ENABLED=false \
+            -e APP_ENV=development \
+            -e DB_URL=sqlite:////app/state/trades.sqlite \
+            -e EXPLAIN_LEDGER_PATH=/app/data/explainability_ledger.jsonl \
+            intradyne-lite:ci
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/healthz > /dev/null && break
+            sleep 2
+          done
+          API_BASE=http://localhost:8000 python scripts/e2e_smoke.py
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker logs intradyne-ci || true
+
+      - name: Stop the smoke container
+        if: always()
+        run: docker rm -f intradyne-ci || true
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:

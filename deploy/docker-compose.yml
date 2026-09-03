@@ -14,7 +14,19 @@ services:
       # The container root is read-only in the prod compose; keep the ledger
       # and database on the writable mount here too so the two agree.
       - EXPLAIN_LEDGER_PATH=${EXPLAIN_LEDGER_PATH:-/app/data/explainability_ledger.jsonl}
-      - DB_URL=${DB_URL:-sqlite:////app/data/trades.sqlite}
+      # On a named volume, deliberately not on the ../data bind mount.
+      #
+      # SQLite in WAL mode cannot be written through a Docker Desktop
+      # bind mount: WAL needs shared-memory mapping of the -shm sidecar,
+      # which the mount cannot provide. Reads succeed and writes fail
+      # with a bare "disk I/O error", so every risk and portfolio
+      # endpoint 500s while /readyz -- which only runs SELECT 1 --
+      # keeps reporting the database healthy.
+      #
+      # A host-owned database file is a bad idea here regardless: the
+      # container and anything running on the host would be two writers
+      # in two lock domains.
+      - DB_URL=${DB_URL:-sqlite:////app/state/trades.sqlite}
       # The trading loop runs inside this service when enabled.
       - ENGINE_ENABLED=${ENGINE_ENABLED:-false}
     ports:
@@ -22,6 +34,12 @@ services:
     volumes:
       - ../reports:/app/reports
       - ../data:/app/data
+      # Locally generated research results, and the writable home for
+      # production_params.json -- /engine/params/revert has to write
+      # there, and the copy baked into the image is not writable.
+      - ../artifacts:/app/artifacts
+      # The database lives here, owned by the container.
+      - intradyne_state:/app/state
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz').read()"]
       interval: 30s
@@ -32,3 +50,6 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+
+volumes:
+  intradyne_state: {}
