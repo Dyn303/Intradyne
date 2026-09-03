@@ -54,6 +54,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 import time
 from datetime import date, datetime, timezone
@@ -91,10 +92,38 @@ NOT_COMMON_EQUITY: List[Tuple[str, Set[str], str]] = [
     ("NOTE", {"NOTE", "NOTES", "DEBENTURE", "BOND"}, "a debt instrument, not equity"),
     (
         "WHEN_ISSUED",
-        {"ISSUED"},
+        {"ISSUED", "WHENISSUED"},
         "a when-issued line is a forward on an unsettled share",
     ),
 ]
+
+#: Names that mean a fund wrapper rather than an operating company. Kept
+#: deliberately short, because the near-misses are worse than the misses:
+#: TRUST rejects 284 names including American Assets Trust and Arbor Realty
+#: Trust, which are REITs and ordinary common stock; PORTFOLIO rejects
+#: Altisource Portfolio Solutions and Consumer Portfolio Service, which are
+#: operating companies. Both were measured before being left out.
+FUND_WRAPPER: Set[str] = {"ETF", "FUND", "ADR", "ADS"}
+
+#: A preferred line's *name* is the issuer's, so the name filter cannot see it:
+#: SCHW-P-D reads "Charles Schwab Corp" and TY-P reads "Tri-Continental Corp".
+#: The ticker is the only signal, and US exchanges encode it two ways.
+#:
+#:   NYSE-style   a `-P` suffix, optionally with a series letter: SCHW-P-D
+#:   NASDAQ-style a fifth letter P on an otherwise five-letter root: RILYP
+#:
+#: Share classes must survive both. `ACV-A`, `AKO-B` and `AGM-A` are Class A
+#: and B common stock, and were checked against these patterns rather than
+#: assumed safe -- 199 such tickers in the universe, none matched.
+PREFERRED_TICKER = re.compile(r"-P(-[A-Z])?$")
+PREFERRED_NASDAQ = re.compile(r"^[A-Z]{4}P$")
+
+
+def is_preferred_ticker(symbol: str) -> bool:
+    """Whether the ticker encodes a preferred line rather than common stock."""
+    sym = (symbol or "").strip().upper()
+    return bool(PREFERRED_TICKER.search(sym) or PREFERRED_NASDAQ.match(sym))
+
 
 #: Markers in an ETF's name that mean it is leveraged, inverse or derivative
 #: backed. Whole-word matched, same discipline.
@@ -365,6 +394,26 @@ def instrument_type(sym: str, ref: Dict[str, Dict[str, str]]) -> Tuple[str, str]
     for code, keys, why in NOT_COMMON_EQUITY:
         if name_words & keys:
             return "excluded", f"{code}: {why}"
+
+    # The ticker, where the name cannot help. A preferred line carries the
+    # issuer's name -- SCHW-P-D reads "Charles Schwab Corp" -- so every check
+    # above passes it, and 614 such lines survived into the A3 universe on
+    # that basis. Decided from the symbol because that is where the evidence
+    # is; adding words to the name list could not have caught them.
+    if is_preferred_ticker(sym):
+        return (
+            "excluded",
+            "PREFERRED: the ticker encodes a preferred line, which carries a "
+            "fixed coupon and is not common equity",
+        )
+
+    hit = name_words & FUND_WRAPPER
+    if hit:
+        return (
+            "excluded",
+            f"FUND: {', '.join(sorted(hit))} -- a fund or depositary wrapper "
+            "around holdings that would be screened individually",
+        )
 
     if len(sym) > 1 and sym[-1] in "WRUP":
         root = ref.get(sym[:-1])
