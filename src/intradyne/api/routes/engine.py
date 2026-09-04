@@ -33,11 +33,23 @@ def _params_path(name: str) -> str:
 def engine_status() -> Dict[str, Any]:
     settings = load_settings()
     active = engine_loop.get_active_router()
+    feed = engine_loop.get_active_feed()
     return {
         "enabled": settings.engine_enabled,
         "running": active is not None,
         "mode": settings.mode,
         "live_trading_enabled": settings.live_trading_enabled,
+        # How prices arrive, and how often. The strategies size their windows
+        # in ticks, so `interval_s` is what converts a 60-tick lookback into a
+        # span of time -- 60s on the socket, 170s on a slow REST pass against
+        # a 120s time stop. It was previously only inferable from outside the
+        # process by the absence of a log warning.
+        "transport": feed.transport if feed is not None else None,
+        "interval_s": (
+            round(feed.interval_s, 3)
+            if feed is not None and feed.interval_s is not None
+            else None
+        ),
         "symbols": list(active.symbols) if active is not None else [],
         "open_positions": (
             {s: p.base for s, p in active.portfolio.positions.items() if p.base > 0}
