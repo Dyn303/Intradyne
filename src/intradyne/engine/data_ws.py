@@ -22,7 +22,7 @@ SLOW_PASS_TOLERANCE = 1.5
 
 
 class DataFeed:
-    """Spot L1 feed. Websockets via ccxtpro when installed, else REST polling.
+    """Spot L1 feed. Websockets where the venue supports them, else polling.
 
     ## The interval is the thing to get right
 
@@ -64,6 +64,43 @@ class DataFeed:
         #: Measured seconds between passes. None until the first completes.
         self.interval_s: Optional[float] = None
         self._warned_slow = False
+        #: How the last pass got its prices: "websocket" or "rest".
+        self.transport: str = "rest"
+        #: Latest quote per symbol, kept current by the websocket task.
+        self._latest: Dict[str, Any] = {}
+
+    async def _watch(self, ex: Any, symbols: List[str]) -> None:
+        """Keep `_latest` current from the venue's ticker stream.
+
+        Deliberately does not yield anything. Emission cadence belongs to
+        `start`, because the strategies count windows in ticks and a socket
+        pushing ~10 updates a second would redefine every one of them.
+
+        A socket that drops is not fatal -- `start` falls back to the REST
+        snapshot for as long as `_latest` is empty -- so failures here are
+        logged and retried rather than raised into the trading loop.
+        """
+        backoff = 1.0
+        while self._running:
+            try:
+                tickers = await ex.watch_tickers(symbols)
+                if tickers:
+                    self._latest.update(tickers)
+                    backoff = 1.0
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                # Stale quotes are worse than none: a reconnect that silently
+                # replays the last snapshot would price orders off a market
+                # that has moved. Drop what we have and let the REST path
+                # cover the gap.
+                self._latest.clear()
+                logger.warning(
+                    f"ticker socket dropped ({e}); retrying in {backoff:.0f}s, "
+                    "REST snapshot covering the gap"
+                )
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 30.0)
 
     async def start(self, symbols: List[str]) -> AsyncIterator[Dict[str, Any]]:
         self._running = True
@@ -73,9 +110,18 @@ class DataFeed:
             # import time. A caller may set `exchange` first to supply its
             # own -- which is how the cadence above is tested without a
             # network, since latency is the whole subject.
-            import ccxt.async_support as ccxt
+            # ccxt Pro has shipped inside the free `ccxt` package since 4.0;
+            # the separate commercial `ccxtpro` distribution this code used to
+            # tell people to install is not how you get websockets any more.
+            # Fall back to the REST client if the pro module is unavailable.
+            try:
+                import ccxt.pro as ccxt_pro
 
-            self.exchange = getattr(ccxt, self.exchange_id)()
+                self.exchange = getattr(ccxt_pro, self.exchange_id)()
+            except Exception:  # noqa: BLE001
+                import ccxt.async_support as ccxt
+
+                self.exchange = getattr(ccxt, self.exchange_id)()
             if self.exchange_id == "bitget" and self.use_testnet:
                 # Bitget testnet support is limited in ccxt; left as a flag
                 # for future use.
@@ -84,13 +130,34 @@ class DataFeed:
         await ex.load_markets()
         logger.info(f"DataFeed started for {symbols}")
         batched = bool(getattr(ex, "has", {}).get("fetchTickers"))
+
+        # Websockets feed the snapshot; they do not drive emission.
+        #
+        # Bitget pushes ~9.9 ticker updates a second. Yielding on each one
+        # would take the tick rate from 0.36/s (a 2.8s REST pass) to 9.9/s,
+        # and since the strategies count their windows in *ticks*, a 60-tick
+        # window would collapse from 170 seconds to six. That is the same
+        # defect as a slow feed, inverted and larger.
+        #
+        # So the socket keeps `_latest` current and the loop below emits on
+        # the target interval regardless. Freshness comes from the socket;
+        # cadence stays what the strategies were written against.
+        watcher: Optional[asyncio.Task[None]] = None
+        if bool(getattr(ex, "has", {}).get("watchTickers")):
+            watcher = asyncio.create_task(self._watch(ex, symbols))
         try:
             while self._running:
                 started = time.monotonic()
                 now = time.time()
 
                 tickers: Dict[str, Any] = {}
-                if batched:
+                if watcher is not None and self._latest:
+                    # The socket has quotes; take a snapshot and skip the
+                    # round trip entirely.
+                    tickers = dict(self._latest)
+                    self.transport = "websocket"
+                elif batched:
+                    self.transport = "rest"
                     # One call for every symbol. Against Kraken this is ~1.2s
                     # for eight, where eight sequential calls were ~8.9s -- and
                     # it no longer grows with the symbol count.
@@ -110,7 +177,10 @@ class DataFeed:
                 # tick and stops still learns what the tick was worth.
                 fetch_s = time.monotonic() - started
                 self.interval_s = max(fetch_s, TARGET_INTERVAL_S)
-                slow = fetch_s > TARGET_INTERVAL_S * SLOW_PASS_TOLERANCE
+                slow = (
+                    self.transport == "rest"
+                    and fetch_s > TARGET_INTERVAL_S * SLOW_PASS_TOLERANCE
+                )
                 if slow and not self._warned_slow:
                     self._warned_slow = True
                     logger.warning(
@@ -119,8 +189,10 @@ class DataFeed:
                         "symbols. Strategy windows are counted in ticks, so a "
                         f"60-tick window now spans ~{60 * fetch_s:.0f}s while "
                         "time_stop_s stays in real seconds -- positions will "
-                        "time out before their window fills. Install ccxtpro "
-                        "for websockets, or reduce the symbol count."
+                        "time out before their window fills. This venue does "
+                        "not support watchTickers, so the socket path is "
+                        "unavailable; reduce the symbol count or use a venue "
+                        "that does."
                     )
 
                 for sym in symbols:
@@ -142,6 +214,12 @@ class DataFeed:
                     max(0.0, TARGET_INTERVAL_S - (time.monotonic() - started))
                 )
         finally:
+            if watcher is not None:
+                watcher.cancel()
+                try:
+                    await watcher
+                except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                    pass
             try:
                 await ex.close()
             except Exception:

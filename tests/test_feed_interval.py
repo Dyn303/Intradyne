@@ -137,3 +137,87 @@ def test_falls_back_when_the_venue_has_no_batch_endpoint():
     assert ex.batch_calls == 0
     assert ex.single_calls == len(SYMBOLS)
     assert {t["symbol"] for t in ticks} == set(SYMBOLS)
+
+
+class WSExchange(FakeExchange):
+    """A venue that pushes fast, the way Bitget does at ~9.9 updates/sec."""
+
+    def __init__(self, push_gap_s: float = 0.01, fail_after: int | None = None) -> None:
+        super().__init__(latency_s=0.02, batched=True)
+        self.has = {"fetchTickers": True, "watchTickers": True}
+        self.push_gap_s = push_gap_s
+        self.pushes = 0
+        self.fail_after = fail_after
+
+    async def watch_tickers(self, symbols):
+        await asyncio.sleep(self.push_gap_s)
+        self.pushes += 1
+        if self.fail_after is not None and self.pushes > self.fail_after:
+            raise ConnectionError("socket dropped")
+        return {
+            s: {"bid": 1.0, "ask": 1.1, "last": 1.05, "baseVolume": 10.0}
+            for s in symbols
+        }
+
+
+def test_the_socket_is_used_when_the_venue_offers_it():
+    ex = WSExchange()
+    feed = DataFeed(exchange_id="bitget")
+    _run(feed, ex, len(SYMBOLS) * 2)
+    assert feed.transport == "websocket"
+    assert ex.pushes > 0
+
+
+def test_a_fast_socket_does_not_speed_up_the_tick_rate():
+    """The defect this design avoids. Bitget pushes ~9.9 updates a second;
+    emitting on each would take a 60-tick window from 60s to 6s -- the same
+    failure as a slow feed, inverted. Cadence belongs to the emitter.
+    """
+    ex = WSExchange(push_gap_s=0.001)  # ~1000 pushes/sec
+    feed = DataFeed(exchange_id="bitget")
+
+    started = time.monotonic()
+    _run(feed, ex, len(SYMBOLS) * 2)  # two passes
+    elapsed = time.monotonic() - started
+
+    assert elapsed >= TARGET_INTERVAL_S * 0.9, (
+        f"two passes took {elapsed:.2f}s -- emission is following the socket"
+    )
+    assert feed.interval_s is not None
+    assert feed.interval_s <= TARGET_INTERVAL_S + 0.2
+    assert ex.pushes > 10, "the socket should still be pushing hard underneath"
+
+
+def test_the_socket_saves_the_round_trip():
+    """Once quotes are flowing there is nothing to fetch."""
+    ex = WSExchange()
+    feed = DataFeed(exchange_id="bitget")
+    _run(feed, ex, len(SYMBOLS) * 3)
+    assert ex.batch_calls <= 1, "REST covered only the gap before first push"
+
+
+def test_no_slow_warning_on_the_socket_path():
+    """There is no round trip to be slow, so the REST warning must not fire
+    and send someone chasing latency that is not there."""
+    ex = WSExchange()
+    feed = DataFeed(exchange_id="bitget")
+    _run(feed, ex, len(SYMBOLS) * 2)
+    assert not feed._warned_slow
+
+
+def test_a_dropped_socket_discards_its_quotes():
+    """Stale quotes are worse than none: pricing an order off a market that
+    has moved is a real loss, where a REST round trip is only a delay."""
+    ex = WSExchange(fail_after=1)
+    feed = DataFeed(exchange_id="bitget")
+    _run(feed, ex, len(SYMBOLS) * 3)
+    assert ex.batch_calls >= 1, "REST should have covered the gap"
+
+
+def test_a_venue_without_watch_tickers_still_polls():
+    ex = FakeExchange()  # advertises fetchTickers only
+    feed = DataFeed(exchange_id="kraken")
+    ticks = _run(feed, ex, len(SYMBOLS))
+    assert feed.transport == "rest"
+    assert ex.batch_calls >= 1
+    assert {t["symbol"] for t in ticks} == set(SYMBOLS)
