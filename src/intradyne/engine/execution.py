@@ -387,6 +387,21 @@ class ExecutionManager:
             # equivalent taker run.
             try:
                 if self.ctx.paper.open_orders(symbol):
+                    # Also a missed trade, and also previously silent: the
+                    # strategy asked to enter and did not, because an earlier
+                    # order is still resting. Counted so the maker fill rate
+                    # is measured against everything the strategy wanted,
+                    # not only against orders that reached the book.
+                    self.ctx.ledger.append(
+                        "order_blocked",
+                        {
+                            "symbol": symbol,
+                            "side": side,
+                            "qty": qty,
+                            "action": "resting_order_exists",
+                            "strategy_id": strategy_id,
+                        },
+                    )
                     return {
                         "status": "pending",
                         "action": "resting_order_exists",
