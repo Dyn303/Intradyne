@@ -304,6 +304,20 @@ class Settings(BaseSettings):
             syms = list(permitted)
 
         if markets:
+            # Narrowing to what the venue lists, and saying which names it
+            # removed. This dropped them silently, which is how MATIC/USDT sat
+            # in the whitelist unnoticed after Polygon migrated the token to
+            # POL in 2024: permissible, configured, and not a listed ticker.
+            # A delisting is a fact about the world that should reach a human,
+            # not a set difference computed at startup and discarded -- the
+            # same reasoning that already logs unscreened operator entries.
+            unlisted = [s for s in syms if s not in markets]
+            if unlisted:
+                logger.bind(event="unlisted_symbols_dropped").warning(
+                    f"{self.exchange} does not list {sorted(unlisted)}; they are "
+                    "permitted and selected but cannot be traded. Check for a "
+                    "ticker migration or a delisting."
+                )
             syms = [s for s in syms if s in markets]
         self.symbols = syms
         return self.symbols
