@@ -298,6 +298,7 @@ def get_execution_manager() -> "ExecutionManager":
                 order_keys=OrderKeyStore(settings.db_url),
                 execution_mode=settings.execution_mode,
                 maker_offset_bps=settings.maker_offset_bps,
+                default_min_notional=settings.min_order_notional,
             )
         )
     return _EXECUTION

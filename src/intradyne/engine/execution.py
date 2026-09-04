@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional
 
 from loguru import logger
@@ -48,6 +48,15 @@ class ExecContext:
     execution_mode: str = "taker"
     #: How far inside the touch to post when making, in bps.
     maker_offset_bps: float = 0.0
+    #: Smallest order the venue will accept, per symbol, in quote currency.
+    #: Populated from the exchange's own `limits.cost.min` -- the floor is a
+    #: property of the venue, not a number worth inventing. Empty until the
+    #: feed has loaded its markets, and symbols the venue does not declare
+    #: fall back to `default_min_notional`.
+    min_notional: Dict[str, float] = field(default_factory=dict)
+    #: Fallback floor for symbols the venue declares no minimum for. Bitget
+    #: reports $1.00 for every pair on the traded whitelist.
+    default_min_notional: float = 1.0
 
 
 class ExecutionManager:
@@ -172,6 +181,43 @@ class ExecutionManager:
 
         if qty <= 0:
             return {"status": "blocked", "action": "zero_qty", "reasons": reasons}
+
+        # Dust floor.
+        #
+        # Sizing is `min(sizer, position_capacity)`, so once a position nears
+        # its cap the remaining capacity is a rounding remnant and the next
+        # entry is priced in cents. `qty <= 0` let every one of those through:
+        # in a 75-second paper run, 6 of 11 fills were under a dollar -- $0.0049
+        # of BTC, $0.0143 of ETH -- against a venue minimum of $1.00. Paper
+        # filled them and charged taker fees; the live exchange would have
+        # rejected them outright. The equity curve was being shaped by orders
+        # that could not exist, which is the one thing paper must not do.
+        #
+        # Checked after the gate rather than before, because a VaR step-down
+        # can shrink an approved order into dust on its own.
+        floor = self.ctx.min_notional.get(symbol, self.ctx.default_min_notional)
+        if mark and floor > 0:
+            notional = abs(float(qty)) * float(mark)
+            if notional < floor:
+                self.ctx.ledger.append(
+                    "order_blocked",
+                    {
+                        "symbol": symbol,
+                        "side": side,
+                        "qty": qty,
+                        "notional": notional,
+                        "min_notional": floor,
+                        "action": "below_min_notional",
+                        "strategy_id": strategy_id,
+                    },
+                )
+                return {
+                    "status": "blocked",
+                    "action": "below_min_notional",
+                    "reasons": [
+                        f"notional {notional:.4f} below venue minimum {floor:.4f}"
+                    ],
+                }
 
         # `checks_passed` is strategy-supplied diagnostics. It is recorded as
         # such and never as compliance evidence -- callers pass a hardcoded
