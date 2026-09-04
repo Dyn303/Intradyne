@@ -190,6 +190,17 @@ class Settings(BaseSettings):
     #: declares no `limits.cost.min`. The venue's own figure is preferred and
     #: overrides this at runtime; Bitget reports $1.00 across the whitelist.
     min_order_notional: float = 1.0
+    #: The spread a backtest prices its fills against, in bps. OHLCV carries
+    #: no spread, so one has to be assumed, and the assumption decides what a
+    #: backtest concludes. This was hardcoded at 1.0 inside `bars_to_l1` and
+    #: never passed, so every instrument was modelled at one basis point --
+    #: near enough on the liquid names and 10bps optimistic on DOT.
+    #:
+    #: The default is `max_spread_bps`: the live filter refuses anything
+    #: wider, so the widest spread the system will actually trade is the
+    #: conservative reading of what a fill could have cost. Override per
+    #: instrument with real measurements where they exist.
+    backtest_spread_bps: float = 4.0
     entry_cooldown_s: int = 0
 
     # Sentiment
