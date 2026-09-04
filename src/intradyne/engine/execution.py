@@ -69,6 +69,10 @@ class ExecutionManager:
 
     def __init__(self, ctx: ExecContext) -> None:
         self.ctx = ctx
+        #: Symbols holding a position too small for the venue to accept a
+        #: closing order. Recorded so the refusal is reported once rather
+        #: than on every tick -- see the dust floor in `submit`.
+        self._stranded: set[str] = set()
 
     def _gate(
         self,
@@ -199,25 +203,57 @@ class ExecutionManager:
         if mark and floor > 0:
             notional = abs(float(qty)) * float(mark)
             if notional < floor:
-                self.ctx.ledger.append(
-                    "order_blocked",
-                    {
-                        "symbol": symbol,
-                        "side": side,
-                        "qty": qty,
-                        "notional": notional,
-                        "min_notional": floor,
-                        "action": "below_min_notional",
-                        "strategy_id": strategy_id,
-                    },
-                )
+                # A refused *exit* is not the same event as a refused entry.
+                #
+                # The router resubmits the exit on every tick for as long as
+                # the stop stays breached, so ledger-appending each refusal
+                # grew the hash chain without bound -- once per tick, forever,
+                # for a position worth cents. Worse, the position cannot be
+                # closed at all: the stop-loss silently stops working.
+                #
+                # Refusing is still right. The venue will not accept a
+                # sub-minimum sell either, so a dust holding genuinely is
+                # stranded, and pretending otherwise in paper would put a fill
+                # in the equity curve that live could never produce. What the
+                # entry floor above does is stop these positions being opened;
+                # this branch reports the ones that already exist, once each,
+                # and then keeps quiet.
+                held = self.ctx.portfolio.get_position(symbol).base
+                closing = side == "sell" and held > 0
+                first_time = symbol not in self._stranded
+                if closing:
+                    self._stranded.add(symbol)
+                if not closing or first_time:
+                    self.ctx.ledger.append(
+                        "order_blocked",
+                        {
+                            "symbol": symbol,
+                            "side": side,
+                            "qty": qty,
+                            "notional": notional,
+                            "min_notional": floor,
+                            "action": "below_min_notional",
+                            "stranded": closing,
+                            "strategy_id": strategy_id,
+                        },
+                    )
+                if closing and first_time:
+                    logger.bind(event="position_stranded").warning(
+                        f"{symbol} holds {notional:.4f} in quote terms, below the "
+                        f"venue minimum of {floor:.4f}. It cannot be closed -- the "
+                        "stop-loss on this position will not execute. Further "
+                        "refusals for this symbol are suppressed."
+                    )
                 return {
                     "status": "blocked",
                     "action": "below_min_notional",
+                    "stranded": closing,
                     "reasons": [
                         f"notional {notional:.4f} below venue minimum {floor:.4f}"
                     ],
                 }
+        # A position that grew back above the floor is closable again.
+        self._stranded.discard(symbol)
 
         # `checks_passed` is strategy-supplied diagnostics. It is recorded as
         # such and never as compliance evidence -- callers pass a hardcoded
