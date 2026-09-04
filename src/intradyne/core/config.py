@@ -164,7 +164,28 @@ class Settings(BaseSettings):
     limit_ttl_s: float = 60.0
 
     # Execution filters
-    max_spread_bps: int = 0  # 0 disables
+    #: Refuse entries when the touch spread is wider than this, in bps.
+    #:
+    #: This defaulted to 0 -- disabled -- which made it a fail-open filter:
+    #: the venue could quote any spread it liked and the engine would cross
+    #: it. Measured on Bitget across the traded whitelist, the spreads that
+    #: default admitted were not hypothetical:
+    #:
+    #:     BTC 0.00   ETH 0.04   SOL 0.96   XRP 0.69
+    #:     LTC 1.96   AVAX 1.33  ADA 4.51   DOT 11.38-22.78
+    #:
+    #: DOT had *nothing* resting within 5bps of the touch, while
+    #: `slippage_bps` (below) charges every fill a flat 2. So the engine was
+    #: trading a 11-23bps spread and booking it as 2 -- against a strategy
+    #: edge measured at ~0.5bps, which is the whole margin several times over.
+    #:
+    #: The bound is 2x `slippage_bps`: the filter's job is to keep reality
+    #: inside the cost model's assumption, and past twice the assumed
+    #: slippage the model is not describing the fill any more. At 4 this
+    #: admits the six liquid names and excludes ADA and DOT. Raise it via
+    #: MAX_SPREAD_BPS to trade wider books, but raise `slippage_bps` with it
+    #: or the results will flatter exactly the names where cost decides.
+    max_spread_bps: int = 4  # 0 disables
     entry_cooldown_s: int = 0
 
     # Sentiment

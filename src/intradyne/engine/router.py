@@ -69,7 +69,19 @@ class StrategyRouter:
         self._mae_pct: Dict[str, float] = defaultdict(float)
 
         # Execution controls
-        self.micro_slices: int = 3
+        #: Child orders per entry. Slicing exists to avoid moving the book,
+        #: and at this size there is no book to move: with
+        #: MAX_ORDER_NOTIONAL=300, a full order is 0.02-1.2% of the depth
+        #: resting within 5bps on the liquid names (BTC $1.36M, ETH $1.11M,
+        #: SOL $489K). Three $100 clips bought nothing there and cost 3x the
+        #: order flow and rate-limit budget.
+        #:
+        #: On the thin names, where impact is real, slicing as implemented
+        #: could not help either: the children were submitted 83-152ms apart,
+        #: far inside book replenishment, so they swept the same levels in
+        #: three bites rather than one. Slicing without spacing in time is
+        #: not slicing. Raise this only alongside a delay between children.
+        self.micro_slices: int = 1
         self.time_stop_s: int = 120
         self.trail_atr_k: float = 0.0
         self.pyramid_max: int = 0
