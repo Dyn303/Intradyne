@@ -57,6 +57,15 @@ class ExecContext:
     #: Fallback floor for symbols the venue declares no minimum for. Bitget
     #: reports $1.00 for every pair on the traded whitelist.
     default_min_notional: float = 1.0
+    #: Smallest *entry* worth placing, in quote currency. Distinct from the
+    #: venue floor above, which says what the exchange will reject; this says
+    #: what is not worth an order slot. 0 disables it.
+    #:
+    #: They must stay separate. Raising the venue floor to suppress trivial
+    #: orders would misrepresent what the exchange does, and would apply to
+    #: exits -- which is how #48 stranded positions whose stops then could
+    #: not fire. This one is checked on increases in exposure only.
+    min_entry_notional: float = 0.0
 
 
 class ExecutionManager:
@@ -254,6 +263,43 @@ class ExecutionManager:
                 }
         # A position that grew back above the floor is closable again.
         self._stranded.discard(symbol)
+
+        # Policy floor, entries only.
+        #
+        # Sizing is `min(sizer, position_capacity)`, so a position near its cap
+        # leaves a remnant. The venue floor above stops those being rejected;
+        # it does not stop them being pointless. Observed in an hour of paper
+        # trading: 3 of 288 fills were $1.01, $1.13 and $1.22 -- valid orders
+        # that the exchange would accept, spending an order slot and
+        # rate-limit budget to move a dollar, and skewing fill statistics.
+        #
+        # Buys only. An exit is worth making at any size, because the
+        # alternative is holding the position; that asymmetry is the whole
+        # reason this is not simply a higher venue floor.
+        entry_floor = self.ctx.min_entry_notional
+        if mark and entry_floor > 0 and side == "buy":
+            notional = abs(float(qty)) * float(mark)
+            if notional < entry_floor:
+                self.ctx.ledger.append(
+                    "order_blocked",
+                    {
+                        "symbol": symbol,
+                        "side": side,
+                        "qty": qty,
+                        "notional": notional,
+                        "min_entry_notional": entry_floor,
+                        "action": "below_min_entry",
+                        "strategy_id": strategy_id,
+                    },
+                )
+                return {
+                    "status": "blocked",
+                    "action": "below_min_entry",
+                    "reasons": [
+                        f"entry {notional:.4f} below the {entry_floor:.4f} "
+                        "worth placing"
+                    ],
+                }
 
         # `checks_passed` is strategy-supplied diagnostics. It is recorded as
         # such and never as compliance evidence -- callers pass a hardcoded

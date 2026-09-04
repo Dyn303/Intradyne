@@ -299,6 +299,7 @@ def get_execution_manager() -> "ExecutionManager":
                 execution_mode=settings.execution_mode,
                 maker_offset_bps=settings.maker_offset_bps,
                 default_min_notional=settings.min_order_notional,
+                min_entry_notional=settings.min_entry_notional,
             )
         )
     return _EXECUTION
