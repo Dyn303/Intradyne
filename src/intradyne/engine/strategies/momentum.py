@@ -7,13 +7,27 @@ from typing import Any, Deque, Dict, Mapping, Optional
 
 @dataclass
 class MomentumState:
-    prices: Deque[float] = field(default_factory=lambda: deque(maxlen=120))  # 2m at 1s
+    #: Ticks, not seconds. 120 of them is two minutes only while the feed
+    #: delivers at `data_ws.TARGET_INTERVAL_S`; see MomentumStrategy below.
+    prices: Deque[float] = field(default_factory=lambda: deque(maxlen=120))
 
 
 @dataclass
 class MomentumStrategy:
+    """A breakout scalper whose lookback is counted in ticks.
+
+    `breakout_window` is a **number of ticks**, though it was commented as
+    seconds; the two coincide only when the feed delivers one tick per second.
+    `time_stop_s` really is seconds -- `router.py:231` compares wall clock --
+    and that asymmetry is the trap: if the feed slows, the window stretches
+    while the stop does not, so a position can time out before its lookback
+    has even filled. `DataFeed.interval_s` reports the live conversion factor
+    and the feed warns when it drifts from the target.
+    """
+
     symbol: str
-    breakout_window: int = 60  # seconds
+    #: Ticks. 60 at a 1s interval is a minute; at 10s it is ten.
+    breakout_window: int = 60
     min_range_bps: int = 5
     time_stop_s: int = 120
     retest_pct: float = 0.0  # allow entry if within pct below breakout high
