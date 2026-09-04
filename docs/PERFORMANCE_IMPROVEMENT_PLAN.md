@@ -63,22 +63,40 @@ Round trip today is `spread + 2 × slippage + 2 × taker` = 14.00–25.44 bps
 depending on instrument (`docs/spread_measurements.json`), ~15 bps on the
 traded mix.
 
-| change                                             | saves     |
-|----------------------------------------------------|----------:|
-| `EXECUTION_MODE=maker` (taker 5 bps → maker 2 bps, both sides) | 6 bps |
-| restrict to the two tightest books (BTC 0.00, ETH 0.04 bps)    | ~1 bps |
+**Correction, 2026-09-04.** An earlier version of this section claimed maker
+execution applies to both sides and reaches ~4.04 bps. It does not.
+`execution.py:379` converts market orders to limits only when
+`side == "buy"` — the comment there is explicit that long-only makes entries
+buys and exits sells, so **exits stay taker market orders**.
 
-**15.0 → ~4.04 bps.** Effect on the baseline:
+What maker execution actually changes, per round trip:
 
-- net mean per trade: **−15.75 → −4.67 bps**
-- share of trades with a payable moment: **9.6% → 42.5%**
+| leg   | taker today                     | maker entry                   |
+|-------|---------------------------------|-------------------------------|
+| entry | 5 bps fee, crosses to ask, 2 bps slippage | 2 bps fee, posts at bid, no slippage |
+| exit  | 5 bps fee, crosses to bid, 2 bps slippage | unchanged                     |
 
-Both already supported: `execution_mode`, `maker_offset_bps` and `limit_ttl_s`
+Entering at the bid and exiting at the bid means the spread is not crossed on
+the round trip at all, so the saving is larger than the fee difference alone:
+roughly **15 → 9 bps** on the traded mix, not 4.
+
+That figure is a model, not a measurement, and it assumes every entry fills —
+which is exactly what is in question. Treat it as the ceiling.
+
+Already supported: `execution_mode`, `maker_offset_bps` and `limit_ttl_s`
 exist, and `ALLOWED_SYMBOLS` narrows the universe.
 
-**What it costs.** A maker order may not fill. `limit_ttl_s = 60` cancels it,
+**What it costs.** A maker order may not fill. `limit_ttl_s = 60` expires it,
 and an unfilled maker order is a missed trade, not a free one — so fill rate
 becomes the new unknown and must be measured before the saving can be claimed.
+
+There is a second cost with no line in the table: **adverse selection**. A
+resting bid fills when the market comes down to it, so maker entries are
+filled preferentially on the trades that were about to go against them, and
+skipped on the ones that ran away. The fee saving is visible in a cost model;
+this is not, and it can exceed it. It shows up only as a worse gross edge on
+filled trades, which is why Stage 1 must compare gross P&L on maker fills
+against the taker baseline, not just compare costs.
 `PaperBroker._try_fill` already models this: a marketable limit is booked as a
 taker fill at the touch, and only a genuinely resting order earns the maker
 side. The paper figures will therefore be honest about it.
