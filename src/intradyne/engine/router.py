@@ -208,10 +208,25 @@ class StrategyRouter:
             except Exception:
                 pass
 
-        # Risk shield
-        if self.risk.flash_crash_check(sym, now_ts, last_f):
-            logger.warning(f"Flash-crash shield halted {sym}")
-            return
+        # Risk shield.
+        #
+        # This used to `return` here, which put it *above* the exit handling
+        # below -- so a symbol in free-fall stopped evaluating its own stops.
+        # The shield fires at a 30% drop from the 1h high, which is precisely
+        # the moment a stop-loss is the only thing standing between a position
+        # and the rest of the move. It did not protect the book; it disarmed
+        # the thing protecting the book, and it did so silently.
+        #
+        # The shield's job is to stop taking *new* risk. So it now sets a flag
+        # and the return moves down to the entry section: stops, trailing
+        # stops, partial take-profits and the time stop all still run, while
+        # entries and pyramiding are refused for as long as the drop stands.
+        halted = self.risk.flash_crash_check(sym, now_ts, last_f)
+        if halted:
+            logger.warning(
+                f"Flash-crash shield: refusing new entries in {sym}. "
+                "Exits remain armed."
+            )
 
         # Position state
         pos = self.portfolio.get_position(sym)
@@ -360,6 +375,11 @@ class StrategyRouter:
                 self._pyramids_done.pop(sym, None)
                 self._partial_stage.pop(sym, None)
                 return
+
+        # Everything below opens or increases exposure, which is what the
+        # flash-crash shield exists to prevent. Everything above closes it.
+        if halted:
+            return
 
         # Max open positions
         open_positions = sum(1 for p in self.portfolio.positions.values() if p.base > 0)
