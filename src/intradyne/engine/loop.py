@@ -180,10 +180,19 @@ EQUITY_SAMPLE_SECONDS = 60.0
 #: Exposed so the API can reconfigure the *live* engine, which previously
 #: required the separate engine process and its own FastAPI app.
 _ACTIVE_ROUTER: Optional[StrategyRouter] = None
+#: The live feed, exposed for the same reason as the router: its transport and
+#: achieved interval are the conversion factor between a strategy window's tick
+#: count and real time, and that was only observable from outside the process
+#: as the *absence* of a warning.
+_ACTIVE_FEED: Optional[DataFeed] = None
 
 
 def get_active_router() -> Optional[StrategyRouter]:
     return _ACTIVE_ROUTER
+
+
+def get_active_feed() -> Optional[DataFeed]:
+    return _ACTIVE_FEED
 
 
 def apply_params(runtime: Dict[str, Any]) -> Dict[str, Any]:
@@ -220,7 +229,7 @@ async def run_once(
     `feed` is injectable so the tick path can be driven without a venue
     connection.
     """
-    global _ACTIVE_ROUTER
+    global _ACTIVE_ROUTER, _ACTIVE_FEED
 
     syms = symbols if symbols is not None else await resolve_symbols(settings)
     if not syms:
@@ -253,6 +262,7 @@ async def run_once(
     last_sample = time.monotonic()
 
     _ACTIVE_ROUTER = router
+    _ACTIVE_FEED = source if isinstance(source, DataFeed) else None
     #: Venue minimums are only knowable once the feed has loaded its markets,
     #: which happens inside `start`. Populated on the first tick and then left
     #: alone; until it is, the configured fallback applies.
@@ -300,6 +310,7 @@ async def run_once(
                 last_sample = now
     finally:
         _ACTIVE_ROUTER = None
+        _ACTIVE_FEED = None
 
 
 async def supervise(
