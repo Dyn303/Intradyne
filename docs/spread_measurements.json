@@ -1,0 +1,105 @@
+{
+ "2026-09-04": {
+  "exchange": "bitget",
+  "symbols": {
+   "ADA/USDT": {
+    "depth_usd_5bps": 2285.92,
+    "samples": 20,
+    "spread_bps": 4.5096,
+    "spread_bps_max": 4.5137,
+    "spread_bps_min": 4.5096
+   },
+   "ALGO/USDT": {
+    "depth_usd_5bps": 0.0,
+    "samples": 20,
+    "spread_bps": 10.805,
+    "spread_bps_max": 21.5983,
+    "spread_bps_min": 10.7933
+   },
+   "ATOM/USDT": {
+    "depth_usd_5bps": 116.88,
+    "samples": 20,
+    "spread_bps": 6.5941,
+    "spread_bps_max": 6.5985,
+    "spread_bps_min": 6.5898
+   },
+   "AVAX/USDT": {
+    "depth_usd_5bps": 10602.08,
+    "samples": 20,
+    "spread_bps": 1.3359,
+    "spread_bps_max": 1.3361,
+    "spread_bps_min": 1.3357
+   },
+   "BTC/USDT": {
+    "depth_usd_5bps": 1561675.18,
+    "samples": 20,
+    "spread_bps": 0.0012,
+    "spread_bps_max": 0.0012,
+    "spread_bps_min": 0.0012
+   },
+   "DOT/USDT": {
+    "depth_usd_5bps": 0.0,
+    "samples": 20,
+    "spread_bps": 11.4351,
+    "spread_bps_max": 11.4351,
+    "spread_bps_min": 11.4351
+   },
+   "ETH/USDT": {
+    "depth_usd_5bps": 969686.49,
+    "samples": 20,
+    "spread_bps": 0.0399,
+    "spread_bps_max": 0.0399,
+    "spread_bps_min": 0.0399
+   },
+   "LINK/USDT": {
+    "depth_usd_5bps": 1195.97,
+    "samples": 20,
+    "spread_bps": 0.8378,
+    "spread_bps_max": 5.0264,
+    "spread_bps_min": 0.8376
+   },
+   "LTC/USDT": {
+    "depth_usd_5bps": 10027.25,
+    "samples": 20,
+    "spread_bps": 3.9043,
+    "spread_bps_max": 3.9085,
+    "spread_bps_min": 1.9522
+   },
+   "NEAR/USDT": {
+    "depth_usd_5bps": 92.97,
+    "samples": 20,
+    "spread_bps": 5.0878,
+    "spread_bps_max": 10.1729,
+    "spread_bps_min": 5.0852
+   },
+   "SOL/USDT": {
+    "depth_usd_5bps": 162914.47,
+    "samples": 20,
+    "spread_bps": 0.9639,
+    "spread_bps_max": 0.9643,
+    "spread_bps_min": 0.9638
+   },
+   "TRX/USDT": {
+    "depth_usd_5bps": 4986.51,
+    "samples": 20,
+    "spread_bps": 0.3048,
+    "spread_bps_max": 0.6095,
+    "spread_bps_min": 0.3048
+   },
+   "XLM/USDT": {
+    "depth_usd_5bps": 1950.75,
+    "samples": 20,
+    "spread_bps": 5.4451,
+    "spread_bps_max": 5.4481,
+    "spread_bps_min": 5.4451
+   },
+   "XRP/USDT": {
+    "depth_usd_5bps": 81860.36,
+    "samples": 20,
+    "spread_bps": 0.6907,
+    "spread_bps_max": 0.6921,
+    "spread_bps_min": 0.6904
+   }
+  }
+ }
+}
