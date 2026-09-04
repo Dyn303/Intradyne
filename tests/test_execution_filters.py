@@ -1,9 +1,14 @@
 """The spread filter and the slicing count, both measured against Bitget.
 
 `max_spread_bps` defaulted to 0 -- disabled -- so the engine crossed whatever
-spread the venue quoted while `slippage_bps` booked every fill at a flat 2.
-On the traded whitelist that gap was real: DOT quoted 11.38-22.78bps with
-nothing resting within 5bps of the touch.
+spread the venue quoted. On the traded whitelist that meant DOT at
+11.38-22.78bps with nothing resting within 5bps of the touch.
+
+An earlier version of this docstring added that `slippage_bps` "booked every
+fill at a flat 2", making the filter sound like a defence of the cost model.
+That was wrong: `PaperBroker._try_fill` fills at the touch and applies
+slippage on top, so the real spread was always paid. The filter is an
+economic bound, not a correction -- see `test_the_bound_caps_the_round_trip`.
 
 `micro_slices` defaulted to 3. Slicing avoids moving the book, and at
 MAX_ORDER_NOTIONAL=300 a full order is 0.02-1.2% of the depth within 5bps on
@@ -97,10 +102,30 @@ def test_default_bound_admits_the_liquid_names_and_excludes_the_thin_ones():
         assert spread > bound, f"{sym} at {spread}bps should be refused"
 
 
-def test_bound_stays_within_the_cost_model():
-    """The bound is 2x the slippage the paper broker charges. Past that the
-    model is not describing the fill, so results flatter the thin names."""
-    assert Settings().max_spread_bps == 2 * PaperBroker(Portfolio()).slippage_bps
+def test_the_bound_caps_the_round_trip():
+    """What the bound actually buys, priced through the real cost model.
+
+    Round trip is `spread + 2x slippage + 2x taker`. This replaces an earlier
+    test asserting `max_spread_bps == 2 * slippage_bps`, which passed on the
+    numbers while encoding a false reason for them.
+    """
+    s = Settings()
+    per_side = PaperBroker(Portfolio()).slippage_bps + s.fees.taker_bps
+    admitted = s.max_spread_bps + 2 * per_side
+    dot = 11.38 + 2 * per_side
+
+    assert admitted == 18.0, "worst admitted round trip"
+    assert dot > admitted, "DOT is excluded precisely because it costs more"
+
+
+def test_the_bound_does_not_make_anything_profitable():
+    """A threshold invites the wrong inference. Every admitted name still
+    loses against the ~0.5bps edge the startup gate cites; the bound limits
+    how fast, and keeps costs to something measurable."""
+    s = Settings()
+    per_side = PaperBroker(Portfolio()).slippage_bps + s.fees.taker_bps
+    best_case = 0.0 + 2 * per_side  # BTC, a zero spread
+    assert best_case > 0.5, "even a free spread loses to fees and slippage"
 
 
 def test_a_wide_spread_produces_no_entry():

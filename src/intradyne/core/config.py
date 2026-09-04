@@ -174,17 +174,26 @@ class Settings(BaseSettings):
     #:     BTC 0.00   ETH 0.04   SOL 0.96   XRP 0.69
     #:     LTC 1.96   AVAX 1.33  ADA 4.51   DOT 11.38-22.78
     #:
-    #: DOT had *nothing* resting within 5bps of the touch, while
-    #: `slippage_bps` (below) charges every fill a flat 2. So the engine was
-    #: trading a 11-23bps spread and booking it as 2 -- against a strategy
-    #: edge measured at ~0.5bps, which is the whole margin several times over.
+    #: DOT had *nothing* resting within 5bps of the touch.
     #:
-    #: The bound is 2x `slippage_bps`: the filter's job is to keep reality
-    #: inside the cost model's assumption, and past twice the assumed
-    #: slippage the model is not describing the fill any more. At 4 this
-    #: admits the six liquid names and excludes ADA and DOT. Raise it via
-    #: MAX_SPREAD_BPS to trade wider books, but raise `slippage_bps` with it
-    #: or the results will flatter exactly the names where cost decides.
+    #: An earlier version of this comment justified the bound as "2x
+    #: `slippage_bps`, to keep reality inside the cost model's assumption".
+    #: That reasoning was wrong and is corrected here. `PaperBroker._try_fill`
+    #: already fills at the touch -- `px = ask if buy else bid` -- so the
+    #: model was never assuming a flat spread; `slippage_bps` is an extra
+    #: impact term *on top of* crossing the real one. Measured round trips:
+    #: BTC 14.00bps, LTC 15.96, ADA 18.51, DOT 25.38. Cost tracked the quoted
+    #: spread 1:1 all along, and DOT was charged the most, not the least.
+    #:
+    #: So the filter is not defending the cost model. It is an economic
+    #: bound: round trip is `spread + 4bps slippage + 10bps taker`, so a
+    #: bound of 4 caps the worst round trip at 18bps instead of DOT's 25.38.
+    #: It separates the six liquid names from the two thin ones.
+    #:
+    #: Stated plainly, because a threshold invites the wrong inference: this
+    #: does not make anything profitable. Against an edge measured at ~0.5bps
+    #: every admitted name still loses. The bound limits how fast, and keeps
+    #: the traded universe to instruments whose cost is at least measurable.
     max_spread_bps: int = 4  # 0 disables
     #: Fallback smallest order, in quote currency, for symbols whose venue
     #: declares no `limits.cost.min`. The venue's own figure is preferred and
