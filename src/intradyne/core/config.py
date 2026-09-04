@@ -186,6 +186,10 @@ class Settings(BaseSettings):
     #: MAX_SPREAD_BPS to trade wider books, but raise `slippage_bps` with it
     #: or the results will flatter exactly the names where cost decides.
     max_spread_bps: int = 4  # 0 disables
+    #: Fallback smallest order, in quote currency, for symbols whose venue
+    #: declares no `limits.cost.min`. The venue's own figure is preferred and
+    #: overrides this at runtime; Bitget reports $1.00 across the whitelist.
+    min_order_notional: float = 1.0
     entry_cooldown_s: int = 0
 
     # Sentiment
