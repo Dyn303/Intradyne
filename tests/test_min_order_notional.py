@@ -47,6 +47,22 @@ def _exec(**kw):
     return ExecutionManager(ctx), ctx
 
 
+def _submit_side(mgr, qty, side):
+    return asyncio.run(
+        mgr.submit(
+            SYM,
+            side,
+            "market",
+            qty,
+            None,
+            {"symbol": SYM, "last": PX, "bid": PX, "ask": PX},
+            "test",
+            {},
+            {},
+        )
+    )
+
+
 def _submit(mgr, qty):
     return asyncio.run(
         mgr.submit(
@@ -140,3 +156,61 @@ class TestVenueFloors:
     )
     def test_missing_metadata_yields_no_floor_rather_than_a_crash(self, markets):
         assert venue_min_notionals(markets, [SYM]) == {}
+
+
+class TestStrandedPositions:
+    """A refused *exit* is a different event from a refused entry.
+
+    The router resubmits the exit on every tick for as long as the stop stays
+    breached. Ledger-appending each refusal grew the hash chain without bound
+    -- once per tick, forever, for a position worth cents.
+
+    Refusing is still correct: the venue will not accept a sub-minimum sell
+    either, so the holding genuinely is stranded, and filling it in paper
+    would put a trade in the equity curve that live could never produce. The
+    entry floor stops these being opened; this reports the ones that exist.
+    """
+
+    def _with_dust(self):
+        mgr, ctx = _exec()
+        ctx.min_notional[SYM] = 1.0
+        ctx.portfolio.buy(SYM, 0.40 / PX, PX)
+        return mgr, ctx
+
+    def _exit(self, mgr, ctx):
+        return _submit_side(mgr, ctx.portfolio.get_position(SYM).base, "sell")
+
+    def test_a_dust_position_cannot_be_closed(self):
+        """Stated rather than hidden: the stop-loss on such a position will
+        not execute, because the exchange would not accept the order."""
+        mgr, ctx = self._with_dust()
+        r = self._exit(mgr, ctx)
+        assert r["status"] == "blocked"
+        assert r["stranded"] is True
+
+    def test_the_refusal_is_recorded_once_not_every_tick(self):
+        mgr, ctx = self._with_dust()
+        for _ in range(50):
+            self._exit(mgr, ctx)
+        entries = [e for e in ctx.ledger if "below_min_notional" in str(e)]
+        assert len(entries) == 1, f"ledger grew to {len(entries)} entries"
+
+    def test_a_refused_entry_is_still_recorded_every_time(self):
+        """Entries are not retried tick-on-tick the way a breached stop is,
+        and each one is a distinct decision worth auditing."""
+        mgr, ctx = _exec()
+        for _ in range(5):
+            _submit(mgr, 0.0049 / PX)
+        entries = [e for e in ctx.ledger if "below_min_notional" in str(e)]
+        assert len(entries) == 5
+
+    def test_a_position_that_grows_back_is_closable_again(self):
+        mgr, ctx = self._with_dust()
+        self._exit(mgr, ctx)
+        ctx.portfolio.buy(SYM, 200.0 / PX, PX)
+        assert self._exit(mgr, ctx)["status"] != "blocked"
+        # ...and having recovered, it can strand again and report again.
+        ctx.portfolio.positions[SYM].base = 0.40 / PX
+        assert self._exit(mgr, ctx)["stranded"] is True
+        entries = [e for e in ctx.ledger if "below_min_notional" in str(e)]
+        assert len(entries) == 2
