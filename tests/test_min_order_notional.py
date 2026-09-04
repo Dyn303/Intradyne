@@ -214,3 +214,63 @@ class TestStrandedPositions:
         assert self._exit(mgr, ctx)["stranded"] is True
         entries = [e for e in ctx.ledger if "below_min_notional" in str(e)]
         assert len(entries) == 2
+
+
+class TestEntryFloor:
+    """The venue floor stops orders the exchange would reject. It does not
+    stop orders that are merely pointless.
+
+    Observed in an hour of paper trading after the venue floor landed: 3 of
+    288 fills were $1.01, $1.13 and $1.22 -- valid orders, accepted by the
+    exchange, spending an order slot and rate-limit budget to move a dollar.
+
+    Buys only. An exit is worth making at any size, because the alternative is
+    holding the position, and a floor that blocks exits is how #48 stranded
+    positions whose stops then could not fire.
+    """
+
+    def _mgr(self, floor=15.0):
+        mgr, ctx = _exec(min_entry_notional=floor)
+        ctx.min_notional[SYM] = 1.0
+        return mgr, ctx
+
+    def test_a_dollar_entry_is_refused(self):
+        mgr, _ = self._mgr()
+        r = _submit(mgr, 1.0146 / PX)  # an actual observed fill
+        assert r["status"] == "blocked"
+        assert r["action"] == "below_min_entry"
+
+    def test_a_full_size_entry_passes(self):
+        mgr, _ = self._mgr()
+        assert _submit(mgr, 169.0 / PX)["status"] != "blocked"
+
+    def test_an_exit_of_the_same_size_is_untouched(self):
+        """The asymmetry that makes this a separate setting."""
+        mgr, ctx = self._mgr()
+        ctx.portfolio.buy(SYM, 5.0 / PX, PX)
+        r = _submit_side(mgr, ctx.portfolio.get_position(SYM).base, "sell")
+        assert r["status"] != "blocked", r
+
+    def test_zero_disables_it(self):
+        mgr, _ = self._mgr(floor=0.0)
+        assert _submit(mgr, 1.0146 / PX)["status"] != "blocked"
+
+    def test_the_venue_floor_still_bites_underneath(self):
+        """A sub-venue-minimum order is refused for the venue's reason, not
+        this one -- the two must stay distinguishable in the ledger."""
+        mgr, _ = self._mgr()
+        assert _submit(mgr, 0.0049 / PX)["action"] == "below_min_notional"
+
+    def test_the_refusal_is_recorded(self):
+        mgr, ctx = self._mgr()
+        _submit(mgr, 1.0146 / PX)
+        assert [e for e in ctx.ledger if "below_min_entry" in str(e)]
+
+    def test_the_default_is_a_twentieth_of_a_full_order(self):
+        from intradyne.core.config import Settings
+
+        s = Settings()
+        assert s.min_entry_notional == 15.0
+        assert s.min_entry_notional > s.min_order_notional, (
+            "the policy floor must sit above the venue floor to do anything"
+        )

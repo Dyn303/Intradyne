@@ -199,6 +199,15 @@ class Settings(BaseSettings):
     #: declares no `limits.cost.min`. The venue's own figure is preferred and
     #: overrides this at runtime; Bitget reports $1.00 across the whitelist.
     min_order_notional: float = 1.0
+    #: Smallest *entry* worth placing, in quote currency. The venue minimum
+    #: above says what the exchange rejects; this says what is not worth an
+    #: order slot, and applies to buys only so an exit is never blocked.
+    #:
+    #: 5% of MAX_ORDER_NOTIONAL (300), so a remnant worth less than a
+    #: twentieth of a full order is skipped. Observed before this existed:
+    #: 3 of 288 fills in an hour were $1.01, $1.13 and $1.22 -- valid, and
+    #: pointless. 0 disables it.
+    min_entry_notional: float = 15.0
     #: The spread a backtest prices its fills against, in bps. OHLCV carries
     #: no spread, so one has to be assumed, and the assumption decides what a
     #: backtest concludes. This was hardcoded at 1.0 inside `bars_to_l1` and
