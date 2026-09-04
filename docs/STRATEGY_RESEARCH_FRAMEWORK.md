@@ -109,6 +109,36 @@ sigma across 6,391 trades -- and irrelevant:
 `src/intradyne/backtester/costs.py` already computes what this gate needs:
 `round_trip_cost_pct()`, `breakeven_win_rate()` and `expectancy_pct()`.
 
+**The 14 bps is a floor, not a ceiling.** That figure is taker fees plus
+slippage on a book quoted at effectively zero spread, which is what BTC and
+ETH offer and what the crypto work was measured on. Cost is
+`spread + 2x slippage + 2x taker`, so it rises one-for-one with the quoted
+spread. Measured on Bitget, 2026-09-04:
+
+| symbol | quoted spread | round trip |
+|---|---|---|
+| BTC/USDT | 0.00 bps | 14.00 bps |
+| LTC/USDT | 1.96 | 15.96 |
+| ADA/USDT | 4.51 | 18.51 |
+| DOT/USDT | 11.38-22.78 | **25.38** |
+
+Two consequences for anyone applying gate A1. The cost side of the ratio is a
+property of the instrument, not of the venue or the strategy, so it must be
+measured per instrument -- the same discipline Part 4 already requires for
+breadth. And a backtest that assumes one spread across a universe answers a
+question about no real book: `DataLoader.bars_to_l1` assumed 1 bp for every
+instrument until this was measured, which was near enough on the majors and
+10 bps optimistic on DOT.
+
+An earlier draft of this section reasoned the opposite way -- that the paper
+broker charged a flat slippage while real spreads ran wider, so results
+flattered thin names. That was wrong. `PaperBroker._try_fill` fills at the
+touch and applies slippage on top, so the real spread was always paid, and
+the thin names were charged the most all along. The error is recorded rather
+than deleted because the framework's own D-stage asks what would have to be
+true for a result to be wrong, and a cost model nobody had priced end to end
+was the answer here.
+
 **A2. Compute the minimum detectable effect before choosing criteria.**
 
 The source notes that a profit factor of 5.0 on 12 trades is worthless (§10)
