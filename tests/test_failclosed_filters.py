@@ -32,13 +32,21 @@ def _router():
     pf = Portfolio()
     pf.balances["USDT"] = 100_000.0
     risk = RiskManager(
-        max_pos_pct=0.5, per_trade_sl_pct=0.02, tp_pct=0.04,
-        dd_soft=0.9, dd_hard=0.95, flash_crash_drop_1h=0.9,
-        max_concurrent_pos=5, kill_switch_breaches=99,
+        max_pos_pct=0.5,
+        per_trade_sl_pct=0.02,
+        tp_pct=0.04,
+        dd_soft=0.9,
+        dd_hard=0.95,
+        flash_crash_drop_1h=0.9,
+        max_concurrent_pos=5,
+        kill_switch_breaches=99,
     )
     ctx = ExecContext(
-        portfolio=pf, paper=PaperBroker(pf), ledger=FakeLedger(),
-        whitelist=[SYM], fast_mode=True,
+        portfolio=pf,
+        paper=PaperBroker(pf),
+        ledger=FakeLedger(),
+        whitelist=[SYM],
+        fast_mode=True,
     )
     r = StrategyRouter([SYM], risk, ExecutionManager(ctx), pf)
     r._max_spread_bps = 4
