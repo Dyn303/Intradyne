@@ -4,7 +4,16 @@ import asyncio
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterator, Dict, Iterator, List, Tuple
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+)
 
 import pandas as pd
 import ccxt.async_support as ccxt
@@ -278,6 +287,24 @@ class DataLoader:
     def bars_to_l1(
         df: pd.DataFrame, spread_bps: float = 1.0
     ) -> Iterator[Dict[str, Any]]:
+        """Synthesise an L1 quote from an OHLCV bar.
+
+        OHLCV carries no spread, so one has to be assumed, and the assumption
+        decides what a backtest concludes. `spread_bps` defaulted to 1.0 and
+        nothing ever passed anything else, so every instrument was modelled at
+        one basis point. Measured on Bitget against a round trip that also
+        pays 4bps slippage and 10bps taker fees:
+
+            symbol      real    at 1bps    understated by
+            BTC/USDT   14.00      15.00            -1.00
+            LTC/USDT   15.96      15.00            +0.96
+            ADA/USDT   18.51      15.00            +3.51
+            DOT/USDT   25.38      15.00           +10.38
+
+        Roughly neutral on the liquid names and badly optimistic on the thin
+        ones -- which are exactly the names where an edge lives or dies. The
+        caller now supplies this; see `multi_symbol_stream`.
+        """
         if df.empty:
             # A generator returns by stopping; `return iter(())` here was a
             # value-return inside a generator, which Python ignores.
@@ -298,8 +325,21 @@ class DataLoader:
             }
 
     async def multi_symbol_stream(
-        self, symbols: List[str], timeframe: str, start_ms: int, end_ms: int
+        self,
+        symbols: List[str],
+        timeframe: str,
+        start_ms: int,
+        end_ms: int,
+        spread_bps: float = 1.0,
+        spread_bps_by_symbol: Optional[Mapping[str, float]] = None,
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
+        """Merge per-symbol bars into one time-ordered stream.
+
+        `spread_bps` is the cost assumption every fill in a backtest is priced
+        against, and `spread_bps_by_symbol` overrides it per instrument where
+        a real measurement exists -- a single figure cannot be right for both
+        BTC at 0.00bps and DOT at 11.38.
+        """
         # Load all symbols then merge by timestamp using heap
         import heapq
 
@@ -308,8 +348,12 @@ class DataLoader:
             df = await self.load_ohlcv(s, timeframe, start_ms, end_ms)
             frames[s] = df
 
+        by_symbol = spread_bps_by_symbol or {}
         iters: Dict[str, Iterator[Dict[str, Any]]] = {
-            s: self.bars_to_l1(frames[s]).__iter__() for s in symbols
+            s: self.bars_to_l1(
+                frames[s], float(by_symbol.get(s, spread_bps))
+            ).__iter__()
+            for s in symbols
         }
         heap: List[Tuple[float, str, Dict[str, Any]]] = []
         for s, it in iters.items():

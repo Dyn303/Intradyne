@@ -71,6 +71,16 @@ def run(
     _offset = float(_exec_cfg.get("maker_offset_bps", settings.maker_offset_bps))
     _ttl = float(_exec_cfg.get("limit_ttl_s", settings.limit_ttl_s))
 
+    # Stated rather than assumed. This figure sets what every fill in the run
+    # costs, so a result read without it is not interpretable.
+    _spread_bps = float(
+        _exec_cfg.get("backtest_spread_bps", settings.backtest_spread_bps)
+    )
+    logger.info(
+        f"backtest cost model: spread {_spread_bps}bps + slippage "
+        f"{slippage_bps}bps + taker {taker_bps}bps per side"
+    )
+
     portfolio = Portfolio(maker_bps=maker_bps, taker_bps=taker_bps)
     paper = PaperBroker(portfolio, slippage_bps=slippage_bps, limit_ttl_s=_ttl)
     ledger_path = Path(settings.artifacts_dir) / "backtests" / "ledger.jsonl"
@@ -170,7 +180,11 @@ def run(
             peak_equity, \
             traded_notional
         async for sym, bar in data_loader.multi_symbol_stream(
-            symbols, timeframe, start_ms, end_ms
+            symbols,
+            timeframe,
+            start_ms,
+            end_ms,
+            spread_bps=_spread_bps,
         ):
             # augment bar to l1 with symbol
             l1 = {**bar, "symbol": sym}
