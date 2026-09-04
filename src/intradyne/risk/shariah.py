@@ -49,6 +49,7 @@ is supplied explicitly by whoever made the ruling.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from datetime import date, datetime, timezone
 from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
 
@@ -99,8 +100,47 @@ FORBIDDEN_ORDER_PARAMS = (
 DEFAULT_BLOCKED_TAGS = ("gambling", "riba", "porn")
 
 
+#: A crypto pair: BASE/QUOTE, both alphanumeric, and not the same asset twice.
+_CRYPTO = re.compile(r"^([A-Z0-9]{2,15})/([A-Z0-9]{2,15})$")
+
+#: A US equity ticker, including share classes (BRK-B) and the dotted form.
+_EQUITY = re.compile(r"^[A-Z]{1,5}([.-][A-Z]{1,3})?$")
+
+
 def is_crypto_symbol(symbol: str) -> bool:
-    return "/" in (symbol or "")
+    """Kept for callers that only ask the yes/no question.
+
+    `classify_symbol` is the one that decides policy: this returns False for an
+    unclassifiable symbol, which used to mean "treat it as an equity".
+    """
+    return classify_symbol(symbol) == "crypto"
+
+
+def classify_symbol(symbol: str) -> str:
+    """ "crypto", "equity", or "unknown".
+
+    This used to be `"/" in symbol`, which is a test for punctuation rather
+    than for an asset class. Once the two classes were screened by different
+    evidence, that heuristic stopped gating and started *routing* -- and a
+    router with no reject branch sends every malformed input somewhere.
+
+    What it sent them to was the more permissive branch. With an unconfigured
+    allow-list, `PORNCO/USDT` and `AAPL/USD` both passed business screening
+    outright, because a slash was the whole test. Meanwhile `BTC` was refused
+    for wanting an equity screening record.
+
+    So the shapes are matched explicitly and anything else is `unknown`, which
+    refuses. A symbol nobody can classify is not an equity by default.
+    """
+    sym = (symbol or "").strip().upper()
+    m = _CRYPTO.match(sym)
+    if m:
+        # BTC/BTC is not a pair; it is a typo that would otherwise be screened
+        # as though it were tradeable.
+        return "crypto" if m.group(1) != m.group(2) else "unknown"
+    if _EQUITY.match(sym):
+        return "equity"
+    return "unknown"
 
 
 # ---- imperative helpers (used at the broker boundary) --------------------
@@ -201,8 +241,27 @@ class ShariahPolicy:
         # Business screening, applied to every instrument. Which evidence
         # permits it depends on the asset class; that no evidence permits it
         # is refused either way.
-        if is_crypto_symbol(symbol):
-            if self.allowed_crypto and symbol not in self.allowed_crypto:
+        asset = classify_symbol(symbol)
+        if asset == "unknown":
+            return (
+                False,
+                f"cannot classify {symbol!r} as an instrument: it is neither a "
+                "BASE/QUOTE pair nor a ticker, so no screen applies to it",
+            )
+        if asset == "crypto":
+            if not self.allowed_crypto:
+                # An unconfigured allow-list used to permit every pair, which
+                # made appending "/USDT" to any name a way past this gate.
+                # `docs/FULLSTACK_PLAN.md` already settled the shape of this
+                # question for the Mini App: an unset allowlist disables auth
+                # rather than defaulting to open, because "a configured bot
+                # with no allowlist is the genuinely dangerous state".
+                return (
+                    False,
+                    "no crypto allow-list is configured, so no pair is "
+                    "permitted. Set ALLOWED_SYMBOLS, or pass allowed_crypto",
+                )
+            if symbol not in self.allowed_crypto:
                 return False, f"Crypto {symbol} not in allowed list"
         else:
             ok, why = self._equity_permitted(symbol)
@@ -242,5 +301,6 @@ __all__ = [
     "assert_whitelisted",
     "enforce_spot_only",
     "forbid_shorting",
+    "classify_symbol",
     "is_crypto_symbol",
 ]
