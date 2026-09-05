@@ -217,3 +217,60 @@ weaker null would have concluded.
 
 A single survivor at the boundary of a corrected threshold is the shape a false
 positive takes. The hold-out decides it.
+
+## Outcome — hold-out, and the verdict
+
+2025-09 → 2026-07, 8,016 hourly bars per symbol, same null, same bar.
+
+| signal   | lb | hz | n     | edge   | null 95%          | p      | verdict |
+|----------|---:|---:|------:|-------:|-------------------|-------:|---------|
+| breakout | 12 |  4 | 3,411 | −0.36  | [−7.83, −0.35]    | 0.9701 | no      |
+| breakout | 12 |  8 | 2,434 | −3.61  | [−12.76, −1.60]   | 0.9005 | no      |
+| breakout | 48 |  4 | 1,403 | −1.31  | [−10.74, +2.73]   | 0.8657 | no      |
+| **breakout** | **48** | **8** | 1,006 | **−6.93** | [−18.17, +1.33] | 0.6269 | **no** |
+| meanrev  | 12 |  4 | 3,634 | −2.31  | [−6.88, +0.11]    | 0.7761 | no      |
+| meanrev  | 12 |  8 | 2,564 | −8.06  | [−12.04, −1.94]   | 0.4080 | no      |
+| meanrev  | 48 |  4 | 1,652 | −3.83  | [−9.24, +1.13]    | 0.4279 | no      |
+| meanrev  | 48 |  8 | 1,168 | −8.88  | [−14.61, +1.60]   | 0.3333 | no      |
+
+**Zero of eight.** The primary's survivor did not merely weaken: **+17.86 →
+−6.93**, a swing of 24.8 bps and a change of sign. That is what an in-sample
+artefact looks like, and it is what the three cautions recorded above were
+pointing at.
+
+### Verdict: FAIL
+
+Registered criterion: *"Primary passes, hold-out does not → FAIL, and reported
+as an in-sample artefact."* Met exactly.
+
+### Crypto closes
+
+The bound set at the top of this document: *"This is one approach... If it
+fails, crypto closes and does not reopen on a further reframing — the next
+reopening requires a new instrument class, not a new angle on this one."*
+
+It failed. Crypto is closed. This is the eleventh and last approach against the
+asset class, and the condition was written before the answer was known.
+
+### What was actually learned
+
+Not "the signals are bad" — that was already known from ten prior approaches
+and 1,649 live paper trades. What this settles is the **horizon defence**: the
+argument that the previous ten failed only because a 2-minute holding period
+made success arithmetically impossible. Extending to 4 and 8 hours, where the
+typical move is 2.5× the round trip rather than 0.2×, does not produce an edge
+either. The horizon was a real constraint and removing it was not sufficient.
+
+That closes the last open line of argument for this asset class, which is why
+the programme can close rather than merely pause.
+
+### The methodological finding, which outlives the programme
+
+Under the originally registered random-bar control, four configurations
+"passed" with edges of +37 to +92 bps at t between +10.8 and +13.1 — results
+that would have justified real money. Every one was the period's drift plus the
+arithmetic of selecting a window extremum. The abort condition caught it, the
+resampling null removed it, and the hold-out would have caught it again.
+
+Three independent safeguards were needed to stop one false positive. Any future
+programme against any instrument should assume the same.
