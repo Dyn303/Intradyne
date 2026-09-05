@@ -208,6 +208,12 @@ class Settings(BaseSettings):
     #: 3 of 288 fills in an hour were $1.01, $1.13 and $1.22 -- valid, and
     #: pointless. 0 disables it.
     min_entry_notional: float = 15.0
+    #: Stage 2 control arm. Per-tick probability that the control strategy
+    #: signals a buy, ignoring the market. 0 disables it and the real
+    #: strategies run. See docs/STAGE_2_PREREGISTRATION.md.
+    random_entry_p: float = 0.0
+    #: Seed for that control, so a run can be repeated.
+    random_entry_seed: int = 0
     #: The spread a backtest prices its fills against, in bps. OHLCV carries
     #: no spread, so one has to be assumed, and the assumption decides what a
     #: backtest concludes. This was hardcoded at 1.0 inside `bars_to_l1` and
