@@ -119,15 +119,23 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--a", default="data/ab_taker_ledger.jsonl")
     ap.add_argument("--b", default="data/ab_maker_ledger.jsonl")
+    # The arms were hardcoded as "taker" and "maker entries" for the Stage 1
+    # execution test. Stage 2 reuses this script for strategy-vs-random, where
+    # those labels name the wrong thing entirely -- and a mislabelled arm is
+    # how a control gets read as a treatment.
+    ap.add_argument("--label-a", default="A  (arm A)")
+    ap.add_argument("--label-b", default="B  (arm B)")
     args = ap.parse_args()
 
     ga, sa, ha = _read(Path(args.a))
     gb, sb, hb = _read(Path(args.b))
 
-    print("== concurrent A/B: execution mode ==")
+    print("== concurrent A/B ==")
     print("same symbols, same clock, separate portfolios and ledgers")
-    _summarise("A  taker (control)", ga, sa, ha)
-    _summarise("B  maker entries", gb, sb, hb)
+    print(f"  A: {Path(args.a).name}")
+    print(f"  B: {Path(args.b).name}")
+    _summarise(args.label_a, ga, sa, ha)
+    _summarise(args.label_b, gb, sb, hb)
     _welch(ga, gb)
 
     print("\n== what this design still does not control ==")
