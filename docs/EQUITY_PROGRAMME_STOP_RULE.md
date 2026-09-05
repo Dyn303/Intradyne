@@ -16,6 +16,22 @@ was proposed.
 
 ---
 
+## Crypto reopened once, under a bound (2026-09-05)
+
+This document records that crypto got ten approaches because nobody said stop.
+It has since been reopened once, and the condition is recorded here so the
+reopening is visible from the place that closed it.
+
+The justification was not a new signal but a measurement: at the 2-minute
+holding period every prior approach used, the typical price move is 2.7 bps
+against a 14 bps round trip. A perfect predictor loses there, so those ten
+results are evidence about the horizon rather than about signals.
+
+The bound: **one** approach, fully pre-specified in
+`docs/HORIZON_PREREGISTRATION.md` before any signal touched the data. If it
+fails, crypto closes and does not reopen on a further reframing — the next
+reopening requires a new instrument class, not a new angle on this one.
+
 ## The budget: four approaches
 
 The equities programme gets **four**.
