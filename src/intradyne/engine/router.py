@@ -20,6 +20,7 @@ from .portfolio import Portfolio
 from .strategies.momentum import MomentumStrategy
 from .strategies.meanrev import MeanRevStrategy
 from .strategies.ml import MLStrategy
+from .strategies.random_entry import RandomEntryStrategy
 from .metrics_ml import ML_SIGNALS
 from .metrics import METRICS
 
@@ -56,6 +57,11 @@ class StrategyRouter:
         self.risk = risk
         self.execman = execman
         self.portfolio = portfolio
+        #: Stage 2's control arm. When set, it *replaces* the real strategies
+        #: rather than joining them -- a control that runs alongside what it
+        #: is controlling for measures nothing.
+        self.random_entry_p: float = 0.0
+        self.random: Dict[str, RandomEntryStrategy] = {}
         self.momo = {s: MomentumStrategy(symbol=s) for s in symbols}
         self.meanrev = {s: MeanRevStrategy(symbol=s) for s in symbols}
         self.ml: dict[str, MLStrategy] = {}
@@ -491,9 +497,15 @@ class StrategyRouter:
                 return
 
         # Strategy priority
-        strats: List[TickStrategy] = [self.momo[sym], self.meanrev[sym]]
-        if sym in self.ml:
-            strats.insert(0, self.ml[sym])
+        if self.random_entry_p > 0:
+            # Control arm: everything downstream -- sizing, stops, targets,
+            # the time stop, the cost model -- is identical. Only the choice
+            # of *when* to enter differs, which is the thing under test.
+            strats: List[TickStrategy] = [self.random[sym]]
+        else:
+            strats = [self.momo[sym], self.meanrev[sym]]
+            if sym in self.ml:
+                strats.insert(0, self.ml[sym])
         for strat in strats:
             sig = strat.on_tick(l1)
             if not sig:

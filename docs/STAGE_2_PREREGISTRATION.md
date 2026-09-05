@@ -97,10 +97,42 @@ A conclusion that cannot be overturned is not a finding, so, specifically:
 Run this only to test challenge (1), which is the live one.
 
 **Design.** Forward-only, paper, the six-symbol universe, taker execution so
-the sample matches the existing baseline. For every entry the strategy takes,
-a control entry is recorded at the same timestamp on the same instrument with
-the side chosen at random, held to the same exit rule. The comparison is
-strategy minus control, which removes any drift common to both.
+the sample matches the existing baseline. The strategy arm and a control arm
+run concurrently on the same symbols against the same clock, with separate
+portfolios and ledgers. The comparison is strategy minus control, which
+removes any drift common to both.
+
+### Amendment 1 — the control is random *time*, not random *side*
+
+Registered 2026-09-05, **before the run**, on discovering the original was
+both unimplementable and wrong.
+
+*Unimplementable:* `forbid_shorting` refuses a sell beyond inventory at the
+compliance layer, so half of a random-side control's entries would be blocked
+rather than executed. The arm would silently become "long whenever the coin
+flip said long", which is a random-time control with half the sample and an
+undisclosed selection step.
+
+*Wrong:* the strategy's claim is that at these moments price is about to rise
+more than usual. The null is therefore that these moments are no different
+from other moments, and the control that tests it enters long at **arbitrary
+times** on the same instruments under the same exit rules. Random side tests
+whether the chosen direction carries information, which is not a question a
+long-only rule raises.
+
+The control is `RandomEntryStrategy`: a fixed per-tick probability of
+signalling a buy, ignoring price entirely, seeded per symbol so two symbols do
+not fire in lockstep. It **replaces** the real strategies in its arm rather
+than joining them, since a control running alongside what it controls for
+measures nothing. Everything downstream -- sizing, stops, targets, the time
+stop, the cost model, the spread filter -- is identical between arms, so the
+only difference is when the entry happens.
+
+`p = 0.004` per tick, which at a 1 s interval over six symbols is a few
+hundred signals a day before position capacity refuses some, matching the live
+strategy's order of magnitude. The realised counts are reported rather than
+assumed equal, and the comparison is of means, which does not require them to
+match.
 
 **Statistic.** Difference in mean gross bps per trade, with a **day-clustered**
 standard error — the cluster is the trading day, because that is the level at

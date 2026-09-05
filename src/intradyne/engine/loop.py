@@ -165,6 +165,23 @@ def build_router(
         params=params,
     )
     router._max_spread_bps = int(max(0, settings.max_spread_bps))
+    if settings.random_entry_p > 0:
+        from .strategies.random_entry import RandomEntryStrategy
+
+        router.random_entry_p = float(settings.random_entry_p)
+        router.random = {
+            s: RandomEntryStrategy(
+                symbol=s,
+                p=float(settings.random_entry_p),
+                seed=int(settings.random_entry_seed),
+            )
+            for s in symbols
+        }
+        logger.bind(event="control_arm").warning(
+            f"CONTROL ARM: entering at random, p={settings.random_entry_p} per "
+            f"tick, seed={settings.random_entry_seed}. The real strategies are "
+            "disabled. This is not a trading configuration."
+        )
     router._entry_cooldown_s = int(max(0, settings.entry_cooldown_s))
     router._sentiment_enabled = bool(settings.sentiment_enabled)
     router._sentiment_long_min = float(settings.sentiment_long_min)
