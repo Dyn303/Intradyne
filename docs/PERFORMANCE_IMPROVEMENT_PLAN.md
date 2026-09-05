@@ -107,6 +107,19 @@ not make the strategy profitable, and no combination of Stage 1 changes can.
 
 ## Stage 2 — The gate: does any gross edge exist?
 
+**Registered 2026-09-05 in `docs/STAGE_2_PREREGISTRATION.md`, and the
+decision-relevant half is already answered there.** Detecting a 9 bps effect
+at the observed sd of 14.35 needs 41 trades; the existing sample is 1,649, so
+the test is forty times over-powered for the effect size that matters. The
+95% bound on gross edge is [−1.30, +0.09] naive and [−7.53, +6.32] with the
+standard error stressed tenfold for day-clustering — below the 9 bps
+best-case cost floor under every assumption tried.
+
+What remains open is narrow and specific: whether 2026-09-04 was a day about
+10 bps worse than average, which is the only way a true edge above the floor
+could produce the observed −0.61. The pre-registration sets out the forward
+run that would test it, and fixes the criteria in advance.
+
 This decides whether Stages 3 and 4 are worth anyone's time, and it is the
 stage this plan actually turns on.
 
