@@ -27,6 +27,12 @@ holding period every prior approach used, the typical price move is 2.7 bps
 against a 14 bps round trip. A perfect predictor loses there, so those ten
 results are evidence about the horizon rather than about signals.
 
+**Outcome, 2026-09-05: it failed, and crypto is closed.** The primary window
+produced one survivor of eight; the hold-out turned it from +17.86 bps to
+−6.93, a change of sign. Zero of eight out of sample. Under the bound below,
+crypto does not reopen on a further reframing — the next reopening requires a
+new instrument class. Details in `docs/HORIZON_PREREGISTRATION.md`.
+
 The bound: **one** approach, fully pre-specified in
 `docs/HORIZON_PREREGISTRATION.md` before any signal touched the data. If it
 fails, crypto closes and does not reopen on a further reframing — the next
