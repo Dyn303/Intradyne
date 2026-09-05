@@ -63,6 +63,12 @@ One place of record, so the budget cannot be lost track of. A slot is *spent*
 when its test runs to a verdict or any interim result is seen — not when its
 pre-registration is written.
 
+Slot 1 is registered but **not started**: see
+`docs/SLOT_1_PREREGISTRATION.md`. Its preconditions -- prices joinable to the
+point-in-time universe by CUSIP through renames, spreads measured rather than
+assumed, and at least 80% of the filed universe priceable -- are unmet, and a
+test that cannot be run does not spend a slot.
+
 | slot | hypothesis | pre-registration | state |
 |---|---|---|---|
 | 1 | Intraday return predictability, flat at every close | `docs/APPROACH_1_PREREGISTRATION.md` | **not spent** — precondition failure on data reachability |
