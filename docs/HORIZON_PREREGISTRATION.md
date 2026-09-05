@@ -78,9 +78,52 @@ These are the hourly translations of `MomentumStrategy` and `MeanRevStrategy`.
 No threshold tuning, no additional filters, no parameter search. Four signal
 configurations × two horizons = **eight tests**.
 
-**Control.** Entry at a uniformly random bar, same symbols, same horizons,
-matched in count per symbol per horizon, seeded and recorded. The comparison is
-signal minus control.
+**Control.** See Amendment 1 -- the registered control was wrong, and its own
+abort condition is what caught it.
+
+### Amendment 1 -- the control is a resampling null
+
+Registered 2026-09-05, after the primary run aborted twice and **before any
+result was read as a finding**.
+
+The registered control was entry at a uniformly random bar. Its own abort
+condition rejected it: the control's mean sat at |t| = 4.22 from zero, and 8.72
+after an attempt to match it per day. The diagnostic was that the control's
+*sign flipped with the signal it was paired with* -- positive alongside
+breakout, negative alongside mean reversion -- because breakout fires on days
+price is rising and mean reversion on days it is falling. The control was
+measuring the day's direction rather than providing a baseline.
+
+The deeper problem no random-bar control can fix: both signals select on a
+**window extremum**, and an extremum is a biased sample of prices whenever
+prints carry transient noise. A control entering at a typical bar does not
+share that bias, so the comparison confounds "this signal predicts" with "an
+extremum is not a typical price".
+
+**The control is now a resampling null.** Hourly log returns are shuffled
+independently within each symbol, prices are rebuilt from the shuffled returns,
+and the *identical* signal and measurement are run on that series. Repeated
+B = 200 times to give a null distribution of the edge, against which the real
+edge becomes an empirical p-value.
+
+This is the right null because it destroys predictability while preserving both
+the return distribution and the entire selection mechanism. If buying a 12-hour
+low is mechanically profitable regardless of real structure, the shuffled series
+shows it too and the real edge sits inside the null distribution.
+
+*Stated limitation:* an IID shuffle also destroys volatility clustering, which
+changes how often extrema occur and how extreme they are. The null is therefore
+not exactly matched on clustering. A block bootstrap would preserve clustering
+but would also preserve part of the 4-hour predictability under test, which is
+the worse error.
+
+**The abort becomes:** a configuration fails if its real edge falls inside the
+central 95% of its null distribution. There is no separate control-mean check,
+because the null distribution now *is* the control and is centred by
+construction.
+
+**Unchanged:** eight tests, so a configuration passes only at empirical
+p < 0.00625, and must still clear its own symbol's round-trip cost.
 
 **Statistic.** Mean gross return per trade in bps, signal minus control, with a
 **day-clustered** standard error. Overlapping windows are not treated as
@@ -135,3 +178,42 @@ arithmetic made success impossible, and that this one is bounded in advance.
 The most likely outcome remains that nothing clears, and the value of writing
 this first is that the conclusion will then be reached by a rule rather than by
 argument.
+
+## Outcome — primary window, recorded 2026-09-05 before the hold-out was run
+
+2022-09 → 2025-08, 26,304 hourly bars per symbol, resampling null B = 200.
+
+| signal   | lb | hz | n      | edge   | null mean | null 95%         | p      | cost  | verdict |
+|----------|---:|---:|-------:|-------:|----------:|------------------|-------:|------:|---------|
+| breakout | 12 |  4 | 11,454 | +2.47  | +3.20     | [+0.83, +5.46]   | 0.7313 | 15.15 | no      |
+| breakout | 12 |  8 |  8,196 | +7.93  | +6.64     | [+2.62, +9.86]   | 0.2388 | 15.15 | no      |
+| breakout | 48 |  4 |  5,050 | +7.87  | +3.26     | [−0.19, +6.63]   | 0.0149 | 15.15 | no      |
+| breakout | 48 |  8 |  3,657 | **+17.86** | +6.46 | [+0.00, +12.32]  | **0.0050** | 15.15 | **PASS** |
+| meanrev  | 12 |  4 | 10,995 | +7.94  | +3.49     | [+1.22, +5.89]   | 0.0050 | 15.15 | p only  |
+| meanrev  | 12 |  8 |  7,996 | +9.33  | +6.87     | [+3.12, +10.92]  | 0.1393 | 15.15 | no      |
+| meanrev  | 48 |  4 |  4,702 | +4.75  | +3.42     | [−0.59, +7.43]   | 0.2537 | 15.15 | no      |
+| meanrev  | 48 |  8 |  3,445 | +1.99  | +6.89     | [−0.58, +12.95]  | 0.9154 | 15.15 | no      |
+
+**One of eight passed:** breakout, 48h lookback, 8h horizon.
+
+**What Amendment 1 removed.** Under the original random-bar control the four
+mean-reversion configurations all "passed" with edges of +37 to +92 bps at
+t between +10.8 and +13.1. Against the resampling null every one of them falls
+inside its own null distribution. That apparent edge was the period's upward
+drift plus the arithmetic of selecting a window extremum, and the amended
+control absorbs both. Recorded because a reader should be able to see what the
+weaker null would have concluded.
+
+**Three cautions on the survivor, written before the hold-out.**
+
+1. *The p is at the resolution floor.* With B = 200 the smallest achievable
+   value is 1/201 = 0.00498, so p = 0.0050 means zero null draws exceeded the
+   edge. It clears the registered bar legitimately, but the number does not
+   measure how strong the effect is — only that it is beyond what 200 draws
+   could reach.
+2. *The margin over cost is 2.71 bps.* It clears, and not by much.
+3. *It is the noisiest cell.* Longest lookback and longest horizon give the
+   fewest entries of the eight, 3,657 across six symbols over three years.
+
+A single survivor at the boundary of a corrected threshold is the shape a false
+positive takes. The hold-out decides it.
