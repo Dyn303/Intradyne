@@ -243,6 +243,15 @@ pointing at.
 Registered criterion: *"Primary passes, hold-out does not → FAIL, and reported
 as an in-sample artefact."* Met exactly.
 
+### Overridden 2026-09-08
+
+This closure was overridden by the operator's decision, not by new evidence.
+The reopening is registered in `docs/CRYPTO_REOPENING_PREREGISTRATION.md` as a
+cross-sectional test -- a different mechanism from the twelve time-series
+approaches -- bounded to one attempt with its criteria fixed in advance. It is
+recorded here so the override is visible from the document that closed the
+programme, rather than only from the one that reopened it.
+
 ### Crypto closes
 
 The bound set at the top of this document: *"This is one approach... If it
