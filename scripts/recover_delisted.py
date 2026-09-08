@@ -58,6 +58,7 @@ from intradyne.research.delisted_names import (  # noqa: E402
 from intradyne.research.price_source import (  # noqa: E402
     CachedPrices,
     Resolution,
+    window_coverage,
 )
 from intradyne.research.sec_names import (  # noqa: E402
     load_registry,
@@ -185,10 +186,16 @@ def price_tail(
 ) -> Tuple[set, CachedPrices]:
     """Fetch each resolved name and report which produced a usable series.
 
-    A name counts as priced only if the provider returns closes *inside the
-    window the fund held it*. A series that exists but stops before the fund
-    bought the name prices nothing, and counting it would restate the same
-    survivorship error P3 exists to catch, one level down.
+    A name counts as priced only when its history *spans* the window the fund
+    held it, not merely touches it. The distinction is not pedantry: on the
+    free Alpha Vantage tier a delisted name returns its last 100 sessions, and
+    for thirteen of the twenty-one that overlaps the holding window by a
+    median of 5.5%. Counting overlap would put P3 at 85% on series covering a
+    twentieth of their period -- the same hollow pass, one level down, that
+    Amendment 1 introduced the dropped-tail measure to catch.
+
+    The per-name bar is P3's own floor rather than a new number: a name is
+    priced if at least `FLOOR` of the window's weekdays have a close.
     """
     prices = CachedPrices(resolved, api_key=key)
     priced: set = set()
@@ -198,17 +205,17 @@ def price_tail(
         if res is None:
             continue
         first, last = held[cusip]
-        got = prices.close_series(
-            cusip,
-            date.fromisoformat(first) - QUARTER,
-            date.fromisoformat(last),
-        )
-        if got:
+        lo = date.fromisoformat(first) - QUARTER
+        hi = date.fromisoformat(last)
+        got = prices.close_series(cusip, lo, hi)
+        cov = window_coverage(got, lo, hi)
+        if cov >= FLOOR:
             priced.add(cusip)
-        mark = "ok " if got else "-- "
+        mark = "ok " if cov >= FLOOR else ("~~ " if got else "-- ")
         tag = "dead" if res.delisted else "live"
         print(
-            f"  [{i:>3}/{len(order)}] {mark}{res.ticker:<8} {tag}  {len(got):>5} closes",
+            f"  [{i:>3}/{len(order)}] {mark}{res.ticker:<8} {tag}"
+            f"  {len(got):>5} closes  {100 * cov:5.1f}% of window",
             flush=True,
         )
     return priced, prices
