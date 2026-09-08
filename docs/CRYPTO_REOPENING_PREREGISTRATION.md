@@ -184,3 +184,70 @@ is the shape a real effect takes and not the shape a broken null takes.
 4. *This is in-sample.* The horizon test's survivor showed +17.86 in the
    primary and −6.93 out of sample, a change of sign. Nothing here is a finding
    until the hold-out agrees.
+
+## Outcome — hold-out, and the verdict
+
+2025-09 → 2026-08, 334 daily steps, all 24 symbols live throughout.
+
+| configuration  | n   | dates | edge    | null 95%          | p      | verdict |
+|----------------|----:|------:|--------:|-------------------|-------:|---------|
+| reversal lb=5  | 656 |   328 | −9.75   | [−17.94, +20.35]  | 0.2935 | no      |
+| reversal lb=21 | 624 |   312 | −25.12  | [−18.95, +18.47]  | 0.0149 | no      |
+| momentum lb=5  | 656 |   328 | **−9.88**  | [−17.51, +18.55] | 0.2687 | no      |
+| momentum lb=21 | 624 |   312 | **+3.44**  | [−16.47, +20.99] | 0.7214 | no      |
+
+**Zero of four.** The primary's two survivors did not merely weaken:
+
+| configuration  | primary | hold-out | change |
+|----------------|--------:|---------:|-------:|
+| momentum lb=5  | +19.59  | −9.88    | −29.5  |
+| momentum lb=21 | +20.84  | +3.44    | −17.4  |
+
+**Is the hold-out simply underpowered?** It is smaller — 334 days against
+1,096 — and its null bands are correspondingly wider. But the primary edge of
++19.59 sits at the very edge of the hold-out's null band, so the window was
+marginally able to detect it, and what came back was not a positive estimate
+short of significance. It was a **change of sign**. A sign flip is stronger
+evidence against the effect than a failure to reach the bar.
+
+### Verdict: FAIL
+
+Registered criterion: *"Primary passes, hold-out does not → FAIL, reported as
+an in-sample artefact."* Met exactly.
+
+### The override is spent, and crypto closes
+
+The bound set before any signal was scored: *"One approach... If it fails,
+crypto closes and this override is spent — no fourteenth attempt, no further
+reframing, and no filter added afterwards to rescue a null result."*
+
+It failed. This is the thirteenth approach against the asset class and the last
+one this project will run.
+
+### What was learned, beyond another negative
+
+The pattern has now repeated identically, on a **different mechanism**:
+
+| test                  | primary | hold-out |
+|-----------------------|--------:|---------:|
+| horizon (time-series) | +17.86  | −6.93    |
+| cross-sectional       | +19.59  | −9.88    |
+
+Two independent tests, two different mechanisms, two survivors that cleared a
+Bonferroni-corrected bar against a resampling null in-sample, and both changed
+sign out of sample. That is not twelve ways of being unlucky; it is what a
+market with no exploitable structure looks like when it is searched carefully.
+
+The in-sample asymmetry was real and encouraging — momentum passed at both
+lookbacks while reversal failed at both, which is the shape of a genuine effect
+rather than a broken null. It still did not survive. **An asymmetry that looks
+like a mechanism is not evidence of one**, and that is the most transferable
+thing this test produced.
+
+### What would have been true if the filter had been added
+
+A market filter was refused on power grounds before the run. Had it been added
+and the unfiltered momentum result then failed the hold-out, the filter would
+have been the obvious place to look for a rescue — and searching for one after
+seeing a null result is how a programme never ends. Refusing it in advance is
+what makes this a clean stop rather than an open question.
