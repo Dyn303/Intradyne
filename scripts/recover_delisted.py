@@ -284,7 +284,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     # the run still prices the live half, and the verdict is withheld rather
     # than computed against a set that was never asked for.
     unfetchable = (
-        {c for c in scope if (r := resolved.get(c)) and r.delisted} if not key else set()
+        {c for c in scope if (r := resolved.get(c)) and r.delisted}
+        if not key
+        else set()
     )
     if unfetchable:
         print("\nALPHAVANTAGE_API_KEY is not set; see .env.example")
