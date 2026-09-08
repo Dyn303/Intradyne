@@ -91,7 +91,6 @@ def load_registry(
     normalisation was too aggressive for that pair, and picking one would be
     a silent coin flip over which company's prices enter the panel.
     """
-    raw: Optional[bytes] = None
     if cache_path.exists() and not refresh:
         raw = cache_path.read_bytes()
     else:
@@ -104,9 +103,10 @@ def load_registry(
             TICKERS_URL, headers={"User-Agent": contact, "Accept-Encoding": "gzip"}
         )
         with urllib.request.urlopen(req, timeout=30) as f:
-            raw = f.read()
+            body: bytes = f.read()
             if f.headers.get("Content-Encoding") == "gzip":
-                raw = gzip.decompress(raw)
+                body = gzip.decompress(body)
+        raw = body
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_bytes(raw)
 
