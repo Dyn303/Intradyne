@@ -74,6 +74,53 @@ acquired names -- not a universe, and the narrowest this question has been. A
 paid source with a security master supplies it; free sources do not, because a
 delisted ticker is exactly what they stop serving.
 
+### Amendment 2 — the free path does reach the tail, and the purchase is off
+
+The paragraph above is wrong in its second half, and this records the
+correction rather than quietly editing it away. Two claims failed:
+
+*"Free sources do not serve delisted tickers."* Alpha Vantage does.
+`TIME_SERIES_DAILY` returns `ABMD` through 2023-01-03 and `ATVI` through
+2023-10-13 -- their delisting dates, takeover premium included -- on the free
+tier. What is premium is the *adjusted* series, not the data.
+
+*"The remaining thirty need a security master."* They needed a name index that
+includes dead companies, and `docs/equity_listings.csv` had been sitting in the
+repository since #65, committed by `scripts/equity_pit_universe.py` for the
+survivorship work. It carries 7,473 dead listings with names and delisting
+dates. Matching N-PORT names against it recovers 17 of the 30, including every
+name quoted above as an example of the problem.
+
+    resolution of the dropped tail
+      OpenFIGI                65.0%
+      + SEC registrants       77.5%
+      + delisted listings     91.7%
+
+Two defects were found and fixed while measuring, both of which had been
+depressing the figure:
+
+- **Liveness was inferred from the resolver.** A name OpenFIGI resolved was
+  sent to yfinance even when it had delisted in 2021, and yfinance answers a
+  dead ticker with an empty frame indistinguishable from a network failure.
+  Liveness is now looked up by symbol against the listing record.
+- **Seventeen CUSIPs appear in exactly one quarter**, so their reported
+  window was a single day -- and the fund's quarter-ends fall on Sundays and
+  market holidays. ALK, BALL, BWA, LUV and Q were all scored unpriceable
+  because prices were requested for a day the market was shut.
+
+**Status: 89 of 120 priced, with 21 delisted names not yet requested.**
+`ALPHAVANTAGE_API_KEY` is unset in this checkout, and those 21 are exactly the
+population P3 scores, so the run **refuses to compute a coverage figure** --
+a score over names that were never requested is not a low number, it is a
+meaningless one. That refusal is the same discipline adopted after an empty
+table was once reported as "0 of 8 passed".
+
+If all 21 price, the tail reaches 110/120 (91.7%) and P3 passes. If twelve do,
+it reaches 84.2% and P3 still passes. **P3 is not yet passed, and the slot
+stays closed until the number exists.** Run `scripts/recover_delisted.py
+--prices` with a key set; the free tier's 25 requests a day covers 21 names at
+two calls each in two runs, and the cache makes the second one cheap.
+
 ## Why this hypothesis
 
 Two facts shape it, both measured rather than assumed.
