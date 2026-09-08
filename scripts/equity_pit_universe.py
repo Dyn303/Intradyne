@@ -47,6 +47,31 @@ applied downstream on a reduced candidate set, the same way
 `scripts/screen_equities.py` already does it live. The gap is stated in the
 worksheet rather than left for a reader to discover.
 
+*Mortality is a lower bound, not a measurement.* The delisted count is
+whatever the source has recorded a `delistingDate` for, and some securities
+that stopped trading never receive one. Sampling the SPAC-named listings shows
+the shape: every 2018 and 2019 vehicle is correctly marked delisted, but 188
+that IPO'd 2020-2022 are still flagged active -- four to five years after a
+charter that runs eighteen to twenty-four months. 136 of those are units,
+warrants or rights, whose tickers usually stop trading within weeks of the
+IPO. One of them, `BMAQU`, was checked against a second vendor and no longer
+exists there.
+
+So the true figure is higher than the one printed below, by at least 0.8
+points from SPACs alone. The direction is the fortunate one -- an understated
+mortality understates the survivorship bias this script exists to demonstrate,
+so the argument is made more weakly than the data warrants rather than more
+strongly. It is still wrong, and a reader comparing this number against
+another source should know which way it leans.
+
+This does not reach the price panel. A symbol the fetcher finds no bars for
+writes no CSV at all (`fetch_equity_bars.write_symbol` returns 0 without
+creating a file), and the gate scripts glob the files that exist rather than
+iterating a universe list, so a stale-active listing contributes no series --
+not a flat one. `fetch_klines_archive.py` forward-fills its grid at last
+price, so the crypto path would behave differently; the equity path is safe
+here by construction.
+
 Requires ALPHAVANTAGE_API_KEY. See .env.example.
 """
 
@@ -353,6 +378,18 @@ def worksheet(
     a("A backtest run over today's listings alone would omit the delisted")
     a(f"{meta['dead']:,} entirely -- {meta['mortality']:.1f}% of everything that")
     a("ever traded, and the part that by construction did worst.")
+    a("")
+    a("**This is a floor.** The count is whatever the source recorded a")
+    a("delisting date for, and some securities that stopped trading never")
+    a("receive one: 188 SPACs that listed in 2020-2022 are still flagged")
+    a("active here, four to five years after a charter that runs eighteen to")
+    a("twenty-four months, and 136 of those are units or warrants whose")
+    a("tickers normally stop trading within weeks. True mortality is higher")
+    a("than the figure above -- by at least 0.8 points from SPACs alone.")
+    a("")
+    a("The error leans the safe way. Understating mortality understates the")
+    a("survivorship bias this worksheet exists to show, so the case above is")
+    a("weaker than the data warrants rather than stronger.")
     a("")
     a("## A ticker is not an identity")
     a("")
