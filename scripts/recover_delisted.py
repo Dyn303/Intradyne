@@ -36,6 +36,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -221,6 +222,126 @@ def price_tail(
     return priced, prices
 
 
+#: Endpoints that might carry full history for a dead name, cheapest question
+#: first. `full` on the daily endpoint is premium; the weekly and monthly ones
+#: take no `outputsize` at all, so if they answer they answer with everything.
+PROBE_ENDPOINTS = (
+    ("TIME_SERIES_DAILY", {"outputsize": "compact"}),
+    ("TIME_SERIES_DAILY", {"outputsize": "full"}),
+    ("TIME_SERIES_WEEKLY", {}),
+    ("TIME_SERIES_MONTHLY", {}),
+)
+
+
+#: Alpha Vantage's free tier limits requests per minute as well as per day.
+PROBE_SLEEP_S = 15.0
+
+#: Phrases that separate a permanent answer about the plan from a temporary
+#: one about today. Both bodies mention "premium" -- the rate-limit notice
+#: links to the upgrade page -- so a bare substring test on that word reports
+#: a quota breach as a capability finding. It did, on the first run: weekly
+#: and daily-full were both labelled premium while merely being throttled.
+_PREMIUM = ("is a premium", "premium endpoint", "premium feature")
+_THROTTLED = ("spreading out", "rate limit", "requests per")
+
+
+def _classify(body: str) -> str:
+    low = body.lower()
+    if any(p in low for p in _PREMIUM):
+        return "premium"
+    if any(p in low for p in _THROTTLED):
+        return "rate-limited"
+    return "refused"
+
+
+def probe_endpoints(key: str, ticker: str = "ABMD") -> Dict[str, Tuple[str, str]]:
+    """Ask which history endpoints a key can actually reach, on a dead name.
+
+    Four requests, one per endpoint, against a ticker known to be delisted
+    (ABMD, 2023-01-03). This is a precondition check in the sense
+    `EQUITY_PROGRAMME_STOP_RULE.md` uses -- it establishes whether a question
+    can be asked, spends no slot, and is run *before* paying a provider.
+
+    It exists because the opposite order was expensive: a fetcher was built on
+    `outputsize=full`, which the free tier refuses, and the refusal was read as
+    21 delisted names having no data.
+
+    The two failure bodies are distinguished, because they mean opposite
+    things. A premium notice is a permanent answer about the plan; a rate-limit
+    notice is a temporary answer about today, and reading one as the other is
+    how a quota breach becomes a false finding about the market.
+    """
+    import httpx
+
+    out: Dict[str, Tuple[str, str]] = {}
+    for n, (fn, extra) in enumerate(PROBE_ENDPOINTS):
+        if n:
+            # The free tier caps requests per minute as well as per day, and
+            # four back-to-back probes trip it -- which the first version then
+            # reported as three endpoints being premium.
+            time.sleep(PROBE_SLEEP_S)
+        label = fn + (f"[{extra['outputsize']}]" if extra else "")
+        params = {"function": fn, "symbol": ticker, "apikey": key, "datatype": "csv"}
+        params.update(extra)
+        try:
+            r = httpx.get(
+                "https://www.alphavantage.co/query", params=params, timeout=60.0
+            )
+        except Exception as exc:  # pragma: no cover - network
+            out[label] = ("error", str(exc)[:80])
+            continue
+        body = r.text.strip()
+        if body.startswith("{"):
+            out[label] = (_classify(body), " ".join(body.split())[:100])
+            continue
+        rows = body.splitlines()[1:]
+        if not rows:
+            out[label] = ("empty", "header only")
+            continue
+        stamps = sorted(r.split(",")[0] for r in rows if r.strip())
+        out[label] = ("free", f"{len(stamps)} rows, {stamps[0]} .. {stamps[-1]}")
+    return out
+
+
+def project_span(
+    resolved: Dict[str, Resolution],
+    dropped: set,
+    held: Dict[str, Tuple[str, str]],
+    earliest: str,
+) -> None:
+    """How much of each dead name's window a full-history series would span.
+
+    Reported separately from `window_coverage` because the two answer
+    different questions. Coverage asks whether the panel can be *filled* at
+    daily frequency, which is what slot 1 needs. Span asks whether the history
+    *exists* at all, which is what decides whether a provider is worth paying.
+
+    A weekly series scores about 20% on coverage no matter how complete it is,
+    simply because four weekdays in five have no observation. That is the right
+    answer for a daily panel and the wrong one for "does this data exist".
+    """
+    rows = []
+    for cusip in sorted(dropped):
+        res = resolved.get(cusip)
+        if not (res and res.delisted):
+            continue
+        lo = date.fromisoformat(held[cusip][0]) - QUARTER
+        hi = date.fromisoformat(held[cusip][1])
+        start = max(lo, date.fromisoformat(earliest))
+        end = min(hi, date.fromisoformat(res.delisted))
+        win = (hi - lo).days
+        span = max((end - start).days, 0)
+        rows.append((res.ticker, win, span, 100.0 * span / win if win else 0.0))
+    rows.sort(key=lambda t: t[3])
+    print("")
+    print(f"  {'ticker':<8}{'window(d)':>10}{'spanned':>9}{'pct':>8}")
+    for t, w, sp, pct in rows:
+        print(f"  {t:<8}{w:>10}{sp:>9}{pct:>7.1f}%")
+    full = sum(1 for *_, pct in rows if pct >= 100 * FLOOR)
+    print("")
+    print(f"  {full}/{len(rows)} dead names spanned at {FLOOR:.0%} or better")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--prices", action="store_true", help="fetch prices and score P3")
@@ -229,11 +350,42 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="price the whole universe, not only the dropped tail P3 scores",
     )
+    ap.add_argument(
+        "--probe",
+        action="store_true",
+        help="ask which Alpha Vantage history endpoints this key can reach",
+    )
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args(argv)
 
     names, held, universe, still = holdings()
     dropped = universe - still
+
+    if args.probe:
+        key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
+        if not key:
+            print("ALPHAVANTAGE_API_KEY is not set; see .env.example")
+            return 1
+        print("-- endpoint reachability (4 requests, ABMD) --")
+        results = probe_endpoints(key)
+        for label, (kind, detail) in results.items():
+            print(f"  {label:<28} {kind:<13} {detail}")
+        if any(k == "rate-limited" for k, _ in results.values()):
+            print("")
+            print("  Some answers are quota, not capability. Re-run tomorrow")
+            print("  before recording any of this as a finding.")
+            return 3
+        usable = [lbl for lbl, (k, _) in results.items() if k == "free"]
+        print("")
+        print(f"  free endpoints: {', '.join(usable) if usable else 'none'}")
+        if not usable:
+            return 2
+        resolved, _ = cascade(names, held)
+        print("")
+        print("-- span of each dead name's window, given full history --")
+        project_span(resolved, dropped, held, "2000-01-01")
+        return 0
+
     print(
         f"universe {len(universe)} | still held {len(still)} | dropped {len(dropped)}"
     )

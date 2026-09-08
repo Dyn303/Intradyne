@@ -85,6 +85,16 @@ FREE_TIER_PER_DAY = 25
 #: about five months, against holding windows measured in years.
 COMPACT_SESSIONS = 100
 
+#: Frequency to endpoint. Weekly and monthly take no `outputsize` and return
+#: the full life of a delisted name on the free tier -- ABMD comes back with
+#: 1,208 weekly bars from 1999-11-12 to its delisting. Daily is the one that
+#: is capped, and it is the one a daily panel needs.
+AV_FUNCTION = {
+    "daily": "TIME_SERIES_DAILY",
+    "weekly": "TIME_SERIES_WEEKLY",
+    "monthly": "TIME_SERIES_MONTHLY",
+}
+
 
 @dataclass(frozen=True)
 class Resolution:
@@ -121,6 +131,7 @@ class CachedPrices:
         api_key: str = "",
         sleep_s: float = 1.0,
         outputsize: str = "compact",
+        frequency: str = "daily",
     ) -> None:
         self.resolution = dict(resolution)
         self.cache_dir = Path(cache_dir)
@@ -129,6 +140,9 @@ class CachedPrices:
         # "full" needs a premium key; on the free tier it returns no data at
         # all rather than falling back, so the default has to be "compact".
         self.outputsize = outputsize
+        if frequency not in AV_FUNCTION:
+            raise ValueError(f"frequency must be one of {sorted(AV_FUNCTION)}")
+        self.frequency = frequency
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.requests_made = 0
         self.splits_applied: Dict[str, int] = {}
@@ -175,13 +189,12 @@ class CachedPrices:
         delisting date, which is real history but a small slice of a
         multi-year holding window -- see `COMPACT_SESSIONS`.
         """
-        text = self._av(
-            {
-                "function": "TIME_SERIES_DAILY",
-                "symbol": ticker,
-                "outputsize": self.outputsize,
-            }
-        )
+        params = {"function": AV_FUNCTION[self.frequency], "symbol": ticker}
+        if self.frequency == "daily":
+            # Only the daily endpoint takes outputsize; weekly and monthly
+            # return everything and reject the parameter's premium form.
+            params["outputsize"] = self.outputsize
+        text = self._av(params)
         if not text:
             self.failures[ticker] = "alphavantage returned no series"
             return None
@@ -253,7 +266,16 @@ class CachedPrices:
     # -- cache ----------------------------------------------------------
 
     def _path(self, ticker: str) -> Path:
-        return self.cache_dir / f"{ticker.replace('/', '_')}.csv"
+        """Cache file for a ticker *at this frequency*.
+
+        The frequency is in the name because it is now possible to fetch the
+        same ticker at more than one: `TIME_SERIES_DAILY` is capped at 100
+        sessions on the free tier while `WEEKLY` and `MONTHLY` return full
+        history. Keyed by ticker alone, a weekly series would be served back
+        to a caller that asked for daily, silently, and the panel would carry
+        one bar a week for some names and one a day for others.
+        """
+        return self.cache_dir / f"{ticker.replace('/', '_')}.{self.frequency}.csv"
 
     def _cached(self, ticker: str) -> Optional[Dict[date, float]]:
         p = self._path(ticker)
@@ -335,6 +357,7 @@ def window_coverage(series: Mapping[date, float], start: date, end: date) -> flo
 
 __all__ = [
     "AV",
+    "AV_FUNCTION",
     "COMPACT_SESSIONS",
     "FREE_TIER_PER_DAY",
     "CachedPrices",

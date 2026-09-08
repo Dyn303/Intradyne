@@ -302,14 +302,14 @@ def test_a_failed_request_is_not_cached_as_an_absence(tmp_path: Path) -> None:
     """
     p = _Stub(tmp_path, None, None)  # provider refuses the series
     assert p.series_for("FOO", delisted=True) == {}
-    assert not (tmp_path / "FOO.csv").exists()
+    assert not (tmp_path / "FOO.daily.csv").exists()
 
 
 def test_a_genuine_absence_is_cached(tmp_path: Path) -> None:
     """The other half: a real "nothing here" must not be re-asked daily."""
     p = _Stub(tmp_path, "timestamp,open,high,low,close,volume\n", "")
     assert p.series_for("FOO", delisted=True) == {}
-    assert (tmp_path / "FOO.csv").exists()
+    assert (tmp_path / "FOO.daily.csv").exists()
 
 
 def test_window_coverage_counts_weekdays_not_calendar_days() -> None:
@@ -335,3 +335,25 @@ def test_partial_history_does_not_count_as_priced() -> None:
 def test_window_coverage_is_zero_for_a_series_outside_the_window() -> None:
     series = {date(2024, 6, 3): 1.0}
     assert window_coverage(series, date(2020, 1, 1), date(2021, 1, 1)) == 0.0
+
+
+def test_frequencies_do_not_share_a_cache_file(tmp_path: Path) -> None:
+    """A weekly series must never be served to a caller asking for daily.
+
+    Free-tier daily is capped at 100 sessions while weekly returns full
+    history, so both are worth fetching -- and keyed by ticker alone the
+    second would overwrite the first, leaving a panel with one bar a week for
+    some names and one a day for others.
+    """
+    header = "timestamp,open,high,low,close,volume\n"
+    daily = _Stub(tmp_path, header, "")
+    weekly = _Stub(tmp_path, header, "", frequency="weekly")
+    daily.series_for("FOO", delisted=True)
+    weekly.series_for("FOO", delisted=True)
+    assert (tmp_path / "FOO.daily.csv").exists()
+    assert (tmp_path / "FOO.weekly.csv").exists()
+
+
+def test_an_unknown_frequency_is_refused() -> None:
+    with pytest.raises(ValueError):
+        CachedPrices({}, frequency="hourly")
