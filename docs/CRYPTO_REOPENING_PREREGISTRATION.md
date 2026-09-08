@@ -149,3 +149,38 @@ least informative when everything moves together, which is precisely what a
 What justifies running it anyway is that it is a different question, it is
 adequately powered for an edge worth having, and it costs nothing but time.
 What does not justify it is expectation of success.
+
+## Outcome — primary window, recorded before the hold-out was run
+
+2022-09 → 2025-08, 1,096 daily steps, 22 symbols live at the start and 24 at
+the end. Resampling null B = 200, bar p < 0.0125.
+
+| configuration  | n     | dates | edge   | null 95%           | p      | verdict |
+|----------------|------:|------:|-------:|--------------------|-------:|---------|
+| reversal lb=5  | 2,180 | 1,090 | −7.00  | [−13.26, +13.09]   | 0.2736 | no      |
+| reversal lb=21 | 2,148 | 1,074 | −0.72  | [−10.95, +13.69]   | 0.9353 | no      |
+| **momentum lb=5**  | 2,180 | 1,090 | **+19.59** | [−11.14, +12.07] | **0.0050** | **PASS** |
+| **momentum lb=21** | 2,148 | 1,074 | **+20.84** | [−11.45, +14.11] | **0.0050** | **PASS** |
+
+Two of four pass, both above the 15.0 bps taker cost. All four nulls bracket
+zero and no harness fault fired.
+
+**The asymmetry is the encouraging part.** The registration said: *if one works
+and the other does not, the asymmetry is evidence; if both "work", the harness
+is wrong.* Momentum passes at both lookbacks and reversal fails at both, which
+is the shape a real effect takes and not the shape a broken null takes.
+
+**Four cautions, written before the hold-out is examined.**
+
+1. *The p is at the resolution floor.* With B = 200 the smallest achievable
+   value is 1/201 = 0.00498, so 0.0050 means no null draw reached the edge. It
+   clears the registered bar legitimately, but the number measures reach rather
+   than strength.
+2. *The margin over cost is about 5 bps* — 19.6 and 20.8 against 15.0. Real,
+   and not comfortable.
+3. *The portfolio is two names.* A decile of 24 symbols rounds to k = 2, so
+   each rebalance holds two coins. Any live version of this is far more
+   concentrated than the word "decile" suggests.
+4. *This is in-sample.* The horizon test's survivor showed +17.86 in the
+   primary and −6.93 out of sample, a change of sign. Nothing here is a finding
+   until the hold-out agrees.
