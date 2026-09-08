@@ -173,15 +173,223 @@ def summarise(records: Iterable[Dict[str, Any]]) -> Dict[str, int]:
     return counts
 
 
+# --- markdown rendering ---------------------------------------------------
+#
+# `--list` prints to a terminal, which means the record is only visible to
+# someone who thinks to run the script. The point of moving this ledger into
+# `docs/` was that the evidence survives a clone and shows up in review, and a
+# JSONL file does neither for a reader: GitHub renders it as a wall of JSON and
+# Obsidian cannot render it at all. So the same records get a committed
+# markdown view.
+
+#: Verdicts that mean the test answered, ordered worst-news-first. Anything
+#: not listed still renders; this only fixes the order of the summary.
+_VERDICT_ORDER = [
+    "precondition_failure",
+    "negative",
+    "inconclusive",
+    "positive",
+]
+
+
+def _fmt_value(v: Any) -> str:
+    if isinstance(v, float):
+        return f"{v:,.6g}"
+    if isinstance(v, bool):
+        return "yes" if v else "no"
+    return str(v)
+
+
+def _prereg_link(ref: str) -> str:
+    """Render `docs/X.md@abc1234` as a link plus the commit it was pinned at.
+
+    The commit is the load-bearing half: a pre-registration is only worth
+    anything if you can see the version that existed before the run, so it is
+    shown rather than hidden behind the link.
+    """
+    if not ref:
+        return "_none recorded_"
+    path, _, commit = ref.partition("@")
+    # Links are relative to docs/, where this file is written, so they resolve
+    # in Obsidian and on GitHub alike.
+    name = path.rsplit("/", 1)[-1]
+    link = f"[{name}]({name})"
+    return f"{link} @ `{commit}`" if commit else link
+
+
+def render_markdown(
+    records: List[Dict[str, Any]],
+    chain: Optional[tuple] = None,
+    path: str = DEFAULT_PATH,
+) -> str:
+    """The research record as a committed document.
+
+    `chain` is the `(ok, index, message)` from `verify`. It is rendered at the
+    top rather than omitted on success, because a log that only mentions its
+    integrity when broken teaches a reader to assume silence means intact --
+    and this record's whole purpose is that a removed negative result stays
+    visible.
+    """
+    out: List[str] = []
+    w = out.append
+
+    w("# Research log")
+    w("")
+    w(f"Every recorded research run, newest first. Generated from `{path}` by")
+    w("`python scripts/research_ledger.py --write`. **Do not edit by hand** --")
+    w("regenerating overwrites this file.")
+    w("")
+
+    if chain is not None:
+        ok, idx, msg = chain
+        if ok:
+            n = len(records)
+            w(f"**Chain intact.** {n} run{'' if n == 1 else 's'} verified.")
+        else:
+            w(f"> [!WARNING] **Chain BROKEN at record {idx}.** {msg}")
+            w(">")
+            w("> A run was altered or removed after it was written. Treat every")
+            w("> entry from that point on as unverified until this is explained.")
+        w("")
+
+    if not records:
+        w("No runs recorded yet.")
+        w("")
+        return "\n".join(out) + "\n"
+
+    counts = summarise(records)
+    known = [v for v in _VERDICT_ORDER if v in counts]
+    other = sorted(v for v in counts if v not in _VERDICT_ORDER)
+    w("## Verdicts")
+    w("")
+    w("| verdict | runs |")
+    w("| --- | ---: |")
+    for v in known + other:
+        w(f"| {v} | {counts[v]} |")
+    w("")
+
+    caveats = sum(1 for r in records if r.get("dirty") or r.get("backfilled"))
+    if caveats:
+        n = len(records)
+        w(
+            f"{caveats} of {n} run{'' if n == 1 else 's'} "
+            f"{'carries' if caveats == 1 else 'carry'} a provenance caveat; "
+            "see the notes on each."
+        )
+        w("")
+
+    w("## Runs")
+    w("")
+    w("| date | verdict | script | commit | pre-registration |")
+    w("| --- | --- | --- | --- | --- |")
+    for r in sorted(records, key=lambda x: str(x.get("ts", "")), reverse=True):
+        flags = ""
+        if r.get("dirty"):
+            flags += " ⚠"
+        if r.get("backfilled"):
+            flags += " †"
+        prereg = str(r.get("preregistration", ""))
+        name = prereg.partition("@")[0].rsplit("/", 1)[-1]
+        w(
+            f"| {str(r.get('ts', ''))[:10]} "
+            f"| {r.get('verdict', '?')}{flags} "
+            f"| `{r.get('script', '?')}` "
+            f"| `{str(r.get('commit', ''))[:8]}` "
+            f"| {name or '—'} |"
+        )
+    w("")
+    if any(r.get("dirty") for r in records):
+        w("⚠ ran from a tree with uncommitted changes, so it cannot be")
+        w("reproduced from its commit alone.")
+        w("")
+    if any(r.get("backfilled") for r in records):
+        w("† provenance reconstructed after the fact rather than captured at")
+        w("runtime, which is weaker evidence than a contemporaneous record.")
+        w("")
+
+    w("## Detail")
+    w("")
+    for r in sorted(records, key=lambda x: str(x.get("ts", "")), reverse=True):
+        w(f"### {str(r.get('ts', ''))[:10]} — `{r.get('script', '?')}`")
+        w("")
+        w(f"**Verdict:** {r.get('verdict', '?')}")
+        w("")
+        w(f"- run `{r.get('run_id', '?')}`")
+        commit = str(r.get("commit", ""))
+        dirty = (
+            " — **dirty tree**, not reproducible from this commit alone"
+            if r.get("dirty")
+            else ""
+        )
+        w(f"- commit `{commit[:8]}`{dirty}")
+        if r.get("seed") is not None:
+            w(f"- seed `{r.get('seed')}`")
+        w(f"- pre-registration: {_prereg_link(str(r.get('preregistration', '')))}")
+        argv = r.get("argv") or []
+        if argv:
+            w(f"- argv: `{' '.join(str(a) for a in argv)}`")
+        if r.get("backfilled"):
+            note = str(r.get("note", "")) or "reconstructed after the fact"
+            w(f"- **† backfilled:** {note}")
+        w("")
+
+        for label, key in (("Parameters", "params"), ("Inputs", "inputs")):
+            d = r.get(key) or {}
+            if d:
+                w(f"**{label}**")
+                w("")
+                for k in sorted(d):
+                    w(f"- `{k}`: {_fmt_value(d[k])}")
+                w("")
+
+        s = r.get("summary") or {}
+        if s:
+            w("**Result**")
+            w("")
+            w("| field | value |")
+            w("| --- | ---: |")
+            for k in sorted(s):
+                w(f"| {k} | {_fmt_value(s[k])} |")
+            w("")
+
+    return "\n".join(out) + "\n"
+
+
+#: Written next to the ledger it renders, so a reader who finds one finds both.
+DEFAULT_MARKDOWN = "docs/RESEARCH_LOG.md"
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--path", default=DEFAULT_PATH)
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--json", action="store_true", help="Emit records as JSON")
+    ap.add_argument(
+        "--write",
+        nargs="?",
+        const=DEFAULT_MARKDOWN,
+        metavar="PATH",
+        help=f"Render the record to markdown (default {DEFAULT_MARKDOWN})",
+    )
     args = ap.parse_args(argv)
 
     rs = runs(args.path)
+
+    if args.write:
+        # The chain is verified here rather than trusted: the document reports
+        # its own integrity, and a broken chain must still render -- refusing
+        # to write would hide the very thing worth seeing.
+        chain = verify(args.path)
+        text = render_markdown(rs, chain=chain, path=args.path)
+        out = Path(args.write)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
+        print(f"wrote {out} ({len(rs)} runs)")
+        if not chain[0]:
+            print("  chain is BROKEN; the document says so")
+            return 1
+        return 0
 
     if args.verify:
         ok, idx, msg = verify(args.path)

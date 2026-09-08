@@ -70,3 +70,8 @@ stack-smoke:
 
 stack-down:
 	docker compose -f deploy/docker-compose.yml down
+
+research-log:
+	# Regenerate docs/RESEARCH_LOG.md from the hash-chained run ledger.
+	# Exits non-zero if the chain is broken; the document still says so.
+	python scripts/research_ledger.py --write
