@@ -25,10 +25,54 @@ behind them, must be measured per name the way
 `scripts/measure_spreads.py` did for crypto, and committed alongside the
 result.
 
-**P3 — Enough of the universe reachable.** Approach 1 aborted when 29.2% of a
-sample could not be fetched against a 20% ceiling. The same ceiling applies:
-if more than 20% of the point-in-time universe cannot be priced, the panel is
-not survivorship-honest and the slot is not spent.
+**P3 — Enough of the universe reachable.** See Amendment 1: as first written
+this measured the wrong quantity, and it passed while the panel was still
+biased.
+
+### Amendment 1 — P3 measures coverage of the names that *left*
+
+Registered 2026-09-05, after building the free data path and before any signal
+was scored.
+
+P3 originally read: *if more than 20% of the point-in-time universe cannot be
+priced, the slot is not spent.* Measured end to end -- SPUS CUSIPs resolved
+through OpenFIGI, priced through yfinance -- the universe clears that easily:
+
+| quarter     | coverage |
+|-------------|---------:|
+| 2020-05-31  |    82.8% |
+| 2023-05-31  |    92.4% |
+| 2026-05-31  |    98.0% |
+
+Zero of 25 quarters below the floor. And the test is worthless, because the
+missing names are not a random sample:
+
+| group                        | priceable      |
+|------------------------------|---------------:|
+| still held today             | **98.0%** (198/202) |
+| dropped from the fund        | **53.1%** (34/64)   |
+| overall                      | 85.1% (274/322) |
+
+**44 of the 48 unpriceable names are dropped names.** Overall coverage is
+dominated by survivors, so it cannot fail for the reason that matters: nearly
+half the names that left the universe have no price history, and those are
+precisely the names the point-in-time timeline exists to retain. A panel built
+on this would report 85% coverage and be survivorship-biased in the same way a
+today's-holdings list is, only less visibly.
+
+**P3 is therefore restated.** The universe must be priceable at **80% or better
+among the names that subsequently left it**, measured across the whole span,
+in addition to the per-quarter floor. `spus_panel.Coverage.dropped_coverage`
+computes it.
+
+**Current status: 53.1%. P3 fails and the slot is not opened.** That is the
+same outcome as Approach 1's precondition failure, reached the same way, and
+the slot remains unspent.
+
+**What would satisfy it.** Price history for roughly thirty delisted or
+acquired names -- not a universe, and the narrowest this question has been. A
+paid source with a security master supplies it; free sources do not, because a
+delisted ticker is exactly what they stop serving.
 
 ## Why this hypothesis
 

@@ -234,3 +234,84 @@ class TestPanelShape:
         p.write_text("{}", encoding="utf-8")
         with pytest.raises(ValueError, match="empty or malformed"):
             build_panel(FlatPrices(), p)
+
+
+class TestDroppedCoverage:
+    """Precondition P3, as amended.
+
+    Overall coverage is dominated by survivors and cannot fail for the reason
+    that matters. Measured on the free data path: names still held were 98.0%
+    priceable, names that had left were 53.1%, and 44 of the 48 gaps sat in
+    the tail. A panel can report 85% coverage and be survivorship-biased in
+    the same way a today's-holdings list is.
+    """
+
+    def _two_quarters(self, tmp_path):
+        # AAA leaves the fund after the first quarter; BBB stays.
+        return _timeline(
+            tmp_path,
+            [
+                ("2020-05-31", "2020-07-28", ["AAA", "BBB"]),
+                ("2020-08-31", "2020-10-28", ["BBB"]),
+            ],
+        )
+
+    def test_a_dropped_name_with_no_price_fails_p3(self, tmp_path):
+        tl = self._two_quarters(tmp_path)
+        _, cov = build_panel(
+            FlatPrices(known={"BBB"}),
+            tl,
+            start=date(2020, 7, 1),
+            end=date(2021, 1, 31),
+        )
+        assert cov.dropped_total == 1
+        assert cov.dropped_coverage() == 0.0
+
+    def test_a_priced_dropped_name_passes(self, tmp_path):
+        tl = self._two_quarters(tmp_path)
+        _, cov = build_panel(
+            FlatPrices(), tl, start=date(2020, 7, 1), end=date(2021, 1, 31)
+        )
+        assert cov.dropped_coverage() == pytest.approx(1.0)
+
+    def test_overall_coverage_can_pass_while_p3_fails(self, tmp_path):
+        """The whole reason for the amendment: a survivor-heavy universe keeps
+        overall coverage high while the tail is empty."""
+        tl = _timeline(
+            tmp_path,
+            [
+                ("2020-05-31", "2020-07-28", ["GONE", "S1", "S2", "S3", "S4"]),
+                ("2020-08-31", "2020-10-28", ["S1", "S2", "S3", "S4"]),
+            ],
+        )
+        _, cov = build_panel(
+            FlatPrices(known={"S1", "S2", "S3", "S4"}),
+            tl,
+            start=date(2020, 7, 1),
+            end=date(2021, 1, 31),
+        )
+        assert cov.below(0.80) == [], "overall coverage passes"
+        assert cov.dropped_coverage() == 0.0, "yet the tail is empty"
+
+    def test_the_description_states_the_p3_failure(self, tmp_path):
+        tl = self._two_quarters(tmp_path)
+        panel, cov = build_panel(
+            FlatPrices(known={"BBB"}),
+            tl,
+            start=date(2020, 7, 1),
+            end=date(2021, 1, 31),
+        )
+        text = describe(panel, cov)
+        assert "P3 FAILS" in text
+        assert "dominated by" in text
+        assert "Slot not spent" in text
+
+    def test_no_dropped_names_is_not_a_failure(self, tmp_path):
+        """A universe nobody has left yet has an empty tail, which is not the
+        same as an uncovered one."""
+        tl = _timeline(tmp_path, [("2020-05-31", "2020-07-28", ["AAA"])])
+        panel, cov = build_panel(
+            FlatPrices(), tl, start=date(2020, 7, 1), end=date(2020, 9, 30)
+        )
+        assert cov.dropped_total == 0
+        assert "P3 FAILS" not in describe(panel, cov)
