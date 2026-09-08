@@ -27,6 +27,13 @@ holding period every prior approach used, the typical price move is 2.7 bps
 against a 14 bps round trip. A perfect predictor loses there, so those ten
 results are evidence about the horizon rather than about signals.
 
+**Second outcome, 2026-09-08: reopened by override, failed again, closed for
+good.** A cross-sectional test -- a different mechanism from the twelve
+time-series approaches -- passed its primary window at +19.59 and +20.84 bps
+and returned 0 of 4 out of sample, the lead survivor changing sign to -9.88.
+Thirteen approaches. The override was bounded to one attempt and is spent. See
+`docs/CRYPTO_REOPENING_PREREGISTRATION.md`.
+
 **Outcome, 2026-09-05: it failed, and crypto is closed.** The primary window
 produced one survivor of eight; the hold-out turned it from +17.86 bps to
 −6.93, a change of sign. Zero of eight out of sample. Under the bound below,
