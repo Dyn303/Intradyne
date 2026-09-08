@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -50,6 +51,12 @@ try:  # the entrypoint convention in `api/app.py` and `engine/main.py`
 except ImportError:  # pragma: no cover - dependency is in requirements.txt
     pass
 
+import numpy as np  # noqa: E402
+
+from intradyne.research.cross_sectional import (  # noqa: E402
+    _decile_by_date,
+    bonferroni_alpha,
+)
 from intradyne.research.delisted_names import (  # noqa: E402
     LISTINGS,
     by_symbol,
@@ -65,6 +72,7 @@ from intradyne.research.sec_names import (  # noqa: E402
     load_registry,
     recover as recover_sec,
 )
+from intradyne.research.spus_panel import build_panel  # noqa: E402
 
 TIMELINE = Path("docs/spus_universe_timeline.json")
 FIGI_MAP = Path("docs/cusip_ticker_map.json")
@@ -342,6 +350,72 @@ def project_span(
     print(f"  {full}/{len(rows)} dead names spanned at {FLOOR:.0%} or better")
 
 
+#: Horizons to compare, in trading days. `hold` spaces rebalances so holding
+#: periods never overlap, which is what makes the windows independent enough
+#: to count.
+HORIZONS = (("1 day", 1), ("1 week", 5), ("1 month", 21))
+
+#: 80% power. The A2 form is `(z(1-alpha/2) + z(power)) * sigma / sqrt(n)`,
+#: the same arithmetic behind the crypto table in
+#: `docs/CRYPTO_REOPENING_PREREGISTRATION.md`.
+Z_POWER_80 = 0.8416
+
+
+def _z(p: float) -> float:
+    """Inverse normal CDF, good to ~4e-4 -- Abramowitz & Stegun 26.2.23.
+
+    Written out rather than pulled from scipy, which is not a dependency of
+    this project and would be a heavy one to add for a single number.
+    """
+    if p <= 0.0 or p >= 1.0:
+        raise ValueError("p must be in (0, 1)")
+    if p < 0.5:
+        return -_z(1.0 - p)
+    t = math.sqrt(-2.0 * math.log(1.0 - p))
+    num = 2.515517 + 0.802853 * t + 0.010328 * t * t
+    den = 1.0 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t
+    return t - num / den
+
+
+def measure_power(panel, n_tests: int, lookbacks=(5, 21)) -> None:
+    """Minimum detectable effect per horizon, measured on this panel.
+
+    A2 of the framework: compute what the data can resolve *before* choosing
+    thresholds, because a test whose detectable effect exceeds the effect
+    being looked for cannot answer the question and must not be run. This
+    project has already spent one search concluding "no edge" where the honest
+    answer was "no power".
+
+    Sigma is the standard deviation, across rebalance dates, of the decile's
+    mean excess return over the equal-weighted universe -- the same quantity
+    `run_test` reports the mean of, so the power figure and the test statistic
+    are measured on one definition rather than two.
+    """
+    alpha = bonferroni_alpha(n_tests)
+    z_crit = _z(1.0 - alpha / 2.0)
+    scale = z_crit + Z_POWER_80
+    print(f"  Bonferroni alpha for {n_tests} tests: {alpha:.4f}  (z={z_crit:.3f})")
+    print(f"  detectable effect = {scale:.3f} * sigma / sqrt(n)")
+    print("")
+    print(
+        f"  {'horizon':<9}{'lookback':>9}{'windows':>9}{'sigma bps':>11}{'MDE bps':>10}"
+    )
+    for label, hold in HORIZONS:
+        for lb in lookbacks:
+            by_date = _decile_by_date(panel, lb, hold, weakest=False, decile=0.1)
+            means = [float(np.mean(v)) for v in by_date.values() if v]
+            n = len(means)
+            if n < 3:
+                print(f"  {label:<9}{lb:>9}{n:>9}{'--':>11}{'--':>10}")
+                continue
+            # `_decile_by_date` already returns bps; scaling again gave a
+            # sigma of 881,580 bps on the first run, which is 8,815% and
+            # obviously not a measurement.
+            sigma = float(np.std(means, ddof=1))
+            mde = scale * sigma / math.sqrt(n)
+            print(f"  {label:<9}{lb:>9}{n:>9}{sigma:>11.1f}{mde:>10.1f}")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--prices", action="store_true", help="fetch prices and score P3")
@@ -355,11 +429,42 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="ask which Alpha Vantage history endpoints this key can reach",
     )
+    ap.add_argument(
+        "--power",
+        action="store_true",
+        help="measure the minimum detectable effect per horizon (gate A2)",
+    )
+    ap.add_argument(
+        "--tests",
+        type=int,
+        default=4,
+        help="number of configurations, for the Bonferroni correction",
+    )
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args(argv)
 
     names, held, universe, still = holdings()
     dropped = universe - still
+
+    if args.power:
+        resolved, _ = cascade(names, held)
+        # Live names only. The dead half is not cached, and fetching it would
+        # spend the day's Alpha Vantage quota on a *dispersion* estimate that
+        # barely moves for it. The bias is stated rather than hidden: acquired
+        # names end on takeover premia, which are large one-off moves, so
+        # excluding them slightly understates sigma and therefore understates
+        # the detectable effect. The optimistic direction -- so a horizon that
+        # fails this test fails it comfortably.
+        live_only = {c: r for c, r in resolved.items() if not r.delisted}
+        print(f"-- A2 power, {len(live_only)} live names of {len(universe)} --")
+        print("  dead names excluded; see the note in the source. Their")
+        print("  absence understates sigma, so MDE here is a lower bound.\n")
+        panel, _cov = build_panel(CachedPrices(live_only))
+        live = int(panel.membership.sum(axis=1).max())
+        print(f"  panel: {len(panel.dates)} sessions x {len(panel.symbols)} names")
+        print(f"         {live} names live at the widest point\n")
+        measure_power(panel, args.tests)
+        return 0
 
     if args.probe:
         key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
