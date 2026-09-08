@@ -81,6 +81,22 @@ class Coverage:
     """
 
     by_quarter: Dict[str, Tuple[int, int]]  # as_of -> (priced, filed)
+    #: Coverage among names that were held at some point and are *not* held in
+    #: the final quarter -- the survivorship-relevant tail.
+    dropped_priced: int = 0
+    dropped_total: int = 0
+
+    def dropped_coverage(self) -> float:
+        """The figure precondition P3 actually turns on.
+
+        Overall coverage is dominated by survivors and cannot fail for the
+        reason that matters. Measured on the free data path, names still held
+        were 98.0% priceable while names that had left were 53.1% -- 44 of the
+        48 gaps sat in the tail. A panel can therefore report 85% coverage and
+        be survivorship-biased in the same way a today's-holdings list is, only
+        less visibly. See Amendment 1 in SLOT_1_PREREGISTRATION.md.
+        """
+        return (self.dropped_priced / self.dropped_total) if self.dropped_total else 0.0
 
     def worst(self) -> Tuple[str, float]:
         if not self.by_quarter:
@@ -235,6 +251,19 @@ def build_panel(
                 len(filed_cusips),
             )
 
+    # The survivorship tail: held at some point, not held in the final filing.
+    quarters = sorted(timeline)
+    still_held: set = set()
+    if quarters:
+        final_holdings = timeline[quarters[-1]].get("holdings")
+        if isinstance(final_holdings, list):
+            still_held = {
+                str(h["cusip"])
+                for h in final_holdings
+                if isinstance(h, dict) and h.get("cusip")
+            }
+    dropped = set(symbols) - still_held
+
     dates = np.array(
         [
             datetime(d.year, d.month, d.day, tzinfo=timezone.utc).timestamp()
@@ -243,7 +272,11 @@ def build_panel(
     )
     return (
         Panel(dates=dates, symbols=symbols, close=close, membership=membership),
-        Coverage(by_quarter=by_quarter),
+        Coverage(
+            by_quarter=by_quarter,
+            dropped_priced=len(dropped & priced_cusips),
+            dropped_total=len(dropped),
+        ),
     )
 
 
@@ -261,6 +294,20 @@ def describe(panel: Panel, coverage: Coverage, floor: float = 0.80) -> str:
         else "  no membership",
         f"  worst quarter          : {q} at {100 * worst:.1f}%",
     ]
+    dc = coverage.dropped_coverage()
+    lines.append(
+        f"  names that left the fund: {coverage.dropped_priced}/"
+        f"{coverage.dropped_total} priced ({100 * dc:.1f}%)"
+    )
+    if coverage.dropped_total and dc < floor:
+        lines.append(
+            f"  P3 FAILS: the survivorship tail is {100 * dc:.1f}% covered, "
+            f"below {100 * floor:.0f}%."
+        )
+        lines.append(
+            "  Overall coverage cannot rescue this -- it is dominated by "
+            "survivors. Slot not spent."
+        )
     if failing:
         lines.append(
             f"  BELOW {100 * floor:.0f}% IN {len(failing)} QUARTER(S): {failing[:5]}"
