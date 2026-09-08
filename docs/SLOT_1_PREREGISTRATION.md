@@ -108,18 +108,51 @@ depressing the figure:
   market holidays. ALK, BALL, BWA, LUV and Q were all scored unpriceable
   because prices were requested for a day the market was shut.
 
-**Status: 89 of 120 priced, with 21 delisted names not yet requested.**
-`ALPHAVANTAGE_API_KEY` is unset in this checkout, and those 21 are exactly the
-population P3 scores, so the run **refuses to compute a coverage figure** --
-a score over names that were never requested is not a low number, it is a
-meaningless one. That refusal is the same discipline adopted after an empty
-table was once reported as "0 of 8 passed".
+### Amendment 3 — the free tier serves 100 sessions, and that is not history
 
-If all 21 price, the tail reaches 110/120 (91.7%) and P3 passes. If twelve do,
-it reaches 84.2% and P3 still passes. **P3 is not yet passed, and the slot
-stays closed until the number exists.** Run `scripts/recover_delisted.py
---prices` with a key set; the free tier's 25 requests a day covers 21 names at
-two calls each in two runs, and the cache makes the second one cheap.
+Amendment 2 said the free path reaches the tail. **It does not, and the
+correction is recorded rather than edited away.**
+
+With a key set, all 21 delisted names returned nothing. The cause was not
+quota: `outputsize=full` is a **premium** feature of `TIME_SERIES_DAILY`, and
+the free tier answers it with an Information notice and no data. The MCP calls
+that produced the ABMD and ATVI evidence in Amendment 2 had used `compact`
+without my noticing the difference.
+
+`compact` is 100 sessions — for a delisted name, the 100 ending at its
+delisting date. Measured against the holding windows:
+
+    median coverage of the holding window     5.5%
+    names with no overlap at all              8 of 21
+    names with some overlap                  13 of 21
+
+ATVI, AVB, CTLT, CXO, DOC, KLG, WBA and TEL all delisted long enough after the
+fund dropped them that the last 100 sessions miss the window entirely.
+
+**A coverage test asking only "did any close come back" would count the other
+thirteen as priced, put the tail at 85%, and pass P3 on series covering a
+twentieth of their period.** That is the same hollow pass, one level down,
+that Amendment 1 introduced the dropped-tail measure to catch. So the
+criterion is tightened, knowing it makes P3 fail: a name is priced when at
+least 80% of its window's weekdays have a close — P3's own floor, applied per
+name rather than invented for the occasion. `price_source.window_coverage`
+computes it.
+
+**Status: P3 FAILS.** The live half of the tail is genuinely covered; the dead
+half is not reachable on a free daily endpoint.
+
+**What would satisfy it, now precisely specified.** `outputsize=full` on
+`TIME_SERIES_DAILY` — Alpha Vantage's entry premium tier, around $50 for a
+single month, which is all this needs since the data is cached to disk on
+first fetch. Not a security master, not a subscription: one month of one
+endpoint for 21 tickers. Whether that is worth buying is a decision for the
+programme owner, and this document does not make it.
+
+**Untested, and cheap to check first:** `TIME_SERIES_WEEKLY` and
+`TIME_SERIES_MONTHLY` return full history with no `outputsize` parameter and
+may be free. Weekly bars cannot serve slot 1, which is daily — but they would
+settle whether the *universe* is priceable at all, and they cost two requests
+to find out. The quota was exhausted before this could be run.
 
 ## Why this hypothesis
 

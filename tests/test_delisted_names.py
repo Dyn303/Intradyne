@@ -20,7 +20,11 @@ from intradyne.research.delisted_names import (
     load_delisted,
     recover,
 )
-from intradyne.research.price_source import CachedPrices, Resolution
+from intradyne.research.price_source import (
+    CachedPrices,
+    Resolution,
+    window_coverage,
+)
 
 HEADER = ["listing_id", "symbol", "name", "exchange", "ipo", "delisted"]
 
@@ -257,7 +261,7 @@ def test_unavailable_split_history_withholds_the_series(tmp_path: Path) -> None:
     """
     series = "timestamp,open,high,low,close,volume\n2022-12-21,1,1,1,381,1\n"
     p = _Stub(tmp_path, series, None)
-    assert p._fetch_av_daily("FOO") == {}
+    assert p._fetch_av_daily("FOO") is None
     assert "FOO" in p.failures
 
 
@@ -285,3 +289,71 @@ def test_empty_cache_file_is_honoured_rather_than_refetched(tmp_path: Path) -> N
     src._store("FOO", {})
     assert src.series_for("FOO", delisted=True) == {}
     assert src.requests_made == 0
+
+
+def test_a_failed_request_is_not_cached_as_an_absence(tmp_path: Path) -> None:
+    """The bug that made a wrong parameter permanent.
+
+    A first run asked for `outputsize=full`, which the free tier refuses, and
+    every delisted name came back empty. Because failures were cached like
+    absences, all 21 were written as empty files -- so every later run would
+    have honoured them and reported the same names unpriceable without
+    spending one request to find out otherwise.
+    """
+    p = _Stub(tmp_path, None, None)  # provider refuses the series
+    assert p.series_for("FOO", delisted=True) == {}
+    assert not (tmp_path / "FOO.daily.csv").exists()
+
+
+def test_a_genuine_absence_is_cached(tmp_path: Path) -> None:
+    """The other half: a real "nothing here" must not be re-asked daily."""
+    p = _Stub(tmp_path, "timestamp,open,high,low,close,volume\n", "")
+    assert p.series_for("FOO", delisted=True) == {}
+    assert (tmp_path / "FOO.daily.csv").exists()
+
+
+def test_window_coverage_counts_weekdays_not_calendar_days() -> None:
+    # Mon 2021-01-04 .. Fri 2021-01-08 is five sessions.
+    series = {date(2021, 1, d): 1.0 for d in (4, 5, 6, 7, 8)}
+    assert window_coverage(series, date(2021, 1, 4), date(2021, 1, 10)) == 1.0
+
+
+def test_partial_history_does_not_count_as_priced() -> None:
+    """100 sessions against a multi-year window is not coverage.
+
+    On the free tier a delisted name returns its last 100 sessions, which
+    overlaps the SPUS holding windows by a median of 5.5%. Counting overlap
+    would pass P3 at 85% on series covering a twentieth of their period.
+    """
+    series = {
+        date(2022, 12, d): 1.0 for d in range(1, 22) if date(2022, 12, d).weekday() < 5
+    }
+    cov = window_coverage(series, date(2020, 5, 31), date(2022, 12, 31))
+    assert cov < 0.05
+
+
+def test_window_coverage_is_zero_for_a_series_outside_the_window() -> None:
+    series = {date(2024, 6, 3): 1.0}
+    assert window_coverage(series, date(2020, 1, 1), date(2021, 1, 1)) == 0.0
+
+
+def test_frequencies_do_not_share_a_cache_file(tmp_path: Path) -> None:
+    """A weekly series must never be served to a caller asking for daily.
+
+    Free-tier daily is capped at 100 sessions while weekly returns full
+    history, so both are worth fetching -- and keyed by ticker alone the
+    second would overwrite the first, leaving a panel with one bar a week for
+    some names and one a day for others.
+    """
+    header = "timestamp,open,high,low,close,volume\n"
+    daily = _Stub(tmp_path, header, "")
+    weekly = _Stub(tmp_path, header, "", frequency="weekly")
+    daily.series_for("FOO", delisted=True)
+    weekly.series_for("FOO", delisted=True)
+    assert (tmp_path / "FOO.daily.csv").exists()
+    assert (tmp_path / "FOO.weekly.csv").exists()
+
+
+def test_an_unknown_frequency_is_refused() -> None:
+    with pytest.raises(ValueError):
+        CachedPrices({}, frequency="hourly")
