@@ -16,6 +16,9 @@ import json
 
 import pytest
 
+from intradyne.research.sec_names import (  # noqa: F401
+    _common_line,
+)
 from intradyne.research.sec_names import load_registry, normalise, recover
 
 
@@ -111,3 +114,31 @@ class TestRecover:
         """Absence is how a caller tells recovered from still-unknown."""
         out = recover({"A": "Known Inc", "B": "Unknown Inc"}, {"KNOWN": "KN"})
         assert out == {"A": "KN"} and "B" not in out
+
+
+def test_dotted_legal_form_normalises_like_the_undotted_one() -> None:
+    """The punctuation asymmetry that lost NXP.
+
+    N-PORT writes "NXP Semiconductors NV", where `NV` is stripped as a
+    corporate form. SEC writes "NXP Semiconductors N.V.", which became `N V`
+    -- two single letters no form rule matches. Same company, same legal form,
+    two different keys.
+    """
+    assert normalise("NXP Semiconductors N.V.") == normalise("NXP Semiconductors NV")
+    assert normalise("Foo S.A.") == normalise("Foo SA")
+
+
+def test_a_preferred_line_does_not_make_its_common_ambiguous() -> None:
+    """SEC files SMCI and SMCIP under one title; dropping both lost SMCI."""
+    assert _common_line({"SMCI", "SMCIP"}) == "SMCI"
+
+
+def test_share_classes_stay_ambiguous_even_when_one_is_a_prefix() -> None:
+    """The false positive a bare prefix test would produce.
+
+    SEC lists GOOGL, GOOG, GOOGM and GOOGN all under "Alphabet Inc.". GOOG is
+    a prefix of the others and is *not* their common stock -- they are share
+    classes. Picking one would bind Class C prices to a Class A holding.
+    """
+    assert _common_line({"GOOGL", "GOOG", "GOOGM", "GOOGN"}) is None
+    assert _common_line({"BRK-A", "BRK-B"}) is None
