@@ -18,7 +18,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from loguru import logger
 
@@ -29,6 +29,35 @@ from .execution import ExecutionManager
 from .reconcile import reconcile_on_start
 from .risk import RiskManager
 from .router import StrategyRouter
+
+
+def venue_min_notionals(
+    markets: Optional[Mapping[str, Any]], symbols: Sequence[str]
+) -> Dict[str, float]:
+    """The smallest order each symbol's venue will accept, in quote currency.
+
+    Read from the exchange rather than configured, because the floor is a
+    property of the venue. ccxt reports it as `limits.cost.min`; where a
+    market only declares a minimum *amount* it cannot be converted without a
+    price, so that symbol is left out and takes the configured fallback.
+    """
+    out: Dict[str, float] = {}
+    if not markets:
+        return out
+    for sym in symbols:
+        m = markets.get(sym)
+        if not isinstance(m, Mapping):
+            continue
+        limits = m.get("limits")
+        if not isinstance(limits, Mapping):
+            continue
+        cost = limits.get("cost")
+        if not isinstance(cost, Mapping):
+            continue
+        lo = cost.get("min")
+        if isinstance(lo, (int, float)) and lo > 0:
+            out[sym] = float(lo)
+    return out
 
 
 async def resolve_symbols(settings: Settings) -> List[str]:
@@ -136,6 +165,23 @@ def build_router(
         params=params,
     )
     router._max_spread_bps = int(max(0, settings.max_spread_bps))
+    if settings.random_entry_p > 0:
+        from .strategies.random_entry import RandomEntryStrategy
+
+        router.random_entry_p = float(settings.random_entry_p)
+        router.random = {
+            s: RandomEntryStrategy(
+                symbol=s,
+                p=float(settings.random_entry_p),
+                seed=int(settings.random_entry_seed),
+            )
+            for s in symbols
+        }
+        logger.bind(event="control_arm").warning(
+            f"CONTROL ARM: entering at random, p={settings.random_entry_p} per "
+            f"tick, seed={settings.random_entry_seed}. The real strategies are "
+            "disabled. This is not a trading configuration."
+        )
     router._entry_cooldown_s = int(max(0, settings.entry_cooldown_s))
     router._sentiment_enabled = bool(settings.sentiment_enabled)
     router._sentiment_long_min = float(settings.sentiment_long_min)
@@ -151,10 +197,19 @@ EQUITY_SAMPLE_SECONDS = 60.0
 #: Exposed so the API can reconfigure the *live* engine, which previously
 #: required the separate engine process and its own FastAPI app.
 _ACTIVE_ROUTER: Optional[StrategyRouter] = None
+#: The live feed, exposed for the same reason as the router: its transport and
+#: achieved interval are the conversion factor between a strategy window's tick
+#: count and real time, and that was only observable from outside the process
+#: as the *absence* of a warning.
+_ACTIVE_FEED: Optional[DataFeed] = None
 
 
 def get_active_router() -> Optional[StrategyRouter]:
     return _ACTIVE_ROUTER
+
+
+def get_active_feed() -> Optional[DataFeed]:
+    return _ACTIVE_FEED
 
 
 def apply_params(runtime: Dict[str, Any]) -> Dict[str, Any]:
@@ -191,7 +246,7 @@ async def run_once(
     `feed` is injectable so the tick path can be driven without a venue
     connection.
     """
-    global _ACTIVE_ROUTER
+    global _ACTIVE_ROUTER, _ACTIVE_FEED
 
     syms = symbols if symbols is not None else await resolve_symbols(settings)
     if not syms:
@@ -224,8 +279,28 @@ async def run_once(
     last_sample = time.monotonic()
 
     _ACTIVE_ROUTER = router
+    _ACTIVE_FEED = source if isinstance(source, DataFeed) else None
+    #: Venue minimums are only knowable once the feed has loaded its markets,
+    #: which happens inside `start`. Populated on the first tick and then left
+    #: alone; until it is, the configured fallback applies.
+    _floors_loaded = False
     try:
         async for l1 in source.start(syms):
+            if not _floors_loaded:
+                _floors_loaded = True
+                floors = venue_min_notionals(
+                    getattr(getattr(source, "exchange", None), "markets", None), syms
+                )
+                if floors:
+                    execution.ctx.min_notional.update(floors)
+                    logger.bind(event="min_notional_loaded").info(
+                        {"floors": floors, "source": "venue"}
+                    )
+                else:
+                    logger.warning(
+                        "venue declared no minimum order sizes; falling back to "
+                        f"{execution.ctx.default_min_notional} per order"
+                    )
             # Every tick feeds the flash-crash window, not only ticks that
             # produce an order -- otherwise the hour-ago sample is missing on
             # a quiet market and the guardrail declines to fire.
@@ -252,6 +327,7 @@ async def run_once(
                 last_sample = now
     finally:
         _ACTIVE_ROUTER = None
+        _ACTIVE_FEED = None
 
 
 async def supervise(

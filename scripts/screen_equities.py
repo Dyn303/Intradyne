@@ -54,12 +54,22 @@ import csv
 import io
 import json
 import os
+import re
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import httpx
+from dotenv import find_dotenv, load_dotenv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fundamentals_asof import (  # noqa: E402
+    Filing,
+    filings_from_earnings,
+    pick_report,
+)
 
 AV = "https://www.alphavantage.co/query"
 
@@ -83,10 +93,38 @@ NOT_COMMON_EQUITY: List[Tuple[str, Set[str], str]] = [
     ("NOTE", {"NOTE", "NOTES", "DEBENTURE", "BOND"}, "a debt instrument, not equity"),
     (
         "WHEN_ISSUED",
-        {"ISSUED"},
+        {"ISSUED", "WHENISSUED"},
         "a when-issued line is a forward on an unsettled share",
     ),
 ]
+
+#: Names that mean a fund wrapper rather than an operating company. Kept
+#: deliberately short, because the near-misses are worse than the misses:
+#: TRUST rejects 284 names including American Assets Trust and Arbor Realty
+#: Trust, which are REITs and ordinary common stock; PORTFOLIO rejects
+#: Altisource Portfolio Solutions and Consumer Portfolio Service, which are
+#: operating companies. Both were measured before being left out.
+FUND_WRAPPER: Set[str] = {"ETF", "FUND", "ADR", "ADS"}
+
+#: A preferred line's *name* is the issuer's, so the name filter cannot see it:
+#: SCHW-P-D reads "Charles Schwab Corp" and TY-P reads "Tri-Continental Corp".
+#: The ticker is the only signal, and US exchanges encode it two ways.
+#:
+#:   NYSE-style   a `-P` suffix, optionally with a series letter: SCHW-P-D
+#:   NASDAQ-style a fifth letter P on an otherwise five-letter root: RILYP
+#:
+#: Share classes must survive both. `ACV-A`, `AKO-B` and `AGM-A` are Class A
+#: and B common stock, and were checked against these patterns rather than
+#: assumed safe -- 199 such tickers in the universe, none matched.
+PREFERRED_TICKER = re.compile(r"-P(-[A-Z])?$")
+PREFERRED_NASDAQ = re.compile(r"^[A-Z]{4}P$")
+
+
+def is_preferred_ticker(symbol: str) -> bool:
+    """Whether the ticker encodes a preferred line rather than common stock."""
+    sym = (symbol or "").strip().upper()
+    return bool(PREFERRED_TICKER.search(sym) or PREFERRED_NASDAQ.match(sym))
+
 
 #: Markers in an ETF's name that mean it is leveraged, inverse or derivative
 #: backed. Whole-word matched, same discipline.
@@ -358,6 +396,26 @@ def instrument_type(sym: str, ref: Dict[str, Dict[str, str]]) -> Tuple[str, str]
         if name_words & keys:
             return "excluded", f"{code}: {why}"
 
+    # The ticker, where the name cannot help. A preferred line carries the
+    # issuer's name -- SCHW-P-D reads "Charles Schwab Corp" -- so every check
+    # above passes it, and 614 such lines survived into the A3 universe on
+    # that basis. Decided from the symbol because that is where the evidence
+    # is; adding words to the name list could not have caught them.
+    if is_preferred_ticker(sym):
+        return (
+            "excluded",
+            "PREFERRED: the ticker encodes a preferred line, which carries a "
+            "fixed coupon and is not common equity",
+        )
+
+    hit = name_words & FUND_WRAPPER
+    if hit:
+        return (
+            "excluded",
+            f"FUND: {', '.join(sorted(hit))} -- a fund or depositary wrapper "
+            "around holdings that would be screened individually",
+        )
+
     if len(sym) > 1 and sym[-1] in "WRUP":
         root = ref.get(sym[:-1])
         if root and _norm(root["name"]) == _norm(meta["name"]):
@@ -396,18 +454,43 @@ def overview(
 
 def balance_sheet(
     c: httpx.Client, key: str, sym: str, cache: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+) -> List[Dict[str, Any]]:
+    """Every quarterly report, not just the newest one.
+
+    This used to return `reports[0]`. The newest report that *exists* is not
+    the newest that was *public* on a given date, and choosing between them
+    needs the whole list -- see `fundamentals_asof.pick_report`.
+    """
     hit = cache.get(sym, {}).get("balance")
     if hit:
-        return hit
+        # Caches written before this returned a list hold a single report.
+        return hit if isinstance(hit, list) else [hit]
     body = _get(c, {"function": "BALANCE_SHEET", "symbol": sym, "apikey": key})
     if not isinstance(body, dict):
-        return None
+        return []
     reports = body.get("quarterlyReports") or body.get("annualReports") or []
     if not reports:
-        return None
-    cache.setdefault(sym, {})["balance"] = reports[0]
-    return reports[0]
+        return []
+    cache.setdefault(sym, {})["balance"] = list(reports)
+    return list(reports)
+
+
+def earnings(
+    c: httpx.Client, key: str, sym: str, cache: Dict[str, Any]
+) -> List[Filing]:
+    """Publication dates for each reporting period.
+
+    One extra request per candidate, and it buys the only thing that turns a
+    fiscal period end into a date somebody could have acted on.
+    """
+    hit = cache.get(sym, {}).get("earnings")
+    if hit is not None:
+        return filings_from_earnings(hit)
+    body = _get(c, {"function": "EARNINGS", "symbol": sym, "apikey": key})
+    if not isinstance(body, dict):
+        return []
+    cache.setdefault(sym, {})["earnings"] = body
+    return filings_from_earnings(body)
 
 
 def _n(v: Any) -> Optional[float]:
@@ -426,8 +509,10 @@ def screen_one(
     cache: Dict[str, Any],
     max_debt: float,
     max_liquid: float,
+    as_of: Optional[date] = None,
 ) -> Dict[str, Any]:
     """Tiers 3 and 4 for one surviving candidate."""
+    as_of = as_of or datetime.now(timezone.utc).date()
     sym = rec["symbol"]
     ov = overview(c, key, sym, cache)
     if ov is None:
@@ -448,17 +533,24 @@ def screen_one(
     # No sector or industry at all is not the same as clean.
     rec["known"] = bool(tags)
 
-    bs = balance_sheet(c, key, sym, cache)
+    # The report that was *public* on as_of, not merely the newest that
+    # exists. `reports[0]` would use figures the market had not seen.
+    reports = balance_sheet(c, key, sym, cache)
+    bs = pick_report(reports, earnings(c, key, sym, cache), as_of) if reports else None
     if bs is None or not mcap:
         rec["ratios"] = None
-        rec["ratio_flags"] = ["NO_DATA"]
+        rec["ratio_flags"] = ["NO_DATA"] if not reports else ["NOT_YET_PUBLIC"]
         return rec
 
     debt = _n(bs.get("shortLongTermDebtTotal")) or 0.0
     liquid = _n(bs.get("cashAndShortTermInvestments")) or 0.0
     ratios = {"debt_over_mcap": debt / mcap, "liquid_over_mcap": liquid / mcap}
     rec["ratios"] = ratios
-    rec["ratio_as_of"] = bs.get("fiscalDateEnding", "")
+    # Three dates, because one is not enough to audit a ratio: the period the
+    # figures describe, when they became public, and the date screened against.
+    rec["fiscal_end"] = bs.get("fiscalDateEnding", "")
+    rec["known_from"] = bs.get("_known_from", "")
+    rec["ratio_as_of"] = bs.get("_as_of", "")
 
     breaches = []
     if ratios["debt_over_mcap"] > max_debt:
@@ -589,6 +681,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = ap.parse_args(argv)
 
+    # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
     if not key:
         print("ALPHAVANTAGE_API_KEY is not set; see .env.example", flush=True)

@@ -281,7 +281,14 @@ def get_execution_manager() -> "ExecutionManager":
                 # Same ledger the guardrails write to, so refusals and fills
                 # land in one chain.
                 ledger=guardrails.ledger,
-                whitelist=settings.allowed_crypto_list(),
+                # `load_symbols()`, not `allowed_crypto_list()`. The latter is
+                # operator configuration carrying no compliance check of its
+                # own, so this path would trade whatever ALLOWED_SYMBOLS named
+                # -- including an instrument the Shariah screen has never seen.
+                # The resolver intersects it with `whitelist.json`, and the
+                # engine loop resolves through the same call, so both order
+                # paths now enforce one universe.
+                whitelist=settings.load_symbols(),
                 live_broker=None,
                 live_enabled=False,
                 guardrails=guardrails,
@@ -291,6 +298,8 @@ def get_execution_manager() -> "ExecutionManager":
                 order_keys=OrderKeyStore(settings.db_url),
                 execution_mode=settings.execution_mode,
                 maker_offset_bps=settings.maker_offset_bps,
+                default_min_notional=settings.min_order_notional,
+                min_entry_notional=settings.min_entry_notional,
             )
         )
     return _EXECUTION

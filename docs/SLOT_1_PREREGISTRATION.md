@@ -1,0 +1,270 @@
+# Slot 1 — Cross-sectional reversal in a Shariah-screened US equity universe
+
+**Registered:** 2026-09-05, before any signal is scored against equity prices.
+**Budget:** slot 1 of the four in `docs/EQUITY_PROGRAMME_STOP_RULE.md`.
+**Status:** *not started* — the preconditions below are unmet.
+
+## Preconditions, which must pass before the slot is spent
+
+The framework treats a test that cannot be run as a precondition failure rather
+than a negative result, and Approach 1's slot was returned unspent under
+exactly that rule. Three things must be true first. **None is true today.**
+
+**P1 — Prices joinable to the universe.** `docs/spus_universe_timeline.json`
+identifies holdings by CUSIP, because N-PORT carries no ticker. A price source
+must map CUSIP to a tradeable symbol *through renames and delistings*, or the
+same 43%-style bias returns by the back door: names that changed ticker would
+silently drop out. Free sources do not do this. QuantConnect's security master
+and map files do, at a per-file download cost not yet priced.
+
+**P2 — Spreads measured, not assumed.** The tick-size floor is `100 / price`
+bps, so a $200 name has a 0.5 bp minimum spread against crypto's 14 bps — a
+20-to-30-fold structural improvement, and the reason this universe is worth the
+trouble. But a *floor* is not a spread. Real quoted spreads, and the depth
+behind them, must be measured per name the way
+`scripts/measure_spreads.py` did for crypto, and committed alongside the
+result.
+
+**P3 — Enough of the universe reachable.** See Amendment 1: as first written
+this measured the wrong quantity, and it passed while the panel was still
+biased.
+
+### Amendment 1 — P3 measures coverage of the names that *left*
+
+Registered 2026-09-05, after building the free data path and before any signal
+was scored.
+
+P3 originally read: *if more than 20% of the point-in-time universe cannot be
+priced, the slot is not spent.* Measured end to end -- SPUS CUSIPs resolved
+through OpenFIGI, priced through yfinance -- the universe clears that easily:
+
+| quarter     | coverage |
+|-------------|---------:|
+| 2020-05-31  |    82.8% |
+| 2023-05-31  |    92.4% |
+| 2026-05-31  |    98.0% |
+
+Zero of 25 quarters below the floor. And the test is worthless, because the
+missing names are not a random sample:
+
+| group                        | priceable      |
+|------------------------------|---------------:|
+| still held today             | **98.0%** (198/202) |
+| dropped from the fund        | **53.1%** (34/64)   |
+| overall                      | 85.1% (274/322) |
+
+**44 of the 48 unpriceable names are dropped names.** Overall coverage is
+dominated by survivors, so it cannot fail for the reason that matters: nearly
+half the names that left the universe have no price history, and those are
+precisely the names the point-in-time timeline exists to retain. A panel built
+on this would report 85% coverage and be survivorship-biased in the same way a
+today's-holdings list is, only less visibly.
+
+**P3 is therefore restated.** The universe must be priceable at **80% or better
+among the names that subsequently left it**, measured across the whole span,
+in addition to the per-quarter floor. `spus_panel.Coverage.dropped_coverage`
+computes it.
+
+**Current status: 53.1%. P3 fails and the slot is not opened.** That is the
+same outcome as Approach 1's precondition failure, reached the same way, and
+the slot remains unspent.
+
+**What would satisfy it.** Price history for roughly thirty delisted or
+acquired names -- not a universe, and the narrowest this question has been. A
+paid source with a security master supplies it; free sources do not, because a
+delisted ticker is exactly what they stop serving.
+
+### Amendment 2 — the free path does reach the tail, and the purchase is off
+
+The paragraph above is wrong in its second half, and this records the
+correction rather than quietly editing it away. Two claims failed:
+
+*"Free sources do not serve delisted tickers."* Alpha Vantage does.
+`TIME_SERIES_DAILY` returns `ABMD` through 2023-01-03 and `ATVI` through
+2023-10-13 -- their delisting dates, takeover premium included -- on the free
+tier. What is premium is the *adjusted* series, not the data.
+
+*"The remaining thirty need a security master."* They needed a name index that
+includes dead companies, and `docs/equity_listings.csv` had been sitting in the
+repository since #65, committed by `scripts/equity_pit_universe.py` for the
+survivorship work. It carries 7,473 dead listings with names and delisting
+dates. Matching N-PORT names against it recovers 17 of the 30, including every
+name quoted above as an example of the problem.
+
+    resolution of the dropped tail
+      OpenFIGI                65.0%
+      + SEC registrants       77.5%
+      + delisted listings     91.7%
+
+Two defects were found and fixed while measuring, both of which had been
+depressing the figure:
+
+- **Liveness was inferred from the resolver.** A name OpenFIGI resolved was
+  sent to yfinance even when it had delisted in 2021, and yfinance answers a
+  dead ticker with an empty frame indistinguishable from a network failure.
+  Liveness is now looked up by symbol against the listing record.
+- **Seventeen CUSIPs appear in exactly one quarter**, so their reported
+  window was a single day -- and the fund's quarter-ends fall on Sundays and
+  market holidays. ALK, BALL, BWA, LUV and Q were all scored unpriceable
+  because prices were requested for a day the market was shut.
+
+### Amendment 3 — the free tier serves 100 sessions, and that is not history
+
+Amendment 2 said the free path reaches the tail. **It does not, and the
+correction is recorded rather than edited away.**
+
+With a key set, all 21 delisted names returned nothing. The cause was not
+quota: `outputsize=full` is a **premium** feature of `TIME_SERIES_DAILY`, and
+the free tier answers it with an Information notice and no data. The MCP calls
+that produced the ABMD and ATVI evidence in Amendment 2 had used `compact`
+without my noticing the difference.
+
+`compact` is 100 sessions — for a delisted name, the 100 ending at its
+delisting date. Measured against the holding windows:
+
+    median coverage of the holding window     5.5%
+    names with no overlap at all              8 of 21
+    names with some overlap                  13 of 21
+
+ATVI, AVB, CTLT, CXO, DOC, KLG, WBA and TEL all delisted long enough after the
+fund dropped them that the last 100 sessions miss the window entirely.
+
+**A coverage test asking only "did any close come back" would count the other
+thirteen as priced, put the tail at 85%, and pass P3 on series covering a
+twentieth of their period.** That is the same hollow pass, one level down,
+that Amendment 1 introduced the dropped-tail measure to catch. So the
+criterion is tightened, knowing it makes P3 fail: a name is priced when at
+least 80% of its window's weekdays have a close — P3's own floor, applied per
+name rather than invented for the occasion. `price_source.window_coverage`
+computes it.
+
+**Status: P3 FAILS.** The live half of the tail is genuinely covered; the dead
+half is not reachable on a free daily endpoint.
+
+**What would satisfy it, now precisely specified.** `outputsize=full` on
+`TIME_SERIES_DAILY` — Alpha Vantage's entry premium tier, around $50 for a
+single month, which is all this needs since the data is cached to disk on
+first fetch. Not a security master, not a subscription: one month of one
+endpoint for 21 tickers. Whether that is worth buying is a decision for the
+programme owner, and this document does not make it.
+
+**Untested, and cheap to check first:** `TIME_SERIES_WEEKLY` and
+`TIME_SERIES_MONTHLY` return full history with no `outputsize` parameter and
+may be free. Weekly bars cannot serve slot 1, which is daily — but they would
+settle whether the *universe* is priceable at all, and they cost two requests
+to find out. The quota was exhausted before this could be run.
+
+## Why this hypothesis
+
+Two facts shape it, both measured rather than assumed.
+
+*Cost is no longer the binding constraint.* Crypto's round trip was 14–25 bps
+against typical moves of 2.7 bps at two minutes. Here the tick floor is under
+1 bp on most of the universe. The cost side of gate A1 stops being the reason
+nothing works, which is precisely what could not be said of the last eleven
+approaches.
+
+*Breadth is the binding constraint instead.* The universe holds 180–215 names
+per quarter and 322 across six years, but concentration has risen sharply:
+weight-effective names (1/HHI) fell from **33.9 in 2020 to 19.2 in 2026**, with
+the top ten now 57.9% of the fund. And weight concentration is the *optimistic*
+measure — correlation-based effective breadth for equities was measured at
+**3–10** in earlier work. A cap-weighted test would be a bet on five megacaps
+wearing a portfolio's clothing.
+
+So: **equal-weighted, cross-sectional, and long-only.** Equal weighting is not
+a preference here, it is what makes the breadth real. Long-only is not a
+preference either: `forbid_shorting` enforces it at the compliance layer.
+
+> **H1.** Within the Shariah-screened universe, ranking names by their trailing
+> return and buying the weakest decile earns a gross return, over the following
+> holding period, that exceeds both a resampling null and the round-trip cost.
+
+Short-horizon cross-sectional reversal is the most documented effect that
+survives in liquid US equities, which makes it the right first test: if *it*
+does not appear, the apparatus is more likely wrong than the market.
+
+## What is fixed, now
+
+**Universe.** SPUS holdings as filed, per quarter, from
+`docs/spus_universe_timeline.json`. At each rebalance, the names held *then*.
+Quarterly steps; a name added and dropped inside one quarter is invisible and
+that is accepted.
+
+**Signals: two, two lookbacks each.**
+
+| signal    | rule                                        | lookbacks |
+|-----------|---------------------------------------------|-----------|
+| reversal  | buy the weakest decile by trailing return   | 5d, 21d   |
+| momentum  | buy the strongest decile by trailing return | 5d, 21d   |
+
+Momentum is included as the sign-flipped twin, not as a second guess: if
+reversal works and momentum does not, that asymmetry is evidence; if both
+"work", something is wrong with the harness.
+
+**Horizons: 5 trading days and 21 trading days.** Not intraday. Approach 1
+aimed there and the crypto work established that a short horizon puts the move
+below the cost before any signal is considered. At a daily-to-monthly horizon
+the typical move is two orders of magnitude above the tick floor.
+
+**Four configurations × two horizons = eight tests.** Bonferroni: empirical
+**p < 0.00625**, not 0.05. Fixed now so it cannot be relaxed later.
+
+**Control: a resampling null, B = 200.** Daily cross-sectional returns are
+shuffled *across names within each date*, which destroys the cross-sectional
+signal while preserving each day's market move and the dispersion between
+names. The identical ranking and holding rule then runs on the shuffled panel.
+
+This is the control the crypto work arrived at the hard way. A random-name
+control was tried there and failed its own abort check, because it did not
+share the selection mechanism. Shuffling within date does share it: whatever a
+decile rule earns mechanically, it earns on the shuffle too.
+
+**Statistic.** Mean gross return per position in bps, real minus null, with a
+**date-clustered** standard error. Positions opened on one date share that
+day's market and are not independent.
+
+**Cost gate.** The edge must exceed the measured round trip from P2 — spread
+plus commission plus slippage, per name, not a universe average.
+
+**Hold-out.** Primary on 2020-05-31 → 2024-05-31 (16 quarters). Confirmation on
+2024-08-31 → 2026-05-31 (9 quarters), **not examined until the primary result
+is written into this file.**
+
+## Criteria
+
+| outcome                                                                        | conclusion |
+|--------------------------------------------------------------------------------|------------|
+| ≥1 configuration beats its null at p < 0.00625, exceeds cost, and repeats out of sample | **Pass.** Forward paper test, newly pre-registered. |
+| Beats the null but not the cost                                                 | Real and untradeable. Recorded. Slot spent. |
+| No configuration clears the bar                                                 | **Fail.** Slot spent; three remain. |
+| Primary passes, hold-out does not                                               | **Fail**, reported as an in-sample artefact. Slot spent. |
+
+**Aborts.** The run stops and the slot is **not** spent if any precondition
+above fails mid-run — in particular if the priced universe falls below 80% of
+the filed universe in any quarter.
+
+## Commitments
+
+- No signal, lookback, horizon or threshold changes after this file is
+  committed. A change voids the run and requires a new registration.
+- All eight results reported, including the seven that will not be the best.
+- The outcome is recorded here whatever it is, following
+  `APPROACH_1_PREREGISTRATION.md` and `HORIZON_PREREGISTRATION.md`.
+- A pass earns a forward test and nothing else.
+
+## Prior
+
+Higher than crypto's, and still low. Cross-sectional reversal is documented and
+the cost structure genuinely permits it, which is more than could be said of
+any of the eleven crypto approaches. Against that: large-cap US equities are
+the most competed venue that exists, effective breadth is 3–10 rather than 200,
+and the universe is dominated by a handful of megacaps whose behaviour will
+drive any equal-weighted result more than the name count suggests.
+
+What is carried forward from the crypto closure is not a prior but a method.
+Under a weaker null, four configurations there passed at +37 to +92 bps with
+t between +10.8 and +13.1, and all of it was drift plus selection arithmetic.
+Three safeguards were needed to kill it. All three are built into this document
+before the first number is computed, rather than added once a result looks too
+good.

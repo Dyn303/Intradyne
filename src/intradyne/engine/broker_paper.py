@@ -42,6 +42,9 @@ class PaperBroker:
         #: book fills with stale intentions.
         self.limit_ttl_s = float(limit_ttl_s)
         self.orders: Dict[str, Order] = {}
+        #: Maker orders that rested to their TTL without filling. Each is a
+        #: trade the strategy wanted and did not get.
+        self.expired = 0
 
     def _new_order_id(self) -> str:
         return f"PAPER-{next(_id_counter)}"
@@ -93,7 +96,23 @@ class PaperBroker:
                 and order.created_ts is not None
                 and (float(now) - float(order.created_ts)) > self.limit_ttl_s
             ):
+                # An expiring maker order is a *missed trade*, not a saving.
+                # This set the status and moved on, leaving no trace anywhere,
+                # so the one number that decides whether maker execution is
+                # worth its lower fee -- the fill rate -- could not be counted
+                # at all. Same class as the silent drops fixed in #50 and #54.
                 order.status = "expired"
+                self.expired += 1
+                logger.bind(event="order_expired").info(
+                    {
+                        "order_id": order.id,
+                        "symbol": order.symbol,
+                        "side": order.side,
+                        "qty": order.qty,
+                        "price": order.price,
+                        "resting_s": round(float(now) - float(order.created_ts), 2),
+                    }
+                )
                 continue
             self._try_fill(order, l1)
 

@@ -20,6 +20,7 @@ from .portfolio import Portfolio
 from .strategies.momentum import MomentumStrategy
 from .strategies.meanrev import MeanRevStrategy
 from .strategies.ml import MLStrategy
+from .strategies.random_entry import RandomEntryStrategy
 from .metrics_ml import ML_SIGNALS
 from .metrics import METRICS
 
@@ -56,6 +57,11 @@ class StrategyRouter:
         self.risk = risk
         self.execman = execman
         self.portfolio = portfolio
+        #: Stage 2's control arm. When set, it *replaces* the real strategies
+        #: rather than joining them -- a control that runs alongside what it
+        #: is controlling for measures nothing.
+        self.random_entry_p: float = 0.0
+        self.random: Dict[str, RandomEntryStrategy] = {}
         self.momo = {s: MomentumStrategy(symbol=s) for s in symbols}
         self.meanrev = {s: MeanRevStrategy(symbol=s) for s in symbols}
         self.ml: dict[str, MLStrategy] = {}
@@ -69,7 +75,19 @@ class StrategyRouter:
         self._mae_pct: Dict[str, float] = defaultdict(float)
 
         # Execution controls
-        self.micro_slices: int = 3
+        #: Child orders per entry. Slicing exists to avoid moving the book,
+        #: and at this size there is no book to move: with
+        #: MAX_ORDER_NOTIONAL=300, a full order is 0.02-1.2% of the depth
+        #: resting within 5bps on the liquid names (BTC $1.36M, ETH $1.11M,
+        #: SOL $489K). Three $100 clips bought nothing there and cost 3x the
+        #: order flow and rate-limit budget.
+        #:
+        #: On the thin names, where impact is real, slicing as implemented
+        #: could not help either: the children were submitted 83-152ms apart,
+        #: far inside book replenishment, so they swept the same levels in
+        #: three bites rather than one. Slicing without spacing in time is
+        #: not slicing. Raise this only alongside a delay between children.
+        self.micro_slices: int = 1
         self.time_stop_s: int = 120
         self.trail_atr_k: float = 0.0
         self.pyramid_max: int = 0
@@ -158,6 +176,53 @@ class StrategyRouter:
                 flt.get("atr_block_cooldown_s", self.atr_block_cooldown_s)
             )
 
+    def _spread_too_wide(self, sym: str, l1: Mapping[str, Any]) -> bool:
+        """True when this quote must not be entered on.
+
+        Fail-closed in both directions that matter. A throw means the spread
+        could not be established, and an unverified spread is refused rather
+        than allowed. So is a quote carrying no bid/ask: the filter previously
+        required `bid > 0 and ask > 0` and simply fell through otherwise, so a
+        feed that supplied only `last` disabled the check without saying so.
+
+        Measured on Bitget, this is what the check is holding back: DOT quotes
+        11.38-22.78bps with nothing resting within 5bps of the touch, against
+        a bound of 4.
+        """
+        if self._max_spread_bps <= 0:
+            return False
+        try:
+            bid = float(l1.get("bid", 0.0) or 0.0)
+            ask = float(l1.get("ask", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            logger.warning(f"{sym}: unreadable bid/ask, refusing entry")
+            return True
+        if bid <= 0 or ask <= 0:
+            logger.warning(
+                f"{sym}: quote carries no bid/ask, so the spread cannot be "
+                "checked; refusing entry"
+            )
+            return True
+        mid = (bid + ask) / 2.0
+        if mid <= 0:
+            return True
+        spread_bps = (ask - bid) / mid * 10_000.0
+        return spread_bps > float(self._max_spread_bps)
+
+    def _in_cooldown(self, sym: str, now_ts: float) -> bool:
+        """True when this symbol is still inside its post-stop cooldown.
+
+        Fail-closed for the same reason: a cooldown that cannot be read is a
+        cooldown that has not been shown to have expired.
+        """
+        if self._entry_cooldown_s <= 0:
+            return False
+        try:
+            return now_ts < float(self._cooldown_until.get(sym, 0.0))
+        except (TypeError, ValueError):
+            logger.warning(f"{sym}: unreadable cooldown state, refusing entry")
+            return True
+
     async def on_tick(self, l1: Mapping[str, Any]) -> None:
         # An L1 quote arrives from a websocket or a CSV row, so its values are
         # genuinely dynamic at this boundary -- `Any` says that honestly.
@@ -194,12 +259,32 @@ class StrategyRouter:
                 cl = float(l1.get("last", last_f))
                 self._ohlc[sym].append((hi, lo, cl))
             except Exception:
-                pass
+                # ATR feeds both the trailing stop and the entry band filter,
+                # so a buffer that quietly stops filling degrades two things
+                # at once while reporting neither.
+                logger.opt(exception=True).warning(
+                    f"ATR buffer update failed for {sym}"
+                )
 
-        # Risk shield
-        if self.risk.flash_crash_check(sym, now_ts, last_f):
-            logger.warning(f"Flash-crash shield halted {sym}")
-            return
+        # Risk shield.
+        #
+        # This used to `return` here, which put it *above* the exit handling
+        # below -- so a symbol in free-fall stopped evaluating its own stops.
+        # The shield fires at a 30% drop from the 1h high, which is precisely
+        # the moment a stop-loss is the only thing standing between a position
+        # and the rest of the move. It did not protect the book; it disarmed
+        # the thing protecting the book, and it did so silently.
+        #
+        # The shield's job is to stop taking *new* risk. So it now sets a flag
+        # and the return moves down to the entry section: stops, trailing
+        # stops, partial take-profits and the time stop all still run, while
+        # entries and pyramiding are refused for as long as the drop stands.
+        halted = self.risk.flash_crash_check(sym, now_ts, last_f)
+        if halted:
+            logger.warning(
+                f"Flash-crash shield: refusing new entries in {sym}. "
+                "Exits remain armed."
+            )
 
         # Position state
         pos = self.portfolio.get_position(sym)
@@ -224,7 +309,14 @@ class StrategyRouter:
                             sl = max(sl, trail_sl)
                             self.stops[sym] = (sl, tp)
             except Exception:
-                pass
+                # Swallowed silently, this leaves the stop frozen at its last
+                # value while the position keeps running -- the trail stops
+                # trailing and the logs look normal. The stop below still
+                # fires, so the position is not unprotected, but it is
+                # protected at the wrong level and nobody is told.
+                logger.opt(exception=True).warning(
+                    f"trailing stop update failed for {sym}; stop left at {sl}"
+                )
 
             timed_out = False
             ent_ts = self.entry_ts.get(sym)
@@ -275,7 +367,10 @@ class StrategyRouter:
                         )
                         self._partial_stage[sym] = 2
             except Exception:
-                pass
+                logger.opt(exception=True).warning(
+                    f"partial take-profit failed for {sym}; the position stays "
+                    "whole and runs to its stop or target instead"
+                )
 
             if last_f <= sl or last_f >= tp or timed_out:
                 qty = pos.base
@@ -349,6 +444,11 @@ class StrategyRouter:
                 self._partial_stage.pop(sym, None)
                 return
 
+        # Everything below opens or increases exposure, which is what the
+        # flash-crash shield exists to prevent. Everything above closes it.
+        if halted:
+            return
+
         # Max open positions
         open_positions = sum(1 for p in self.portfolio.positions.values() if p.base > 0)
         if not self.risk.can_open_new_position(open_positions):
@@ -397,37 +497,30 @@ class StrategyRouter:
                 return
 
         # Strategy priority
-        strats: List[TickStrategy] = [self.momo[sym], self.meanrev[sym]]
-        if sym in self.ml:
-            strats.insert(0, self.ml[sym])
+        if self.random_entry_p > 0:
+            # Control arm: everything downstream -- sizing, stops, targets,
+            # the time stop, the cost model -- is identical. Only the choice
+            # of *when* to enter differs, which is the thing under test.
+            strats: List[TickStrategy] = [self.random[sym]]
+        else:
+            strats = [self.momo[sym], self.meanrev[sym]]
+            if sym in self.ml:
+                strats.insert(0, self.ml[sym])
         for strat in strats:
             sig = strat.on_tick(l1)
             if not sig:
                 continue
-            # Spread filter (skip entries if spread too wide)
-            try:
-                if self._max_spread_bps > 0:
-                    bid = float(l1.get("bid", 0.0) or 0.0)
-                    ask = float(l1.get("ask", 0.0) or 0.0)
-                    mid = (
-                        (bid + ask) / 2.0
-                        if bid and ask
-                        else float(l1.get("last", 0.0) or 0.0)
-                    )
-                    if bid > 0 and ask > 0 and mid > 0:
-                        spread_bps = (ask - bid) / mid * 10_000.0
-                        if spread_bps > float(self._max_spread_bps):
-                            continue
-            except Exception:
-                pass
-            # Entry cooldown gate
-            try:
-                if self._entry_cooldown_s > 0 and now_ts < self._cooldown_until.get(
-                    sym, 0.0
-                ):
-                    continue
-            except Exception:
-                pass
+            # Spread filter and entry cooldown, both fail-closed.
+            #
+            # These were each wrapped in `except Exception: pass`, so a throw
+            # skipped the `continue` and the entry went through -- an unpriced
+            # order at any spread, or one inside a cooldown. A control that
+            # allows the thing it exists to refuse, whenever it malfunctions,
+            # is not a control.
+            if self._spread_too_wide(sym, l1):
+                continue
+            if self._in_cooldown(sym, now_ts):
+                continue
             if sig.get("action") == "buy":
                 # Sentiment gate and sizing throttle (optional)
                 s_score = 0.0

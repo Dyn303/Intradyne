@@ -138,7 +138,16 @@ class Settings(BaseSettings):
     explain_ledger_path: str = "explainability_ledger.jsonl"
 
     # Universe. Accepts either BASE or BASE/QUOTE.
-    allowed_symbols: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
+    # MATIC is absent deliberately. Polygon migrated the token to POL in 2024,
+    # so the ticker names no live instrument, and it left the whitelist in #54.
+    # It lingered here afterwards -- removed from compliance, still in the
+    # operator list -- which is how the loop kept warning about it on startup.
+    #
+    # POL is not its replacement. POL/USDT is listed and would trade, but the
+    # Shariah ruling was issued against MATIC, and re-admitting the asset under
+    # a new ticker is a scholarly decision rather than a rename. See
+    # tests/test_universe_cleanup.py.
+    allowed_symbols: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,USDT"
     symbols: List[str] = []
 
     # HTTP rate limits
@@ -164,7 +173,67 @@ class Settings(BaseSettings):
     limit_ttl_s: float = 60.0
 
     # Execution filters
-    max_spread_bps: int = 0  # 0 disables
+    #: Refuse entries when the touch spread is wider than this, in bps.
+    #:
+    #: This defaulted to 0 -- disabled -- which made it a fail-open filter:
+    #: the venue could quote any spread it liked and the engine would cross
+    #: it. Measured on Bitget across the traded whitelist, the spreads that
+    #: default admitted were not hypothetical:
+    #:
+    #:     BTC 0.00   ETH 0.04   SOL 0.96   XRP 0.69
+    #:     LTC 1.96   AVAX 1.33  ADA 4.51   DOT 11.38-22.78
+    #:
+    #: DOT had *nothing* resting within 5bps of the touch.
+    #:
+    #: An earlier version of this comment justified the bound as "2x
+    #: `slippage_bps`, to keep reality inside the cost model's assumption".
+    #: That reasoning was wrong and is corrected here. `PaperBroker._try_fill`
+    #: already fills at the touch -- `px = ask if buy else bid` -- so the
+    #: model was never assuming a flat spread; `slippage_bps` is an extra
+    #: impact term *on top of* crossing the real one. Measured round trips:
+    #: BTC 14.00bps, LTC 15.96, ADA 18.51, DOT 25.38. Cost tracked the quoted
+    #: spread 1:1 all along, and DOT was charged the most, not the least.
+    #:
+    #: So the filter is not defending the cost model. It is an economic
+    #: bound: round trip is `spread + 4bps slippage + 10bps taker`, so a
+    #: bound of 4 caps the worst round trip at 18bps instead of DOT's 25.38.
+    #: It separates the six liquid names from the two thin ones.
+    #:
+    #: Stated plainly, because a threshold invites the wrong inference: this
+    #: does not make anything profitable. Against an edge measured at ~0.5bps
+    #: every admitted name still loses. The bound limits how fast, and keeps
+    #: the traded universe to instruments whose cost is at least measurable.
+    max_spread_bps: int = 4  # 0 disables
+    #: Fallback smallest order, in quote currency, for symbols whose venue
+    #: declares no `limits.cost.min`. The venue's own figure is preferred and
+    #: overrides this at runtime; Bitget reports $1.00 across the whitelist.
+    min_order_notional: float = 1.0
+    #: Smallest *entry* worth placing, in quote currency. The venue minimum
+    #: above says what the exchange rejects; this says what is not worth an
+    #: order slot, and applies to buys only so an exit is never blocked.
+    #:
+    #: 5% of MAX_ORDER_NOTIONAL (300), so a remnant worth less than a
+    #: twentieth of a full order is skipped. Observed before this existed:
+    #: 3 of 288 fills in an hour were $1.01, $1.13 and $1.22 -- valid, and
+    #: pointless. 0 disables it.
+    min_entry_notional: float = 15.0
+    #: Stage 2 control arm. Per-tick probability that the control strategy
+    #: signals a buy, ignoring the market. 0 disables it and the real
+    #: strategies run. See docs/STAGE_2_PREREGISTRATION.md.
+    random_entry_p: float = 0.0
+    #: Seed for that control, so a run can be repeated.
+    random_entry_seed: int = 0
+    #: The spread a backtest prices its fills against, in bps. OHLCV carries
+    #: no spread, so one has to be assumed, and the assumption decides what a
+    #: backtest concludes. This was hardcoded at 1.0 inside `bars_to_l1` and
+    #: never passed, so every instrument was modelled at one basis point --
+    #: near enough on the liquid names and 10bps optimistic on DOT.
+    #:
+    #: The default is `max_spread_bps`: the live filter refuses anything
+    #: wider, so the widest spread the system will actually trade is the
+    #: conservative reading of what a fill could have cost. Override per
+    #: instrument with real measurements where they exist.
+    backtest_spread_bps: float = 4.0
     entry_cooldown_s: int = 0
 
     # Sentiment
@@ -180,8 +249,29 @@ class Settings(BaseSettings):
 
     # ---- derived -------------------------------------------------------
 
-    def allowed_crypto_list(self) -> List[str]:
+    def allowed_instruments(self) -> List[str]:
+        """Every configured instrument, crypto and equity alike, unmangled.
+
+        A bare symbol used to mean crypto shorthand -- `BTC` became
+        `BTC/USDT` -- and that was right while this system traded nothing else.
+        It stopped being right when equities came into scope, because `BTC` and
+        `AAPL` have exactly the same shape: `classify_symbol` reads both as
+        equities, and the append silently turned a configured equity into a
+        crypto pair that does not exist. An operator naming `AAPL` was then
+        told that `AAPL/USDT` was missing from the Shariah whitelist and
+        advised to add it there, which is the wrong remedy for an instrument
+        that needs a dated screen record instead.
+
+        The whitelist decides, because it is already the compliance ceiling and
+        it is the only thing here that knows a crypto base from a ticker: a
+        bare symbol whose USDT pair is screened *is* that pair, preserving the
+        shorthand exactly; anything else is left alone as an equity ticker.
+        Nothing is guessed from shape.
+        """
         raw = [s.strip() for s in (self.allowed_symbols or "").split(",") if s.strip()]
+        bases = {
+            p.split("/", 1)[0].upper() for p in self.compliance_universe() if "/" in p
+        }
         out: List[str] = []
         for s in raw:
             if "/" in s:
@@ -192,22 +282,129 @@ class Settings(BaseSettings):
                 if base.upper() == quote.upper():
                     continue
                 out.append(f"{base}/{quote}")
-            else:
-                if s.upper() == "USDT":
-                    continue
+            elif s.upper() in bases:
+                # Screened crypto named by its base. The shorthand stands.
                 out.append(f"{s}/USDT")
+            elif s.upper() == "USDT":
+                # A quote currency alone is not an instrument, and was already
+                # dropped before equities existed.
+                continue
+            else:
+                out.append(s)
         return out
 
-    def load_symbols(self, markets: Optional[List[str]] = None) -> List[str]:
-        """Load the Shariah whitelist, optionally intersected with the venue's
-        tradable markets."""
+    def allowed_crypto_list(self) -> List[str]:
+        """The crypto subset, which is what an allow-list means.
+
+        `ShariahPolicy(allowed_crypto=...)` screens crypto against this and
+        screens equities against dated screen records instead, so handing it
+        an equity ticker here would offer the wrong evidence for that class.
+        """
+        from intradyne.risk.shariah import classify_symbol
+
+        return [s for s in self.allowed_instruments() if classify_symbol(s) == "crypto"]
+
+    def compliance_universe(self) -> List[str]:
+        """Every instrument the Shariah screen permits, from `whitelist.json`.
+
+        A **ceiling**, not a trading list. Nothing may be traded that is absent
+        here, but presence is permission rather than intent -- which of these
+        to actually trade is `allowed_crypto_list()`.
+        """
         whitelist_path = (
             Path(__file__).resolve().parent.parent / "engine" / "whitelist.json"
         )
         with open(whitelist_path, "r", encoding="utf-8") as f:
             wl = json.load(f)
-        syms = wl.get("symbols", [])
+        return list(wl.get("symbols", []))
+
+    def load_symbols(self, markets: Optional[List[str]] = None) -> List[str]:
+        """The instruments that may actually be traded.
+
+        Two lists used to feed two order paths independently, and they
+        disagreed. `whitelist.json` carried 15 pairs and drove the live loop
+        (`engine/loop.py`) and the backtester; `ALLOWED_SYMBOLS` carried 9 and
+        drove the API's `ExecutionManager` (`api/deps.py`). LINK, XLM, ATOM,
+        TRX, NEAR and ALGO were therefore tradeable by the loop and refused by
+        the API -- the stricter list did not govern the path that places
+        orders, which is the wrong way round for a fail-open to run.
+
+        They are not redundant, which is why the fix is not to delete one. The
+        whitelist is a *compliance* artifact saying what is permissible;
+        `ALLOWED_SYMBOLS` is *operator configuration* saying what to trade
+        today. The defect was that neither constrained the other. The effective
+        universe is now their intersection, so the compliance list is a ceiling
+        the operator cannot raise and the operator list is a selection within
+        it.
+
+        An operator entry absent from the compliance list is a configuration
+        error, not a silent no-op: it means someone tried to enable an
+        unscreened instrument, and it is logged rather than dropped quietly.
+        """
+        permitted = self.compliance_universe()
+        selected = self.allowed_instruments()
+
+        if selected:
+            # Matched case-insensitively. An operator writing `btc/usdt` means
+            # the same instrument as `BTC/USDT`, and dropping it for the case
+            # would be a silent refusal indistinguishable from a compliance
+            # one -- the two must not look alike.
+            by_upper = {s.upper(): s for s in permitted}
+            chosen = {by_upper[s.upper()] for s in selected if s.upper() in by_upper}
+            unscreened = [s for s in selected if s.upper() not in by_upper]
+            if unscreened:
+                # Two classes, two remedies. Telling the operator of an equity
+                # to add it to a crypto whitelist sends them to the wrong
+                # place: `risk/shariah.py` permits equities on a dated screen
+                # record and refuses without one, and that map is populated by
+                # whoever made the ruling rather than by editing a JSON file.
+                from intradyne.risk.shariah import classify_symbol
+
+                crypto = [s for s in unscreened if classify_symbol(s) == "crypto"]
+                other = [s for s in unscreened if classify_symbol(s) != "crypto"]
+                parts = []
+                if crypto:
+                    parts.append(
+                        f"crypto absent from the whitelist: {sorted(crypto)} -- "
+                        "add them to engine/whitelist.json if they have been "
+                        "screened"
+                    )
+                if other:
+                    # A bare symbol is shape-ambiguous, which is the whole
+                    # reason this branch exists, so both remedies are named
+                    # rather than guessing which the operator meant.
+                    parts.append(
+                        f"bare symbols {sorted(other)} -- if crypto, write the "
+                        "pair (e.g. DOGE/USDT) and add it to "
+                        "engine/whitelist.json once screened; if an equity, it "
+                        "is permitted by a dated screen record rather than the "
+                        "whitelist, see risk/shariah.py"
+                    )
+                logger.bind(event="unscreened_symbols_ignored").warning(
+                    "ALLOWED_SYMBOLS names instruments that will not be traded. "
+                    + "; ".join(parts)
+                )
+            syms = [s for s in permitted if s in chosen]
+        else:
+            # No operator selection configured: the compliance list stands
+            # alone, which is its existing meaning.
+            syms = list(permitted)
+
         if markets:
+            # Narrowing to what the venue lists, and saying which names it
+            # removed. This dropped them silently, which is how MATIC/USDT sat
+            # in the whitelist unnoticed after Polygon migrated the token to
+            # POL in 2024: permissible, configured, and not a listed ticker.
+            # A delisting is a fact about the world that should reach a human,
+            # not a set difference computed at startup and discarded -- the
+            # same reasoning that already logs unscreened operator entries.
+            unlisted = [s for s in syms if s not in markets]
+            if unlisted:
+                logger.bind(event="unlisted_symbols_dropped").warning(
+                    f"{self.exchange} does not list {sorted(unlisted)}; they are "
+                    "permitted and selected but cannot be traded. Check for a "
+                    "ticker migration or a delisting."
+                )
             syms = [s for s in syms if s in markets]
         self.symbols = syms
         return self.symbols
@@ -248,8 +445,9 @@ class Settings(BaseSettings):
             )
 
 
-# Phase 5 of MIGRATION.md opens live trading. Until the controls listed in
-# assert_live_trading_gate() exist, the system refuses to start in live mode.
+# Phase 5 of MIGRATION.md opens live trading. The controls it required are
+# built; what remains is operational validation that cannot be done from a
+# development machine, plus an edge. See RUNBOOK section 8.
 LIVE_TRADING_GATE_OPEN = False
 
 
@@ -259,16 +457,38 @@ def assert_live_trading_gate(settings: "Settings") -> None:
     Deliberately not overridable by an environment variable: an env override
     is exactly how this would get flipped by accident. Opening it is a code
     change to LIVE_TRADING_GATE_OPEN, which leaves a reviewable commit.
+
+    The message below used to name four controls as missing -- idempotency,
+    reconciliation, notional caps and halt alerting -- and all four had since
+    been built, wired, and covered by `tests/test_live_readiness.py`. RUNBOOK
+    section 8 had been updated; this had not. An operator reading it would
+    either distrust a system further along than it claimed, or go and build a
+    second copy of working machinery. A control that misinforms is the failure
+    this project keeps finding, and this one sat in the message an operator
+    sees at exactly the moment they try to go live.
+
+    `tests/test_live_gate_message.py` now ties each claim to the code, so the
+    message cannot drift from reality again without a test failing.
     """
     if LIVE_TRADING_GATE_OPEN:
         return
     if settings.mode == "live" and settings.live_trading_enabled:
         raise RuntimeError(
-            "Live trading is armed (MODE=live and LIVE_TRADING_ENABLED=true) but "
-            "the live-readiness work is not done. Still missing: idempotency keys "
-            "on order submission, reconciliation against exchange state on "
-            "restart, per-symbol and daily notional caps, and alerting on "
-            "halt/kill-switch. See MIGRATION.md phase 5. Run with MODE=paper."
+            "Live trading is armed (MODE=live and LIVE_TRADING_ENABLED=true) "
+            "but the gate is shut.\n\n"
+            "The phase 5 controls are built: idempotency claimed before the "
+            "venue is contacted (core/idempotency.py), restart reconciliation "
+            "that halts rather than guessing (engine/reconcile.py), per-order, "
+            "per-symbol and daily notional caps that fail closed "
+            "(core/limits.py), and alerting on halt (core/alerts.py).\n\n"
+            "What remains cannot be done from a development machine: a testnet "
+            "soak, confirming a page actually reaches a human, rehearsing the "
+            "halt under live conditions, and setting the exposure caps -- which "
+            "default to 0, meaning disabled, so arming live without configuring "
+            "them leaves transacted volume bounded only by the risk "
+            "thresholds.\n\n"
+            "And no edge has been demonstrated: STRATEGY_EDGE_DEMONSTRATED is "
+            "False. See RUNBOOK section 8. Run with MODE=paper."
         )
 
 

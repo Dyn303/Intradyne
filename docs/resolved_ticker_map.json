@@ -1,0 +1,1250 @@
+{
+ "002824100": {
+  "delisted": null,
+  "ticker": "ABT"
+ },
+ "00287Y109": {
+  "delisted": null,
+  "ticker": "ABBV"
+ },
+ "003654100": {
+  "delisted": "2023-01-03",
+  "ticker": "ABMD"
+ },
+ "00507V109": {
+  "delisted": "2023-10-13",
+  "ticker": "ATVI"
+ },
+ "00724F101": {
+  "delisted": null,
+  "ticker": "ADBE"
+ },
+ "00751Y106": {
+  "delisted": null,
+  "ticker": "AAP"
+ },
+ "007903107": {
+  "delisted": null,
+  "ticker": "AMD"
+ },
+ "00846U101": {
+  "delisted": null,
+  "ticker": "A"
+ },
+ "009066101": {
+  "delisted": null,
+  "ticker": "ABNB"
+ },
+ "009158106": {
+  "delisted": null,
+  "ticker": "APD"
+ },
+ "00971T101": {
+  "delisted": null,
+  "ticker": "AKAM"
+ },
+ "011659109": {
+  "delisted": null,
+  "ticker": "ALK"
+ },
+ "012653101": {
+  "delisted": null,
+  "ticker": "ALB"
+ },
+ "015351109": {
+  "delisted": "2021-07-28",
+  "ticker": "ALXN"
+ },
+ "016255101": {
+  "delisted": null,
+  "ticker": "ALGN"
+ },
+ "02079K107": {
+  "delisted": null,
+  "ticker": "GOOG"
+ },
+ "02079K305": {
+  "delisted": null,
+  "ticker": "GOOGL"
+ },
+ "023135106": {
+  "delisted": null,
+  "ticker": "AMZN"
+ },
+ "03027X100": {
+  "delisted": null,
+  "ticker": "AMT"
+ },
+ "03073E105": {
+  "delisted": null,
+  "ticker": "COR"
+ },
+ "031100100": {
+  "delisted": null,
+  "ticker": "AME"
+ },
+ "031162100": {
+  "delisted": null,
+  "ticker": "AMGN"
+ },
+ "032095101": {
+  "delisted": null,
+  "ticker": "APH"
+ },
+ "032654105": {
+  "delisted": null,
+  "ticker": "ADI"
+ },
+ "037833100": {
+  "delisted": null,
+  "ticker": "AAPL"
+ },
+ "038222105": {
+  "delisted": null,
+  "ticker": "AMAT"
+ },
+ "039483102": {
+  "delisted": null,
+  "ticker": "ADM"
+ },
+ "040413106": {
+  "delisted": null,
+  "ticker": "ANET"
+ },
+ "040413205": {
+  "delisted": null,
+  "ticker": "ANET"
+ },
+ "052769106": {
+  "delisted": null,
+  "ticker": "ADSK"
+ },
+ "053332102": {
+  "delisted": null,
+  "ticker": "AZO"
+ },
+ "053484101": {
+  "delisted": "2026-08-17",
+  "ticker": "AVB"
+ },
+ "053611109": {
+  "delisted": null,
+  "ticker": "AVY"
+ },
+ "05722G100": {
+  "delisted": null,
+  "ticker": "BKR"
+ },
+ "058498106": {
+  "delisted": null,
+  "ticker": "BALL"
+ },
+ "071813109": {
+  "delisted": null,
+  "ticker": "BAX"
+ },
+ "075887109": {
+  "delisted": null,
+  "ticker": "BDX"
+ },
+ "086516101": {
+  "delisted": null,
+  "ticker": "BBY"
+ },
+ "090572207": {
+  "delisted": null,
+  "ticker": "BIO"
+ },
+ "09062X103": {
+  "delisted": null,
+  "ticker": "BIIB"
+ },
+ "09073M104": {
+  "delisted": null,
+  "ticker": "TECH"
+ },
+ "09857L108": {
+  "delisted": null,
+  "ticker": "BKNG"
+ },
+ "099724106": {
+  "delisted": null,
+  "ticker": "BWA"
+ },
+ "101137107": {
+  "delisted": null,
+  "ticker": "BSX"
+ },
+ "110122108": {
+  "delisted": null,
+  "ticker": "BMY"
+ },
+ "11135F101": {
+  "delisted": null,
+  "ticker": "AVGO"
+ },
+ "12008R107": {
+  "delisted": null,
+  "ticker": "BLDR"
+ },
+ "12514G108": {
+  "delisted": null,
+  "ticker": "CDW"
+ },
+ "125269100": {
+  "delisted": null,
+  "ticker": "CF"
+ },
+ "12541W209": {
+  "delisted": null,
+  "ticker": "CHRW"
+ },
+ "126408103": {
+  "delisted": null,
+  "ticker": "CSX"
+ },
+ "127097103": {
+  "delisted": "2026-05-06",
+  "ticker": "CTRA"
+ },
+ "127387108": {
+  "delisted": null,
+  "ticker": "CDNS"
+ },
+ "133131102": {
+  "delisted": null,
+  "ticker": "CPT"
+ },
+ "14149Y108": {
+  "delisted": null,
+  "ticker": "CAH"
+ },
+ "14448C104": {
+  "delisted": null,
+  "ticker": "CARR"
+ },
+ "148806102": {
+  "delisted": "2024-12-18",
+  "ticker": "CTLT"
+ },
+ "156782104": {
+  "delisted": "2022-09-08",
+  "ticker": "CERN"
+ },
+ "159864107": {
+  "delisted": null,
+  "ticker": "CRL"
+ },
+ "166764100": {
+  "delisted": null,
+  "ticker": "CVX"
+ },
+ "171340102": {
+  "delisted": null,
+  "ticker": "CHD"
+ },
+ "171779309": {
+  "delisted": null,
+  "ticker": "CIEN"
+ },
+ "17275R102": {
+  "delisted": null,
+  "ticker": "CSCO"
+ },
+ "172908105": {
+  "delisted": null,
+  "ticker": "CTAS"
+ },
+ "177376100": {
+  "delisted": "2022-11-02",
+  "ticker": "CTXS"
+ },
+ "189054109": {
+  "delisted": null,
+  "ticker": "CLX"
+ },
+ "191216100": {
+  "delisted": null,
+  "ticker": "KO"
+ },
+ "192446102": {
+  "delisted": null,
+  "ticker": "CTSH"
+ },
+ "19247G107": {
+  "delisted": null,
+  "ticker": "COHR"
+ },
+ "194162103": {
+  "delisted": null,
+  "ticker": "CL"
+ },
+ "199908104": {
+  "delisted": null,
+  "ticker": "FIX"
+ },
+ "20605P101": {
+  "delisted": "2021-01-15",
+  "ticker": "CXO"
+ },
+ "20825C104": {
+  "delisted": null,
+  "ticker": "COP"
+ },
+ "21037T109": {
+  "delisted": null,
+  "ticker": "CEG"
+ },
+ "216648501": {
+  "delisted": null,
+  "ticker": "COO"
+ },
+ "217204106": {
+  "delisted": null,
+  "ticker": "CPRT"
+ },
+ "219350105": {
+  "delisted": null,
+  "ticker": "GLW"
+ },
+ "22052L104": {
+  "delisted": null,
+  "ticker": "CTVA"
+ },
+ "22160N109": {
+  "delisted": null,
+  "ticker": "CSGP"
+ },
+ "22788C105": {
+  "delisted": null,
+  "ticker": "CRWD"
+ },
+ "22822V101": {
+  "delisted": null,
+  "ticker": "CCI"
+ },
+ "231021106": {
+  "delisted": null,
+  "ticker": "CMI"
+ },
+ "23331A109": {
+  "delisted": null,
+  "ticker": "DHI"
+ },
+ "235851102": {
+  "delisted": null,
+  "ticker": "DHR"
+ },
+ "243537107": {
+  "delisted": null,
+  "ticker": "DECK"
+ },
+ "24906P109": {
+  "delisted": null,
+  "ticker": "XRAY"
+ },
+ "25179M103": {
+  "delisted": null,
+  "ticker": "DVN"
+ },
+ "252131107": {
+  "delisted": null,
+  "ticker": "DXCM"
+ },
+ "25278X109": {
+  "delisted": null,
+  "ticker": "FANG"
+ },
+ "256746108": {
+  "delisted": null,
+  "ticker": "DLTR"
+ },
+ "25809K105": {
+  "delisted": null,
+  "ticker": "DASH"
+ },
+ "260003108": {
+  "delisted": null,
+  "ticker": "DOV"
+ },
+ "264411505": {
+  "delisted": "2022-10-03",
+  "ticker": "DRE"
+ },
+ "26614N102": {
+  "delisted": null,
+  "ticker": "DD"
+ },
+ "26875P101": {
+  "delisted": null,
+  "ticker": "EOG"
+ },
+ "278642103": {
+  "delisted": null,
+  "ticker": "EBAY"
+ },
+ "278865100": {
+  "delisted": null,
+  "ticker": "ECL"
+ },
+ "28176E108": {
+  "delisted": null,
+  "ticker": "EW"
+ },
+ "291011104": {
+  "delisted": null,
+  "ticker": "EMR"
+ },
+ "29355A107": {
+  "delisted": null,
+  "ticker": "ENPH"
+ },
+ "29414B104": {
+  "delisted": null,
+  "ticker": "EPAM"
+ },
+ "294429105": {
+  "delisted": null,
+  "ticker": "EFX"
+ },
+ "29444U700": {
+  "delisted": null,
+  "ticker": "EQIX"
+ },
+ "29476L107": {
+  "delisted": null,
+  "ticker": "VMRK"
+ },
+ "297178105": {
+  "delisted": null,
+  "ticker": "ESS"
+ },
+ "29786A106": {
+  "delisted": null,
+  "ticker": "ETSY"
+ },
+ "30212P303": {
+  "delisted": null,
+  "ticker": "EXPE"
+ },
+ "302130109": {
+  "delisted": null,
+  "ticker": "EXPD"
+ },
+ "302491303": {
+  "delisted": null,
+  "ticker": "FMC"
+ },
+ "30303M102": {
+  "delisted": null,
+  "ticker": "META"
+ },
+ "303250104": {
+  "delisted": null,
+  "ticker": "FICO"
+ },
+ "311900104": {
+  "delisted": null,
+  "ticker": "FAST"
+ },
+ "315616102": {
+  "delisted": null,
+  "ticker": "FFIV"
+ },
+ "336433107": {
+  "delisted": null,
+  "ticker": "FSLR"
+ },
+ "34354P105": {
+  "delisted": null,
+  "ticker": "FLS"
+ },
+ "34959E109": {
+  "delisted": null,
+  "ticker": "FTNT"
+ },
+ "34959J108": {
+  "delisted": null,
+  "ticker": "FTV"
+ },
+ "34964C106": {
+  "delisted": null,
+  "ticker": "FBIN"
+ },
+ "35671D857": {
+  "delisted": null,
+  "ticker": "FCX"
+ },
+ "36266G107": {
+  "delisted": null,
+  "ticker": "GEHC"
+ },
+ "364760108": {
+  "delisted": null,
+  "ticker": "GAP"
+ },
+ "366651107": {
+  "delisted": null,
+  "ticker": "IT"
+ },
+ "36828A101": {
+  "delisted": null,
+  "ticker": "GEV"
+ },
+ "368736104": {
+  "delisted": null,
+  "ticker": "GNRC"
+ },
+ "370334104": {
+  "delisted": null,
+  "ticker": "GIS"
+ },
+ "372460105": {
+  "delisted": null,
+  "ticker": "GPC"
+ },
+ "375558103": {
+  "delisted": null,
+  "ticker": "GILD"
+ },
+ "380237107": {
+  "delisted": null,
+  "ticker": "GDDY"
+ },
+ "384802104": {
+  "delisted": null,
+  "ticker": "GWW"
+ },
+ "40434L105": {
+  "delisted": null,
+  "ticker": "HPQ"
+ },
+ "406216101": {
+  "delisted": null,
+  "ticker": "HAL"
+ },
+ "42250P103": {
+  "delisted": "2024-03-07",
+  "ticker": "DOC"
+ },
+ "427866108": {
+  "delisted": null,
+  "ticker": "HSY"
+ },
+ "436440101": {
+  "delisted": "2026-04-07",
+  "ticker": "HOLX"
+ },
+ "437076102": {
+  "delisted": null,
+  "ticker": "HD"
+ },
+ "438516106": {
+  "delisted": null,
+  "ticker": "HON"
+ },
+ "443510607": {
+  "delisted": null,
+  "ticker": "HUBB"
+ },
+ "445658107": {
+  "delisted": null,
+  "ticker": "JBHT"
+ },
+ "44980X109": {
+  "delisted": null,
+  "ticker": "IPGP"
+ },
+ "45167R104": {
+  "delisted": null,
+  "ticker": "IEX"
+ },
+ "45168D104": {
+  "delisted": null,
+  "ticker": "IDXX"
+ },
+ "452308109": {
+  "delisted": null,
+  "ticker": "ITW"
+ },
+ "452327109": {
+  "delisted": null,
+  "ticker": "ILMN"
+ },
+ "45337C102": {
+  "delisted": null,
+  "ticker": "INCY"
+ },
+ "45687V106": {
+  "delisted": null,
+  "ticker": "IR"
+ },
+ "45784P101": {
+  "delisted": null,
+  "ticker": "PODD"
+ },
+ "458140100": {
+  "delisted": null,
+  "ticker": "INTC"
+ },
+ "459200101": {
+  "delisted": null,
+  "ticker": "IBM"
+ },
+ "461202103": {
+  "delisted": null,
+  "ticker": "INTU"
+ },
+ "46120E602": {
+  "delisted": null,
+  "ticker": "ISRG"
+ },
+ "466313103": {
+  "delisted": null,
+  "ticker": "JBL"
+ },
+ "46982L108": {
+  "delisted": null,
+  "ticker": "J"
+ },
+ "478160104": {
+  "delisted": null,
+  "ticker": "JNJ"
+ },
+ "482480100": {
+  "delisted": null,
+  "ticker": "KLAC"
+ },
+ "485170302": {
+  "delisted": "2021-12-13",
+  "ticker": "KSU"
+ },
+ "49177J102": {
+  "delisted": null,
+  "ticker": "KVUE"
+ },
+ "49271V100": {
+  "delisted": null,
+  "ticker": "KDP"
+ },
+ "49338L103": {
+  "delisted": null,
+  "ticker": "KEYS"
+ },
+ "494368103": {
+  "delisted": null,
+  "ticker": "KMB"
+ },
+ "501889208": {
+  "delisted": null,
+  "ticker": "LKQ"
+ },
+ "504922105": {
+  "delisted": null,
+  "ticker": "LH"
+ },
+ "512807108": {
+  "delisted": null,
+  "ticker": "LRCX"
+ },
+ "512807306": {
+  "delisted": null,
+  "ticker": "LRCX"
+ },
+ "513272104": {
+  "delisted": null,
+  "ticker": "LW"
+ },
+ "518439104": {
+  "delisted": null,
+  "ticker": "EL"
+ },
+ "525327102": {
+  "delisted": null,
+  "ticker": "LDOS"
+ },
+ "526057104": {
+  "delisted": null,
+  "ticker": "LEN"
+ },
+ "526107107": {
+  "delisted": null,
+  "ticker": "LII"
+ },
+ "532457108": {
+  "delisted": null,
+  "ticker": "LLY"
+ },
+ "548661107": {
+  "delisted": null,
+  "ticker": "LOW"
+ },
+ "550021109": {
+  "delisted": null,
+  "ticker": "LULU"
+ },
+ "573284106": {
+  "delisted": null,
+  "ticker": "MLM"
+ },
+ "574599106": {
+  "delisted": null,
+  "ticker": "MAS"
+ },
+ "57772K101": {
+  "delisted": "2021-09-01",
+  "ticker": "MXIM"
+ },
+ "579780206": {
+  "delisted": null,
+  "ticker": "MKC"
+ },
+ "580135101": {
+  "delisted": null,
+  "ticker": "MCD"
+ },
+ "58155Q103": {
+  "delisted": null,
+  "ticker": "MCK"
+ },
+ "58933Y105": {
+  "delisted": null,
+  "ticker": "MRK"
+ },
+ "592688105": {
+  "delisted": null,
+  "ticker": "MTD"
+ },
+ "594918104": {
+  "delisted": null,
+  "ticker": "MSFT"
+ },
+ "595017104": {
+  "delisted": null,
+  "ticker": "MCHP"
+ },
+ "595112103": {
+  "delisted": null,
+  "ticker": "MU"
+ },
+ "59522J103": {
+  "delisted": null,
+  "ticker": "MAA"
+ },
+ "60770K107": {
+  "delisted": null,
+  "ticker": "MRNA"
+ },
+ "608190104": {
+  "delisted": null,
+  "ticker": "MHK"
+ },
+ "60855R100": {
+  "delisted": null,
+  "ticker": "MOH"
+ },
+ "609207105": {
+  "delisted": null,
+  "ticker": "MDLZ"
+ },
+ "609839105": {
+  "delisted": null,
+  "ticker": "MPWR"
+ },
+ "61174X109": {
+  "delisted": null,
+  "ticker": "MNST"
+ },
+ "61945C103": {
+  "delisted": null,
+  "ticker": "MOS"
+ },
+ "620076307": {
+  "delisted": null,
+  "ticker": "MSI"
+ },
+ "62944T105": {
+  "delisted": null,
+  "ticker": "NVR"
+ },
+ "64110D104": {
+  "delisted": null,
+  "ticker": "NTAP"
+ },
+ "651639106": {
+  "delisted": null,
+  "ticker": "NEM"
+ },
+ "65249B109": {
+  "delisted": null,
+  "ticker": "NWSA"
+ },
+ "65249B208": {
+  "delisted": null,
+  "ticker": "NWS"
+ },
+ "654106103": {
+  "delisted": null,
+  "ticker": "NKE"
+ },
+ "655663102": {
+  "delisted": null,
+  "ticker": "NDSN"
+ },
+ "655844108": {
+  "delisted": null,
+  "ticker": "NSC"
+ },
+ "668771108": {
+  "delisted": null,
+  "ticker": "GEN"
+ },
+ "670346105": {
+  "delisted": null,
+  "ticker": "NUE"
+ },
+ "67066G104": {
+  "delisted": null,
+  "ticker": "NVDA"
+ },
+ "67103H107": {
+  "delisted": null,
+  "ticker": "ORLY"
+ },
+ "679580100": {
+  "delisted": null,
+  "ticker": "ODFL"
+ },
+ "682189105": {
+  "delisted": null,
+  "ticker": "ON"
+ },
+ "68389X105": {
+  "delisted": null,
+  "ticker": "ORCL"
+ },
+ "68622V106": {
+  "delisted": null,
+  "ticker": "OGN"
+ },
+ "68902V107": {
+  "delisted": null,
+  "ticker": "OTIS"
+ },
+ "693506107": {
+  "delisted": null,
+  "ticker": "PPG"
+ },
+ "69370C100": {
+  "delisted": null,
+  "ticker": "PTC"
+ },
+ "695156109": {
+  "delisted": null,
+  "ticker": "PKG"
+ },
+ "697435105": {
+  "delisted": null,
+  "ticker": "PANW"
+ },
+ "701094104": {
+  "delisted": null,
+  "ticker": "PH"
+ },
+ "70432V102": {
+  "delisted": null,
+  "ticker": "PAYC"
+ },
+ "713448108": {
+  "delisted": null,
+  "ticker": "PEP"
+ },
+ "714046109": {
+  "delisted": null,
+  "ticker": "RVTY"
+ },
+ "717081103": {
+  "delisted": null,
+  "ticker": "PFE"
+ },
+ "723787107": {
+  "delisted": "2024-05-03",
+  "ticker": "PXD"
+ },
+ "73278L105": {
+  "delisted": null,
+  "ticker": "POOL"
+ },
+ "742718109": {
+  "delisted": null,
+  "ticker": "PG"
+ },
+ "74340W103": {
+  "delisted": null,
+  "ticker": "PLD"
+ },
+ "74460D109": {
+  "delisted": null,
+  "ticker": "PSA"
+ },
+ "745867101": {
+  "delisted": null,
+  "ticker": "PHM"
+ },
+ "74736K101": {
+  "delisted": null,
+  "ticker": "QRVO"
+ },
+ "74743L100": {
+  "delisted": null,
+  "ticker": "Q"
+ },
+ "747525103": {
+  "delisted": null,
+  "ticker": "QCOM"
+ },
+ "74762E102": {
+  "delisted": null,
+  "ticker": "PWR"
+ },
+ "74834L100": {
+  "delisted": null,
+  "ticker": "DGX"
+ },
+ "751212101": {
+  "delisted": null,
+  "ticker": "RL"
+ },
+ "75886F107": {
+  "delisted": null,
+  "ticker": "REGN"
+ },
+ "760759100": {
+  "delisted": null,
+  "ticker": "RSG"
+ },
+ "761152107": {
+  "delisted": null,
+  "ticker": "RMD"
+ },
+ "770323103": {
+  "delisted": null,
+  "ticker": "RHI"
+ },
+ "773903109": {
+  "delisted": null,
+  "ticker": "ROK"
+ },
+ "775711104": {
+  "delisted": null,
+  "ticker": "ROL"
+ },
+ "776696106": {
+  "delisted": null,
+  "ticker": "ROP"
+ },
+ "778296103": {
+  "delisted": null,
+  "ticker": "ROST"
+ },
+ "79466L302": {
+  "delisted": null,
+  "ticker": "CRM"
+ },
+ "80004C200": {
+  "delisted": null,
+  "ticker": "SNDK"
+ },
+ "806407102": {
+  "delisted": null,
+  "ticker": "HSIC"
+ },
+ "806857108": {
+  "delisted": null,
+  "ticker": "SLB"
+ },
+ "81762P102": {
+  "delisted": null,
+  "ticker": "NOW"
+ },
+ "824348106": {
+  "delisted": null,
+  "ticker": "SHW"
+ },
+ "83088M102": {
+  "delisted": null,
+  "ticker": "SWKS"
+ },
+ "831865209": {
+  "delisted": null,
+  "ticker": "AOS"
+ },
+ "83417M104": {
+  "delisted": null,
+  "ticker": "SEDG"
+ },
+ "844741108": {
+  "delisted": null,
+  "ticker": "LUV"
+ },
+ "854502101": {
+  "delisted": null,
+  "ticker": "SWK"
+ },
+ "855244109": {
+  "delisted": null,
+  "ticker": "SBUX"
+ },
+ "858119100": {
+  "delisted": null,
+  "ticker": "STLD"
+ },
+ "863667101": {
+  "delisted": null,
+  "ticker": "SYK"
+ },
+ "86800U104": {
+  "delisted": null,
+  "ticker": "SMCI"
+ },
+ "86800U302": {
+  "delisted": null,
+  "ticker": "SMCI"
+ },
+ "871607107": {
+  "delisted": null,
+  "ticker": "SNPS"
+ },
+ "872540109": {
+  "delisted": null,
+  "ticker": "TJX"
+ },
+ "876030107": {
+  "delisted": null,
+  "ticker": "TPR"
+ },
+ "87612E106": {
+  "delisted": null,
+  "ticker": "TGT"
+ },
+ "879369106": {
+  "delisted": null,
+  "ticker": "TFX"
+ },
+ "880770102": {
+  "delisted": null,
+  "ticker": "TER"
+ },
+ "88160R101": {
+  "delisted": null,
+  "ticker": "TSLA"
+ },
+ "882508104": {
+  "delisted": null,
+  "ticker": "TXN"
+ },
+ "88262P102": {
+  "delisted": null,
+  "ticker": "TPL"
+ },
+ "88339J105": {
+  "delisted": null,
+  "ticker": "TTD"
+ },
+ "883556102": {
+  "delisted": null,
+  "ticker": "TMO"
+ },
+ "88579Y101": {
+  "delisted": null,
+  "ticker": "MMM"
+ },
+ "886547108": {
+  "delisted": "2021-01-08",
+  "ticker": "TIF"
+ },
+ "892356106": {
+  "delisted": null,
+  "ticker": "TSCO"
+ },
+ "896239100": {
+  "delisted": null,
+  "ticker": "TRMB"
+ },
+ "90184L102": {
+  "delisted": "2022-10-28",
+  "ticker": "TWTR"
+ },
+ "902252105": {
+  "delisted": null,
+  "ticker": "TYL"
+ },
+ "90353T100": {
+  "delisted": null,
+  "ticker": "UBER"
+ },
+ "90384S303": {
+  "delisted": null,
+  "ticker": "ULTA"
+ },
+ "904311107": {
+  "delisted": null,
+  "ticker": "UAA"
+ },
+ "904311206": {
+  "delisted": null,
+  "ticker": "UA"
+ },
+ "907818108": {
+  "delisted": null,
+  "ticker": "UNP"
+ },
+ "911312106": {
+  "delisted": null,
+  "ticker": "UPS"
+ },
+ "911363109": {
+  "delisted": null,
+  "ticker": "URI"
+ },
+ "918204108": {
+  "delisted": null,
+  "ticker": "VFC"
+ },
+ "91913Y100": {
+  "delisted": null,
+  "ticker": "VLO"
+ },
+ "92220P105": {
+  "delisted": "2021-04-16",
+  "ticker": "VAR"
+ },
+ "92338C103": {
+  "delisted": "2026-05-28",
+  "ticker": "VLTO"
+ },
+ "92343E102": {
+  "delisted": null,
+  "ticker": "VRSN"
+ },
+ "92532F100": {
+  "delisted": null,
+  "ticker": "VRTX"
+ },
+ "92537N108": {
+  "delisted": null,
+  "ticker": "VRT"
+ },
+ "929160109": {
+  "delisted": null,
+  "ticker": "VMC"
+ },
+ "92942W107": {
+  "delisted": "2025-09-25",
+  "ticker": "KLG"
+ },
+ "929740108": {
+  "delisted": null,
+  "ticker": "WAB"
+ },
+ "931427108": {
+  "delisted": "2025-08-28",
+  "ticker": "WBA"
+ },
+ "94106L109": {
+  "delisted": null,
+  "ticker": "WM"
+ },
+ "941848103": {
+  "delisted": null,
+  "ticker": "WAT"
+ },
+ "95040Q104": {
+  "delisted": null,
+  "ticker": "WELL"
+ },
+ "955306105": {
+  "delisted": null,
+  "ticker": "WST"
+ },
+ "962166104": {
+  "delisted": null,
+  "ticker": "WY"
+ },
+ "969904101": {
+  "delisted": null,
+  "ticker": "WSM"
+ },
+ "98138H101": {
+  "delisted": null,
+  "ticker": "WDAY"
+ },
+ "98419M100": {
+  "delisted": null,
+  "ticker": "XYL"
+ },
+ "989207105": {
+  "delisted": null,
+  "ticker": "ZBRA"
+ },
+ "98956P102": {
+  "delisted": null,
+  "ticker": "ZBH"
+ },
+ "G0176J109": {
+  "delisted": null,
+  "ticker": "ALLE"
+ },
+ "G29183103": {
+  "delisted": null,
+  "ticker": "ETN"
+ },
+ "G51502105": {
+  "delisted": null,
+  "ticker": "JCI"
+ },
+ "G5494J103": {
+  "delisted": null,
+  "ticker": "LIN"
+ },
+ "G5960L103": {
+  "delisted": null,
+  "ticker": "MDT"
+ },
+ "G6095L109": {
+  "delisted": null,
+  "ticker": "APTV"
+ },
+ "G7945M107": {
+  "delisted": null,
+  "ticker": "STX"
+ },
+ "G7S00T104": {
+  "delisted": null,
+  "ticker": "PNR"
+ },
+ "G8473T100": {
+  "delisted": null,
+  "ticker": "STE"
+ },
+ "G8994E103": {
+  "delisted": null,
+  "ticker": "TT"
+ },
+ "H2906T109": {
+  "delisted": null,
+  "ticker": "GRMN"
+ },
+ "H84989104": {
+  "delisted": "2024-09-27",
+  "ticker": "TEL"
+ },
+ "N/A": {
+  "delisted": null,
+  "ticker": "MDT"
+ },
+ "N6596X109": {
+  "delisted": null,
+  "ticker": "NXPI"
+ }
+}

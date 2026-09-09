@@ -109,6 +109,36 @@ sigma across 6,391 trades -- and irrelevant:
 `src/intradyne/backtester/costs.py` already computes what this gate needs:
 `round_trip_cost_pct()`, `breakeven_win_rate()` and `expectancy_pct()`.
 
+**The 14 bps is a floor, not a ceiling.** That figure is taker fees plus
+slippage on a book quoted at effectively zero spread, which is what BTC and
+ETH offer and what the crypto work was measured on. Cost is
+`spread + 2x slippage + 2x taker`, so it rises one-for-one with the quoted
+spread. Measured on Bitget, 2026-09-04:
+
+| symbol | quoted spread | round trip |
+|---|---|---|
+| BTC/USDT | 0.00 bps | 14.00 bps |
+| LTC/USDT | 1.96 | 15.96 |
+| ADA/USDT | 4.51 | 18.51 |
+| DOT/USDT | 11.38-22.78 | **25.38** |
+
+Two consequences for anyone applying gate A1. The cost side of the ratio is a
+property of the instrument, not of the venue or the strategy, so it must be
+measured per instrument -- the same discipline Part 4 already requires for
+breadth. And a backtest that assumes one spread across a universe answers a
+question about no real book: `DataLoader.bars_to_l1` assumed 1 bp for every
+instrument until this was measured, which was near enough on the majors and
+10 bps optimistic on DOT.
+
+An earlier draft of this section reasoned the opposite way -- that the paper
+broker charged a flat slippage while real spreads ran wider, so results
+flattered thin names. That was wrong. `PaperBroker._try_fill` fills at the
+touch and applies slippage on top, so the real spread was always paid, and
+the thin names were charged the most all along. The error is recorded rather
+than deleted because the framework's own D-stage asks what would have to be
+true for a result to be wrong, and a cost model nobody had priced end to end
+was the answer here.
+
 **A2. Compute the minimum detectable effect before choosing criteria.**
 
 The source notes that a profit factor of 5.0 on 12 trades is worthless (§10)
@@ -554,10 +584,14 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
 
 **Known gaps, carried forward rather than solved here.**
 
-- **No results database or run lineage.** The research record is a fixed
-  registry over loose JSON; there are no run IDs, timestamps, parameter
-  provenance, or diffing between runs, and `artifacts/` is gitignored. This is
-  the source framework's §26-§28, and it is a fair criticism.
+- ~~No results database or run lineage.~~ **Closed.**
+  `scripts/research_ledger.py` writes an append-only, hash-chained JSONL to
+  `docs/research_runs.jsonl` -- committed, unlike `artifacts/`, which was the
+  actual complaint. Each run carries its commit, whether the tree was dirty,
+  the seed, the pre-registration it answers by hash, and a content fingerprint
+  of every input. Chained because the discipline depends on negatives
+  surviving: a chain cannot prevent deleting an inconvenient run, but
+  `verify_chain` reports the index where it happened.
 - **No bridge between the research path and the engine path.** Research
   strategies are vectorised numpy masks over `Bars`; engine strategies are
   classes implementing `on_tick`. A signal found in research must be
@@ -576,14 +610,35 @@ plus tag model in `src/intradyne/risk/shariah.py`, per Part 4.
   before an equity can trade -- and neither is urgent while there is no ruling
   to load, which is why the screener produces a worksheet rather than a live
   allow-list.
-- **No point-in-time equity universe.** A3 still needs one, built from
-  `LISTING_STATUS` with delisted names retained --
-  `scripts/point_in_time_universe.py:67` is the direct analogue, and takes the
-  dead names from the archive precisely because the live listing knows only
-  about survivors.
-- **A1's cost model is a large-cap number.** 4.3 bps assumes penny-wide
-  spreads on liquid names. One cent is 20 bps on a $5 stock, so the gate must
-  be re-run per price band before trading below roughly $20.
+- **The point-in-time universe covers membership, not liquidity.**
+  `scripts/equity_pit_universe.py` builds A3's membership half from
+  `LISTING_STATUS` with delisted names retained: 23,246 symbols ever listed,
+  38% of them now dead, and at a 2012 rebalance a current-ticker-list universe
+  would be missing 43% of what actually traded. See
+  `docs/EQUITY_UNIVERSE_TIMELINE.md`.
+- **The liquidity floor is built, and cannot see delisted names.**
+  `scripts/equity_liquidity.py` judges median dollar volume over a window
+  ending at the rebalance date, never on today's turnover. The blocker is the
+  data: this provider serves no delisted history, and fails two ways -- a clean
+  refusal for older names (`FXEN`, delisted 2015), and for recent ones a **flat
+  line at zero volume** (`ADVM` returns 100 sessions of `4.3600`) that a naive
+  screen would score as a real, very quiet stock. Quality is therefore asserted
+  before liquidity, and an unjudgeable name is recorded as `no_data`, never as
+  a liquidity failure -- collapsing those two is how a survivorship hole turns
+  into a finding about a stock. Coverage is reported per run and
+  `--require-coverage` fails the run when the hole is too large. **Closing it
+  needs a survivorship-free data provider: a purchase, not a code change.**
+- **A1 has been re-run per price band, and no band fails.**
+  `scripts/equity_band_a1.py` derives the cost floor from the tick rather than
+  assuming a spread: a penny is 20 bps of a $5 stock and 1.1 bps of a $90 one,
+  so the round trip runs from 11.2 bps in $5-20 down to 2.6 bps above $200.
+  Cheap names move enough more to pay for it -- move/cost at a one-day hold is
+  26.6x in $5-20 against 46.6x above $200, and the low band still clears at
+  7.9x with a four-cent spread. The finding that matters is that **price band
+  is the wrong axis**: dispersion *within* a band exceeds the gap between
+  bands, and a volatile $90 name scores better than anything in $5-20. Band by
+  volatility relative to the tick, not by price. The $20-50 band rests on a
+  single name and is the weakest cell.
 
 **The A1 and A2 gates, and the data behind them, are implemented.**
 

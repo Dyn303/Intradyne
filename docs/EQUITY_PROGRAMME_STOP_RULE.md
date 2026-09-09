@@ -16,6 +16,35 @@ was proposed.
 
 ---
 
+## Crypto reopened once, under a bound (2026-09-05)
+
+This document records that crypto got ten approaches because nobody said stop.
+It has since been reopened once, and the condition is recorded here so the
+reopening is visible from the place that closed it.
+
+The justification was not a new signal but a measurement: at the 2-minute
+holding period every prior approach used, the typical price move is 2.7 bps
+against a 14 bps round trip. A perfect predictor loses there, so those ten
+results are evidence about the horizon rather than about signals.
+
+**Second outcome, 2026-09-08: reopened by override, failed again, closed for
+good.** A cross-sectional test -- a different mechanism from the twelve
+time-series approaches -- passed its primary window at +19.59 and +20.84 bps
+and returned 0 of 4 out of sample, the lead survivor changing sign to -9.88.
+Thirteen approaches. The override was bounded to one attempt and is spent. See
+`docs/CRYPTO_REOPENING_PREREGISTRATION.md`.
+
+**Outcome, 2026-09-05: it failed, and crypto is closed.** The primary window
+produced one survivor of eight; the hold-out turned it from +17.86 bps to
+−6.93, a change of sign. Zero of eight out of sample. Under the bound below,
+crypto does not reopen on a further reframing — the next reopening requires a
+new instrument class. Details in `docs/HORIZON_PREREGISTRATION.md`.
+
+The bound: **one** approach, fully pre-specified in
+`docs/HORIZON_PREREGISTRATION.md` before any signal touched the data. If it
+fails, crypto closes and does not reopen on a further reframing — the next
+reopening requires a new instrument class, not a new angle on this one.
+
 ## The budget: four approaches
 
 The equities programme gets **four**.
@@ -32,6 +61,59 @@ Four is also roughly the number of genuinely distinct hypotheses available:
 cross-sectional selection, intraday time-series, a literature replication, and
 one learned or combination method. Beyond that the ideas start being variants of
 each other, which the next section refuses to let you count separately.
+
+---
+
+## The ledger
+
+One place of record, so the budget cannot be lost track of. A slot is *spent*
+when its test runs to a verdict or any interim result is seen — not when its
+pre-registration is written.
+
+Slot 1 is registered but **not started**: see
+`docs/SLOT_1_PREREGISTRATION.md`. Its preconditions -- prices joinable to the
+point-in-time universe by CUSIP through renames, spreads measured rather than
+assumed, and at least 80% of the filed universe priceable -- are unmet, and a
+test that cannot be run does not spend a slot.
+
+| slot | hypothesis | pre-registration | state |
+|---|---|---|---|
+| 1 | Intraday return predictability, flat at every close | `docs/APPROACH_1_PREREGISTRATION.md` | **not spent** — precondition failure on data reachability |
+| 2 | — | — | unspent |
+| 3 | — | — | unspent |
+| 4 | — | — | unspent |
+
+Slot 1 was committed and then returned unspent: only 51% of a random draw
+from the qualifying universe proved fetchable, 29% of it lost to delisting
+against a 20% ceiling, so no signal was ever computed. The budget still
+stands at four.
+
+Slot 1 does not test the strongest hypothesis available. Cross-sectional
+selection has the better prior and is what A2's breadth finding was built for,
+but it cannot be tested honestly: delisted names return either a hard error or
+a frozen price at zero volume, so a point-in-time backtest would score dead
+companies as zero-volatility assets. A strategy flat at every close barely
+touches that gap, which is why slot 1 is intraday. That is a data constraint
+being respected, not a preference.
+
+**2026-09-09: that constraint is daily-specific, and the slot is still
+unspent.** Both cited failures reproduce against `TIME_SERIES_DAILY` and
+neither survives at the weekly endpoint, which is free and takes no
+`outputsize`. `ADVM` returns 414 distinct closes over 550 weekly bars, carrying
+the fall from 24.63 to 0.57 that the daily placeholder stood in for; `FXEN`,
+which the daily endpoint refuses outright, returns 843 clean bars ending on its
+2015 delisting date. See the correction appended to
+`docs/APPROACH_1_PREREGISTRATION.md`.
+
+This does not decide anything. It removes a stated reason for a choice that has
+not yet been made: a slot is spent when its test runs to a verdict or any
+interim result is seen, and none has been. Whether cross-sectional selection is
+testable at a *weekly* rebalance is a separate question this has not touched,
+and the horizon change is not free -- it trades cost amortisation for a
+different hypothesis than the one A2's breadth finding was measured against.
+
+Recording it here because the alternative is that the reason quietly stops
+being true while the choice it justified stays in place.
 
 ---
 

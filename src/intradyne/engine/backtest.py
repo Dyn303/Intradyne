@@ -15,6 +15,7 @@ import orjson
 
 from intradyne.core.config import load_settings
 from .data_loader import DataLoader, LoaderConfig, timeframe_to_seconds
+from intradyne.core.spreads import load_measured_spreads
 from .portfolio import Portfolio
 from loguru import logger
 
@@ -70,6 +71,36 @@ def run(
     _mode = str(_exec_cfg.get("execution_mode", settings.execution_mode))
     _offset = float(_exec_cfg.get("maker_offset_bps", settings.maker_offset_bps))
     _ttl = float(_exec_cfg.get("limit_ttl_s", settings.limit_ttl_s))
+
+    # Stated rather than assumed. This figure sets what every fill in the run
+    # costs, so a result read without it is not interpretable.
+    _spread_bps = float(
+        _exec_cfg.get("backtest_spread_bps", settings.backtest_spread_bps)
+    )
+    # Measured per instrument where a reading exists. A single figure cannot
+    # be right for BTC at 0.00bps and DOT at 11.44 at once, and the thin names
+    # are where an edge lives or dies. Symbols with no reading keep the
+    # fallback: no measurement is not evidence of a tight book.
+    _measured = load_measured_spreads(exchange=settings.exchange)
+    _by_symbol = {s: v for s, v in _measured.items() if s in symbols}
+    _unmeasured = sorted(set(symbols) - set(_by_symbol))
+    logger.info(
+        f"backtest cost model: slippage {slippage_bps}bps + taker "
+        f"{taker_bps}bps per side; spread measured for "
+        f"{len(_by_symbol)}/{len(symbols)} symbols, "
+        f"{_spread_bps}bps assumed for the rest"
+    )
+    if _by_symbol:
+        logger.info(
+            "measured spreads (bps): "
+            + ", ".join(f"{s} {v:.2f}" for s, v in sorted(_by_symbol.items()))
+        )
+    if _unmeasured:
+        logger.warning(
+            f"no spread measurement for {', '.join(_unmeasured)}; each priced "
+            f"at the {_spread_bps}bps fallback. Run "
+            "scripts/measure_spreads.py to replace the assumption."
+        )
 
     portfolio = Portfolio(maker_bps=maker_bps, taker_bps=taker_bps)
     paper = PaperBroker(portfolio, slippage_bps=slippage_bps, limit_ttl_s=_ttl)
@@ -170,7 +201,12 @@ def run(
             peak_equity, \
             traded_notional
         async for sym, bar in data_loader.multi_symbol_stream(
-            symbols, timeframe, start_ms, end_ms
+            symbols,
+            timeframe,
+            start_ms,
+            end_ms,
+            spread_bps=_spread_bps,
+            spread_bps_by_symbol=_by_symbol,
         ):
             # augment bar to l1 with symbol
             l1 = {**bar, "symbol": sym}

@@ -83,6 +83,14 @@ jobs:
           TEST_POSTGRES_URL: postgresql://intradyne:intradyne@localhost:5432/intradyne
         run: pytest -q
 
+      # A generated record that has drifted from its source is worse than no
+      # record: it reads as authoritative while being wrong. Regenerating and
+      # diffing costs a second and makes staleness a build failure.
+      - name: Research log is current
+        run: |
+          python scripts/research_ledger.py --write
+          git diff --exit-code docs/RESEARCH_LOG.md
+
       - name: Docker build
         run: docker build -t intradyne-lite:ci .
 

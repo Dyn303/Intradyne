@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional
 
 from loguru import logger
@@ -48,6 +48,24 @@ class ExecContext:
     execution_mode: str = "taker"
     #: How far inside the touch to post when making, in bps.
     maker_offset_bps: float = 0.0
+    #: Smallest order the venue will accept, per symbol, in quote currency.
+    #: Populated from the exchange's own `limits.cost.min` -- the floor is a
+    #: property of the venue, not a number worth inventing. Empty until the
+    #: feed has loaded its markets, and symbols the venue does not declare
+    #: fall back to `default_min_notional`.
+    min_notional: Dict[str, float] = field(default_factory=dict)
+    #: Fallback floor for symbols the venue declares no minimum for. Bitget
+    #: reports $1.00 for every pair on the traded whitelist.
+    default_min_notional: float = 1.0
+    #: Smallest *entry* worth placing, in quote currency. Distinct from the
+    #: venue floor above, which says what the exchange will reject; this says
+    #: what is not worth an order slot. 0 disables it.
+    #:
+    #: They must stay separate. Raising the venue floor to suppress trivial
+    #: orders would misrepresent what the exchange does, and would apply to
+    #: exits -- which is how #48 stranded positions whose stops then could
+    #: not fire. This one is checked on increases in exposure only.
+    min_entry_notional: float = 0.0
 
 
 class ExecutionManager:
@@ -60,6 +78,10 @@ class ExecutionManager:
 
     def __init__(self, ctx: ExecContext) -> None:
         self.ctx = ctx
+        #: Symbols holding a position too small for the venue to accept a
+        #: closing order. Recorded so the refusal is reported once rather
+        #: than on every tick -- see the dust floor in `submit`.
+        self._stranded: set[str] = set()
 
     def _gate(
         self,
@@ -173,6 +195,112 @@ class ExecutionManager:
         if qty <= 0:
             return {"status": "blocked", "action": "zero_qty", "reasons": reasons}
 
+        # Dust floor.
+        #
+        # Sizing is `min(sizer, position_capacity)`, so once a position nears
+        # its cap the remaining capacity is a rounding remnant and the next
+        # entry is priced in cents. `qty <= 0` let every one of those through:
+        # in a 75-second paper run, 6 of 11 fills were under a dollar -- $0.0049
+        # of BTC, $0.0143 of ETH -- against a venue minimum of $1.00. Paper
+        # filled them and charged taker fees; the live exchange would have
+        # rejected them outright. The equity curve was being shaped by orders
+        # that could not exist, which is the one thing paper must not do.
+        #
+        # Checked after the gate rather than before, because a VaR step-down
+        # can shrink an approved order into dust on its own.
+        floor = self.ctx.min_notional.get(symbol, self.ctx.default_min_notional)
+        if mark and floor > 0:
+            notional = abs(float(qty)) * float(mark)
+            if notional < floor:
+                # A refused *exit* is not the same event as a refused entry.
+                #
+                # The router resubmits the exit on every tick for as long as
+                # the stop stays breached, so ledger-appending each refusal
+                # grew the hash chain without bound -- once per tick, forever,
+                # for a position worth cents. Worse, the position cannot be
+                # closed at all: the stop-loss silently stops working.
+                #
+                # Refusing is still right. The venue will not accept a
+                # sub-minimum sell either, so a dust holding genuinely is
+                # stranded, and pretending otherwise in paper would put a fill
+                # in the equity curve that live could never produce. What the
+                # entry floor above does is stop these positions being opened;
+                # this branch reports the ones that already exist, once each,
+                # and then keeps quiet.
+                held = self.ctx.portfolio.get_position(symbol).base
+                closing = side == "sell" and held > 0
+                first_time = symbol not in self._stranded
+                if closing:
+                    self._stranded.add(symbol)
+                if not closing or first_time:
+                    self.ctx.ledger.append(
+                        "order_blocked",
+                        {
+                            "symbol": symbol,
+                            "side": side,
+                            "qty": qty,
+                            "notional": notional,
+                            "min_notional": floor,
+                            "action": "below_min_notional",
+                            "stranded": closing,
+                            "strategy_id": strategy_id,
+                        },
+                    )
+                if closing and first_time:
+                    logger.bind(event="position_stranded").warning(
+                        f"{symbol} holds {notional:.4f} in quote terms, below the "
+                        f"venue minimum of {floor:.4f}. It cannot be closed -- the "
+                        "stop-loss on this position will not execute. Further "
+                        "refusals for this symbol are suppressed."
+                    )
+                return {
+                    "status": "blocked",
+                    "action": "below_min_notional",
+                    "stranded": closing,
+                    "reasons": [
+                        f"notional {notional:.4f} below venue minimum {floor:.4f}"
+                    ],
+                }
+        # A position that grew back above the floor is closable again.
+        self._stranded.discard(symbol)
+
+        # Policy floor, entries only.
+        #
+        # Sizing is `min(sizer, position_capacity)`, so a position near its cap
+        # leaves a remnant. The venue floor above stops those being rejected;
+        # it does not stop them being pointless. Observed in an hour of paper
+        # trading: 3 of 288 fills were $1.01, $1.13 and $1.22 -- valid orders
+        # that the exchange would accept, spending an order slot and
+        # rate-limit budget to move a dollar, and skewing fill statistics.
+        #
+        # Buys only. An exit is worth making at any size, because the
+        # alternative is holding the position; that asymmetry is the whole
+        # reason this is not simply a higher venue floor.
+        entry_floor = self.ctx.min_entry_notional
+        if mark and entry_floor > 0 and side == "buy":
+            notional = abs(float(qty)) * float(mark)
+            if notional < entry_floor:
+                self.ctx.ledger.append(
+                    "order_blocked",
+                    {
+                        "symbol": symbol,
+                        "side": side,
+                        "qty": qty,
+                        "notional": notional,
+                        "min_entry_notional": entry_floor,
+                        "action": "below_min_entry",
+                        "strategy_id": strategy_id,
+                    },
+                )
+                return {
+                    "status": "blocked",
+                    "action": "below_min_entry",
+                    "reasons": [
+                        f"entry {notional:.4f} below the {entry_floor:.4f} "
+                        "worth placing"
+                    ],
+                }
+
         # `checks_passed` is strategy-supplied diagnostics. It is recorded as
         # such and never as compliance evidence -- callers pass a hardcoded
         # {"whitelist": True, ...}, so presenting it as the outcome of the
@@ -259,6 +387,21 @@ class ExecutionManager:
             # equivalent taker run.
             try:
                 if self.ctx.paper.open_orders(symbol):
+                    # Also a missed trade, and also previously silent: the
+                    # strategy asked to enter and did not, because an earlier
+                    # order is still resting. Counted so the maker fill rate
+                    # is measured against everything the strategy wanted,
+                    # not only against orders that reached the book.
+                    self.ctx.ledger.append(
+                        "order_blocked",
+                        {
+                            "symbol": symbol,
+                            "side": side,
+                            "qty": qty,
+                            "action": "resting_order_exists",
+                            "strategy_id": strategy_id,
+                        },
+                    )
                     return {
                         "status": "pending",
                         "action": "resting_order_exists",

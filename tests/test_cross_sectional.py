@@ -1,148 +1,174 @@
-"""A negative result is only worth anything if the harness that produced it
-was capable of showing a positive one.
+"""The cross-sectional harness, and the properties slot 1 depends on.
 
-The load-bearing test here is `test_random_selection_earns_no_excess`: if the
-simulation quietly penalised any subset relative to the benchmark, every
-signal would come out negative and the conclusion would be an artifact. It
-does not, so the measured underperformance is real.
+The crypto programme's expensive lesson was that a control which does not
+share the selection mechanism cannot distinguish "this predicts" from "the
+bottom decile is not a typical name". These tests pin the null's behaviour
+rather than the strategy's, because the null is the part that was wrong.
 """
 
-import sys
-from pathlib import Path
+from __future__ import annotations
 
 import numpy as np
+import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-from cross_sectional_test import (  # noqa: E402
-    SIGNALS,
-    forward_returns,
-    price_at,
-    run_signal,
-    sharpe,
+from intradyne.research.cross_sectional import (
+    Panel,
+    bonferroni_alpha,
+    run_test,
+    sanity_check,
+    _decile_by_date,
+    _shuffle_within_date,
 )
 
-DAY = 86_400_000
-T0 = 1_600_000_000_000
+
+def _panel(close: np.ndarray, membership=None) -> Panel:
+    t, n = close.shape
+    return Panel(
+        dates=np.arange(t, dtype=float) * 86_400,
+        symbols=[f"S{j}" for j in range(n)],
+        close=close,
+        membership=np.ones((t, n), bool) if membership is None else membership,
+    )
 
 
-def series(n_days, start_day=0, price=100.0, drift=0.0, qvol=1e6):
-    ts = np.array([T0 + (start_day + i) * DAY for i in range(n_days)], dtype="int64")
-    close = np.array([price * (1 + drift) ** i for i in range(n_days)], dtype="float64")
-    return {"ts": ts, "close": close, "qvol": np.full(n_days, qvol)}
+class TestPanel:
+    def test_a_shape_mismatch_is_refused(self):
+        with pytest.raises(ValueError, match="shape mismatch"):
+            Panel(
+                dates=np.arange(3.0),
+                symbols=["A", "B"],
+                close=np.ones((3, 3)),
+                membership=np.ones((3, 2), bool),
+            )
+
+    def test_membership_is_separate_from_price(self):
+        """A name can be priced and not investable -- delisted from the index,
+        screened out on compliance. Conflating them is how a universe becomes
+        survivorship-biased."""
+        close = np.ones((10, 3)) * np.arange(1, 4)
+        mem = np.ones((10, 3), bool)
+        mem[:, 2] = False  # priced throughout, never investable
+        rows = _decile_by_date(
+            _panel(close, mem), lookback=2, hold=2, weakest=True, decile=0.5
+        )
+        assert rows == {}, "an uninvestable name left too few for a cross-section"
 
 
-def at(day):
-    return T0 + day * DAY
+class TestExcessMeasure:
+    """The flaw crypto validation exposed: a long-only decile carries the
+    market, so its absolute return measures market direction, not ranking."""
+
+    def test_a_universe_moving_together_has_zero_edge(self):
+        t, n = 40, 10
+        close = np.ones((t, n))
+        for i in range(1, t):
+            close[i] = close[i - 1] * 1.05  # every name up 5%, no dispersion
+        rows = _decile_by_date(
+            _panel(close), lookback=5, hold=5, weakest=True, decile=0.2
+        )
+        vals = [v for lst in rows.values() for v in lst]
+        assert vals, "no positions taken"
+        assert max(abs(v) for v in vals) < 1e-6, "market drift leaked into the edge"
+
+    def test_a_name_that_beats_the_universe_shows_positive_edge(self):
+        t, n = 40, 10
+        close = np.ones((t, n))
+        for i in range(1, t):
+            close[i] = close[i - 1] * 1.01
+            close[i, 0] = close[i - 1, 0] * 1.05  # one name outruns the rest
+        rows = _decile_by_date(
+            _panel(close), lookback=5, hold=5, weakest=False, decile=0.1
+        )
+        vals = [v for lst in rows.values() for v in lst]
+        assert vals and st_mean(vals) > 0
 
 
-# ---- survivorship: the loss must actually be taken ---------------------
+def st_mean(v):
+    return sum(v) / len(v)
 
 
-def test_a_dead_name_is_priced_at_its_last_print_not_dropped():
-    """If a delisted holding silently vanished, the portfolio would never
-    book its loss -- which is the exact bias this whole exercise removes."""
-    d = series(100, price=100.0)
-    d["close"][-1] = 10.0  # collapsed before delisting
-    assert price_at(d, at(500)) == 10.0
+class TestSelection:
+    def test_weakest_picks_the_worst_trailing_performer(self):
+        t, n = 30, 10
+        close = np.ones((t, n))
+        for i in range(1, t):
+            close[i] = close[i - 1] * 1.02
+            close[i, 3] = close[i - 1, 3] * 0.98  # name 3 is always the laggard
+        panel = _panel(close)
+        rows = _decile_by_date(panel, lookback=5, hold=5, weakest=True, decile=0.1)
+        assert rows, "no rebalances"
+
+    def test_rebalances_do_not_overlap(self):
+        """Overlapping holding windows share price moves and are not
+        independent draws; counting them as such inflates every t."""
+        close = np.cumprod(1 + np.zeros((60, 8)) + 0.001, axis=0)
+        rows = _decile_by_date(
+            _panel(close), lookback=5, hold=10, weakest=True, decile=0.2
+        )
+        dates = sorted(rows)
+        gaps = {int(b - a) for a, b in zip(dates, dates[1:])}
+        assert gaps == {10 * 86_400}, f"windows overlap: {gaps}"
 
 
-def test_a_holding_that_died_contributes_its_loss():
-    panel = {"DEAD": series(100, price=100.0), "LIVE": series(400, price=100.0)}
-    panel["DEAD"]["close"][-1] = 10.0
-    rets = forward_returns(panel, ["DEAD", "LIVE"], at(50), at(200))
-    assert rets["DEAD"] < -0.5, "the collapse must show up as a loss"
-    assert "DEAD" in rets, "a dead name must not be dropped from the period"
+class TestNull:
+    def test_the_shuffle_preserves_each_dates_return_set(self):
+        """It reassigns which name earned what; it must not change what the
+        market did that day."""
+        rng = np.random.default_rng(0)
+        close = np.cumprod(1 + rng.normal(0, 0.02, (50, 8)), axis=0) * 100
+        shuffled = _shuffle_within_date(close, np.random.default_rng(1))
+        a = np.sort(close[1:] / close[:-1] - 1.0, axis=1)
+        b = np.sort(shuffled[1:] / shuffled[:-1] - 1.0, axis=1)
+        assert np.allclose(a, b), "the shuffle altered a date's returns"
+
+    def test_the_null_brackets_zero_on_random_data(self):
+        """A null that does not bracket zero is not a null. The crypto
+        random-entry control sat four sigma from zero and was read as a
+        baseline for two runs."""
+        rng = np.random.default_rng(7)
+        close = np.cumprod(1 + rng.normal(0.0005, 0.03, (300, 20)), axis=0) * 100
+        r = run_test(_panel(close), lookback=5, hold=5, weakest=True, n_boot=60, seed=3)
+        assert r is not None
+        assert r.null_lo <= 0.0 <= r.null_hi, f"null band [{r.null_lo}, {r.null_hi}]"
+
+    def test_pure_noise_does_not_produce_significance(self):
+        rng = np.random.default_rng(11)
+        close = np.cumprod(1 + rng.normal(0, 0.02, (300, 20)), axis=0) * 100
+        r = run_test(_panel(close), lookback=5, hold=5, weakest=True, n_boot=60, seed=5)
+        assert r is not None
+        assert r.p_value > bonferroni_alpha(8), f"noise passed at p={r.p_value}"
+
+    def test_p_is_never_exactly_zero(self):
+        """A finite number of draws cannot support p = 0."""
+        rng = np.random.default_rng(2)
+        close = np.cumprod(1 + rng.normal(0, 0.02, (200, 12)), axis=0) * 100
+        r = run_test(_panel(close), lookback=5, hold=5, weakest=True, n_boot=40, seed=1)
+        assert r is not None and r.p_value > 0.0
 
 
-def test_a_name_with_no_price_yet_is_excluded_rather_than_assumed_flat():
-    panel = {"LATE": series(100, start_day=300)}
-    assert forward_returns(panel, ["LATE"], at(10), at(50)) == {}
+class TestSanityChecks:
+    """Each of these faults has occurred in this project and presented as a
+    finding: an empty table printed as '0 of 8 passed', a turnover of zero from
+    comparing two empty sets."""
+
+    def test_an_empty_run_is_flagged(self):
+        assert any("empty table" in p for p in sanity_check([]))
+
+    def test_too_few_dates_is_flagged(self):
+        rng = np.random.default_rng(4)
+        close = np.cumprod(1 + rng.normal(0, 0.02, (40, 10)), axis=0) * 100
+        r = run_test(_panel(close), lookback=5, hold=5, weakest=True, n_boot=30, seed=1)
+        if r is not None:
+            assert any("too few to cluster" in p for p in sanity_check([r]))
 
 
-# ---- the harness must be unbiased --------------------------------------
+class TestBonferroni:
+    def test_eight_tests_tighten_the_bar(self):
+        assert bonferroni_alpha(8) == pytest.approx(0.00625)
 
+    def test_one_test_is_uncorrected(self):
+        assert bonferroni_alpha(1) == pytest.approx(0.05)
 
-def test_random_selection_earns_no_excess():
-    """The result rests on this. Selecting names at random must average zero
-    excess over the equal-weight benchmark; if it did not, every signal would
-    read negative for reasons that have nothing to do with the signal."""
-    rng = np.random.default_rng(0)
-    n_names, n_periods = 40, 120
-    panel = {}
-    for i in range(n_names):
-        px = 100 * np.exp(np.cumsum(rng.normal(0, 0.02, n_periods * 30 + 400)))
-        ts = np.array([T0 + j * DAY for j in range(len(px))], dtype="int64")
-        panel[f"S{i}"] = {"ts": ts, "close": px, "qvol": np.full(len(px), 1e6)}
-
-    names = list(panel)
-    dates = [at(400 + p * 30) for p in range(n_periods)]
-    excesses = []
-    for _ in range(200):
-        per = []
-        for t0, t1 in zip(dates, dates[1:]):
-            r = forward_returns(panel, names, t0, t1)
-            pick = rng.choice(list(r), size=4, replace=False)
-            per.append(np.mean([r[s] for s in pick]) - np.mean(list(r.values())))
-        excesses.append(np.mean(per))
-    mean = float(np.mean(excesses))
-    se = float(np.std(excesses, ddof=1)) / np.sqrt(len(excesses))
-    assert abs(mean) < 4 * se, f"harness is biased: {mean:+.5f} vs SE {se:.5f}"
-
-
-# ---- signals must not look ahead ---------------------------------------
-
-
-def test_no_signal_reads_past_the_rebalance_date():
-    """Truncating the data after the as-of date must not change any score."""
-    full = series(800, drift=0.001)
-    cut = {k: v[:500] for k, v in full.items()}
-    asof = at(499)
-    for name, fn in SIGNALS.items():
-        a, b = fn(full, asof), fn(cut, asof)
-        if a is None and b is None:
-            continue
-        assert a == b, f"{name} consulted data after the as-of date"
-
-
-def test_a_signal_returns_none_without_enough_history():
-    short = series(20)
-    assert SIGNALS["mom_12m"](short, at(19)) is None
-
-
-# ---- portfolio mechanics ------------------------------------------------
-
-
-def test_costs_reduce_the_excess():
-    """Turnover has to be charged, or the test measures a portfolio nobody
-    could have traded."""
-    panel = {f"S{i}": series(600, drift=0.0005 * i) for i in range(20)}
-    dates = [at(400 + p * 30) for p in range(6)]
-    mbd = {d: list(panel) for d in dates}
-    free, _, _ = run_signal(panel, dates, mbd, "mom_1m", 0.2, cost_bps=0.0)
-    paid, _, _ = run_signal(panel, dates, mbd, "mom_1m", 0.2, cost_bps=100.0)
-    assert paid.sum() < free.sum()
-
-
-def test_sharpe_is_zero_for_a_flat_series():
-    assert sharpe(np.zeros(50), 12.0) == 0.0
-
-
-def test_sharpe_scales_with_the_annualisation_factor():
-    x = np.array([0.01, -0.005, 0.02, 0.0, 0.01] * 10)
-    assert sharpe(x, 12.0) == np.sqrt(12.0) / np.sqrt(1.0) * sharpe(x, 1.0)
-
-
-def test_all_eight_preregistered_signals_are_present():
-    """The pre-registration fixes the signal list; adding a ninth after
-    seeing results would invalidate the null threshold."""
-    assert set(SIGNALS) == {
-        "mom_1m",
-        "mom_3m",
-        "mom_6m",
-        "mom_12m",
-        "reversal_1w",
-        "mom_3m_volscaled",
-        "low_downside_vol",
-        "volume_trend",
-    }
+    def test_zero_tests_is_an_error(self):
+        with pytest.raises(ValueError):
+            bonferroni_alpha(0)

@@ -141,11 +141,37 @@ def test_crypto_allow_list_still_enforced():
     assert ok is False and "not in allowed list" in reason
 
 
-def test_empty_crypto_allow_list_is_still_permissive():
-    """Deliberately preserved. An empty list means none was configured, and
-    changing that would refuse every order in an existing deployment. Equities
-    have no such history, which is why they fail closed instead."""
-    assert ShariahPolicy().check("BTC/USDT")[0] is True
+def test_an_unconfigured_crypto_allow_list_now_refuses():
+    """This reverses a decision made when the equity gate was added.
+
+    That change preserved "an empty list means none was configured, so it does
+    not by itself refuse", on the grounds that flipping it would block every
+    order in an existing deployment. The reasoning was about compatibility and
+    it missed what the permissiveness combined with: once `"/" in symbol` began
+    *routing* between two screening regimes, an unconfigured allow-list made
+    appending "/USDT" to any name a way past business screening entirely --
+    `PORNCO/USDT` and `AAPL/USD` both passed.
+
+    `docs/FULLSTACK_PLAN.md` had already settled the shape of this question for
+    the Mini App: an unset allowlist disables auth rather than defaulting to
+    open, because "a configured bot with no allowlist is the genuinely
+    dangerous state". The same argument applies here and should have then."""
+    ok, why = ShariahPolicy().check("BTC/USDT")
+    assert ok is False
+    assert "no crypto allow-list is configured" in why
+
+
+def test_a_configured_allow_list_still_admits_its_members():
+    """The compatibility concern was real; this is what it was protecting.
+    Every deployment that configures ALLOWED_SYMBOLS is unaffected."""
+    assert ShariahPolicy(allowed_crypto=["BTC/USDT"]).check("BTC/USDT")[0] is True
+
+
+def test_a_slash_no_longer_buys_passage_past_screening():
+    """The hole this closes, stated as the exploit it was."""
+    pol = ShariahPolicy()
+    for sym in ("PORNCO/USDT", "AAPL/USD", "TSLA/USDT"):
+        assert pol.check(sym)[0] is False, f"{sym} passed business screening"
 
 
 def test_crypto_blocked_tags_still_enforced():

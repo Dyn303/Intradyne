@@ -1,0 +1,1612 @@
+{
+ "002824100": {
+  "exchange": "US",
+  "name": "ABBOTT LABORATORIES",
+  "ticker": "ABT"
+ },
+ "00287Y109": {
+  "exchange": "US",
+  "name": "ABBVIE INC",
+  "ticker": "ABBV"
+ },
+ "003654100": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "00507V109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "00724F101": {
+  "exchange": "US",
+  "name": "ADOBE INC",
+  "ticker": "ADBE"
+ },
+ "00751Y106": {
+  "exchange": "US",
+  "name": "ADVANCE AUTO PARTS INC",
+  "ticker": "AAP"
+ },
+ "007903107": {
+  "exchange": "US",
+  "name": "ADVANCED MICRO DEVICES",
+  "ticker": "AMD"
+ },
+ "00846U101": {
+  "exchange": "US",
+  "name": "AGILENT TECHNOLOGIES INC",
+  "ticker": "A"
+ },
+ "009066101": {
+  "exchange": "US",
+  "name": "AIRBNB INC-CLASS A",
+  "ticker": "ABNB"
+ },
+ "009158106": {
+  "exchange": "US",
+  "name": "AIR PRODUCTS & CHEMICALS INC",
+  "ticker": "APD"
+ },
+ "00971T101": {
+  "exchange": "US",
+  "name": "AKAMAI TECHNOLOGIES INC",
+  "ticker": "AKAM"
+ },
+ "011659109": {
+  "exchange": "US",
+  "name": "ALASKA AIR GROUP INC",
+  "ticker": "ALK"
+ },
+ "012653101": {
+  "exchange": "US",
+  "name": "ALBEMARLE CORP",
+  "ticker": "ALB"
+ },
+ "015351109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "016255101": {
+  "exchange": "US",
+  "name": "ALIGN TECHNOLOGY INC",
+  "ticker": "ALGN"
+ },
+ "02079K107": {
+  "exchange": "US",
+  "name": "ALPHABET INC-CL C",
+  "ticker": "GOOG"
+ },
+ "02079K305": {
+  "exchange": "US",
+  "name": "ALPHABET INC-CL A",
+  "ticker": "GOOGL"
+ },
+ "023135106": {
+  "exchange": "US",
+  "name": "AMAZON.COM INC",
+  "ticker": "AMZN"
+ },
+ "03027X100": {
+  "exchange": "US",
+  "name": "AMERICAN TOWER CORP",
+  "ticker": "AMT"
+ },
+ "03073E105": {
+  "exchange": "US",
+  "name": "CENCORA INC",
+  "ticker": "COR"
+ },
+ "031100100": {
+  "exchange": "US",
+  "name": "AMETEK INC",
+  "ticker": "AME"
+ },
+ "031162100": {
+  "exchange": "US",
+  "name": "AMGEN INC",
+  "ticker": "AMGN"
+ },
+ "032095101": {
+  "exchange": "US",
+  "name": "AMPHENOL CORP-CL A",
+  "ticker": "APH"
+ },
+ "032654105": {
+  "exchange": "US",
+  "name": "ANALOG DEVICES INC",
+  "ticker": "ADI"
+ },
+ "03662Q105": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "037833100": {
+  "exchange": "US",
+  "name": "APPLE INC",
+  "ticker": "AAPL"
+ },
+ "038222105": {
+  "exchange": "US",
+  "name": "APPLIED MATERIALS INC",
+  "ticker": "AMAT"
+ },
+ "039483102": {
+  "exchange": "US",
+  "name": "ARCHER-DANIELS-MIDLAND CO",
+  "ticker": "ADM"
+ },
+ "040413106": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "040413205": {
+  "exchange": "US",
+  "name": "ARISTA NETWORKS INC",
+  "ticker": "ANET"
+ },
+ "052769106": {
+  "exchange": "US",
+  "name": "AUTODESK INC",
+  "ticker": "ADSK"
+ },
+ "053332102": {
+  "exchange": "US",
+  "name": "AUTOZONE INC",
+  "ticker": "AZO"
+ },
+ "053484101": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "053611109": {
+  "exchange": "US",
+  "name": "AVERY DENNISON CORP",
+  "ticker": "AVY"
+ },
+ "05722G100": {
+  "exchange": "US",
+  "name": "BAKER HUGHES CO",
+  "ticker": "BKR"
+ },
+ "058498106": {
+  "exchange": "US",
+  "name": "BALL CORP",
+  "ticker": "BALL"
+ },
+ "071813109": {
+  "exchange": "US",
+  "name": "BAXTER INTERNATIONAL INC",
+  "ticker": "BAX"
+ },
+ "075887109": {
+  "exchange": "US",
+  "name": "BECTON DICKINSON AND CO",
+  "ticker": "BDX"
+ },
+ "086516101": {
+  "exchange": "US",
+  "name": "BEST BUY CO INC",
+  "ticker": "BBY"
+ },
+ "090572207": {
+  "exchange": "US",
+  "name": "BIO-RAD LABORATORIES-A",
+  "ticker": "BIO"
+ },
+ "09062X103": {
+  "exchange": "US",
+  "name": "BIOGEN INC",
+  "ticker": "BIIB"
+ },
+ "09073M104": {
+  "exchange": "US",
+  "name": "BIO-TECHNE CORP",
+  "ticker": "TECH"
+ },
+ "09857L108": {
+  "exchange": "US",
+  "name": "BOOKING HOLDINGS INC",
+  "ticker": "BKNG"
+ },
+ "099724106": {
+  "exchange": "US",
+  "name": "BORGWARNER INC",
+  "ticker": "BWA"
+ },
+ "101137107": {
+  "exchange": "US",
+  "name": "BOSTON SCIENTIFIC CORP",
+  "ticker": "BSX"
+ },
+ "110122108": {
+  "exchange": "US",
+  "name": "BRISTOL-MYERS SQUIBB CO",
+  "ticker": "BMY"
+ },
+ "11135F101": {
+  "exchange": "US",
+  "name": "BROADCOM INC",
+  "ticker": "AVGO"
+ },
+ "12008R107": {
+  "exchange": "US",
+  "name": "BUILDERS FIRSTSOURCE INC",
+  "ticker": "BLDR"
+ },
+ "12514G108": {
+  "exchange": "US",
+  "name": "CDW CORP/DE",
+  "ticker": "CDW"
+ },
+ "125269100": {
+  "exchange": "US",
+  "name": "CF INDUSTRIES HOLDINGS INC",
+  "ticker": "CF"
+ },
+ "12541W209": {
+  "exchange": "US",
+  "name": "C.H. ROBINSON WORLDWIDE INC",
+  "ticker": "CHRW"
+ },
+ "126408103": {
+  "exchange": "US",
+  "name": "CSX CORP",
+  "ticker": "CSX"
+ },
+ "127097103": {
+  "exchange": "US",
+  "name": "COTERRA ENERGY INC",
+  "ticker": "CTRA"
+ },
+ "127387108": {
+  "exchange": "US",
+  "name": "CADENCE DESIGN SYS INC",
+  "ticker": "CDNS"
+ },
+ "133131102": {
+  "exchange": "US",
+  "name": "CAMDEN PROPERTY TRUST",
+  "ticker": "CPT"
+ },
+ "14149Y108": {
+  "exchange": "US",
+  "name": "CARDINAL HEALTH INC",
+  "ticker": "CAH"
+ },
+ "14448C104": {
+  "exchange": "US",
+  "name": "CARRIER GLOBAL CORP",
+  "ticker": "CARR"
+ },
+ "148806102": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "15677J108": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "156782104": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "159864107": {
+  "exchange": "US",
+  "name": "CHARLES RIVER LABORATORIES",
+  "ticker": "CRL"
+ },
+ "166764100": {
+  "exchange": "US",
+  "name": "CHEVRON CORP",
+  "ticker": "CVX"
+ },
+ "171340102": {
+  "exchange": "US",
+  "name": "CHURCH & DWIGHT CO INC",
+  "ticker": "CHD"
+ },
+ "171779309": {
+  "exchange": "US",
+  "name": "CIENA CORP",
+  "ticker": "CIEN"
+ },
+ "17275R102": {
+  "exchange": "US",
+  "name": "CISCO SYSTEMS INC",
+  "ticker": "CSCO"
+ },
+ "172908105": {
+  "exchange": "US",
+  "name": "CINTAS CORP",
+  "ticker": "CTAS"
+ },
+ "177376100": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "189054109": {
+  "exchange": "US",
+  "name": "CLOROX COMPANY",
+  "ticker": "CLX"
+ },
+ "191216100": {
+  "exchange": "US",
+  "name": "COCA-COLA CO/THE",
+  "ticker": "KO"
+ },
+ "192446102": {
+  "exchange": "US",
+  "name": "COGNIZANT TECH SOLUTIONS-A",
+  "ticker": "CTSH"
+ },
+ "19247G107": {
+  "exchange": "US",
+  "name": "COHERENT CORP",
+  "ticker": "COHR"
+ },
+ "194162103": {
+  "exchange": "US",
+  "name": "COLGATE-PALMOLIVE CO",
+  "ticker": "CL"
+ },
+ "199908104": {
+  "exchange": "US",
+  "name": "COMFORT SYSTEMS USA INC",
+  "ticker": "FIX"
+ },
+ "20605P101": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "20825C104": {
+  "exchange": "US",
+  "name": "CONOCOPHILLIPS",
+  "ticker": "COP"
+ },
+ "21037T109": {
+  "exchange": "US",
+  "name": "CONSTELLATION ENERGY",
+  "ticker": "CEG"
+ },
+ "216648402": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "216648501": {
+  "exchange": "US",
+  "name": "COOPER COS INC/THE",
+  "ticker": "COO"
+ },
+ "217204106": {
+  "exchange": "US",
+  "name": "COPART INC",
+  "ticker": "CPRT"
+ },
+ "219350105": {
+  "exchange": "US",
+  "name": "CORNING INC",
+  "ticker": "GLW"
+ },
+ "22052L104": {
+  "exchange": "US",
+  "name": "CORTEVA INC",
+  "ticker": "CTVA"
+ },
+ "22160N109": {
+  "exchange": "US",
+  "name": "COSTAR GROUP INC",
+  "ticker": "CSGP"
+ },
+ "22788C105": {
+  "exchange": "US",
+  "name": "CROWDSTRIKE HOLDINGS INC - A",
+  "ticker": "CRWD"
+ },
+ "22822V101": {
+  "exchange": "US",
+  "name": "CROWN CASTLE INC",
+  "ticker": "CCI"
+ },
+ "231021106": {
+  "exchange": "US",
+  "name": "CUMMINS INC",
+  "ticker": "CMI"
+ },
+ "23331A109": {
+  "exchange": "US",
+  "name": "DR HORTON INC",
+  "ticker": "DHI"
+ },
+ "235851102": {
+  "exchange": "US",
+  "name": "DANAHER CORP",
+  "ticker": "DHR"
+ },
+ "243537107": {
+  "exchange": "US",
+  "name": "DECKERS OUTDOOR CORP",
+  "ticker": "DECK"
+ },
+ "24906P109": {
+  "exchange": "US",
+  "name": "DENTSPLY SIRONA INC",
+  "ticker": "XRAY"
+ },
+ "25179M103": {
+  "exchange": "US",
+  "name": "DEVON ENERGY CORP",
+  "ticker": "DVN"
+ },
+ "252131107": {
+  "exchange": "US",
+  "name": "DEXCOM INC",
+  "ticker": "DXCM"
+ },
+ "25278X109": {
+  "exchange": "US",
+  "name": "DIAMONDBACK ENERGY INC",
+  "ticker": "FANG"
+ },
+ "256746108": {
+  "exchange": "US",
+  "name": "DOLLAR TREE INC",
+  "ticker": "DLTR"
+ },
+ "25809K105": {
+  "exchange": "US",
+  "name": "DOORDASH INC - A",
+  "ticker": "DASH"
+ },
+ "260003108": {
+  "exchange": "US",
+  "name": "DOVER CORP",
+  "ticker": "DOV"
+ },
+ "264411505": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "26614N102": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "26875P101": {
+  "exchange": "US",
+  "name": "EOG RESOURCES INC",
+  "ticker": "EOG"
+ },
+ "278642103": {
+  "exchange": "US",
+  "name": "EBAY INC",
+  "ticker": "EBAY"
+ },
+ "278865100": {
+  "exchange": "US",
+  "name": "ECOLAB INC",
+  "ticker": "ECL"
+ },
+ "28176E108": {
+  "exchange": "US",
+  "name": "EDWARDS LIFESCIENCES CORP",
+  "ticker": "EW"
+ },
+ "291011104": {
+  "exchange": "US",
+  "name": "EMERSON ELECTRIC CO",
+  "ticker": "EMR"
+ },
+ "29355A107": {
+  "exchange": "US",
+  "name": "ENPHASE ENERGY INC",
+  "ticker": "ENPH"
+ },
+ "29414B104": {
+  "exchange": "US",
+  "name": "EPAM SYSTEMS INC",
+  "ticker": "EPAM"
+ },
+ "294429105": {
+  "exchange": "US",
+  "name": "EQUIFAX INC",
+  "ticker": "EFX"
+ },
+ "29444U700": {
+  "exchange": "US",
+  "name": "EQUINIX INC",
+  "ticker": "EQIX"
+ },
+ "29476L107": {
+  "exchange": "US",
+  "name": "VIVMARK RESIDENTIAL",
+  "ticker": "VMRK"
+ },
+ "297178105": {
+  "exchange": "US",
+  "name": "ESSEX PROPERTY TRUST INC",
+  "ticker": "ESS"
+ },
+ "29786A106": {
+  "exchange": "US",
+  "name": "ETSY INC",
+  "ticker": "ETSY"
+ },
+ "30212P303": {
+  "exchange": "US",
+  "name": "EXPEDIA GROUP INC",
+  "ticker": "EXPE"
+ },
+ "302130109": {
+  "exchange": "US",
+  "name": "EXPEDITORS INTL WASH INC",
+  "ticker": "EXPD"
+ },
+ "30231G102": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "302491303": {
+  "exchange": "US",
+  "name": "FMC CORP",
+  "ticker": "FMC"
+ },
+ "30303M102": {
+  "exchange": "US",
+  "name": "META PLATFORMS INC-CLASS A",
+  "ticker": "META"
+ },
+ "303250104": {
+  "exchange": "US",
+  "name": "FAIR ISAAC CORP",
+  "ticker": "FICO"
+ },
+ "311900104": {
+  "exchange": "US",
+  "name": "FASTENAL CO",
+  "ticker": "FAST"
+ },
+ "315616102": {
+  "exchange": "US",
+  "name": "F5 INC",
+  "ticker": "FFIV"
+ },
+ "336433107": {
+  "exchange": "US",
+  "name": "FIRST SOLAR INC",
+  "ticker": "FSLR"
+ },
+ "34354P105": {
+  "exchange": "US",
+  "name": "FLOWSERVE CORP",
+  "ticker": "FLS"
+ },
+ "34959E109": {
+  "exchange": "US",
+  "name": "FORTINET INC",
+  "ticker": "FTNT"
+ },
+ "34959J108": {
+  "exchange": "US",
+  "name": "FORTIVE CORP",
+  "ticker": "FTV"
+ },
+ "34964C106": {
+  "exchange": "US",
+  "name": "FORTUNE BRANDS INNOVATIONS I",
+  "ticker": "FBIN"
+ },
+ "35671D857": {
+  "exchange": "US",
+  "name": "FREEPORT-MCMORAN INC",
+  "ticker": "FCX"
+ },
+ "36266G107": {
+  "exchange": "US",
+  "name": "GE HEALTHCARE TECHNOLOGY",
+  "ticker": "GEHC"
+ },
+ "364760108": {
+  "exchange": "US",
+  "name": "GAP INC/THE",
+  "ticker": "GAP"
+ },
+ "366651107": {
+  "exchange": "US",
+  "name": "GARTNER INC",
+  "ticker": "IT"
+ },
+ "36828A101": {
+  "exchange": "US",
+  "name": "GE VERNOVA INC",
+  "ticker": "GEV"
+ },
+ "368736104": {
+  "exchange": "US",
+  "name": "GENERAC HOLDINGS INC",
+  "ticker": "GNRC"
+ },
+ "370334104": {
+  "exchange": "US",
+  "name": "GENERAL MILLS INC",
+  "ticker": "GIS"
+ },
+ "372460105": {
+  "exchange": "US",
+  "name": "GENUINE PARTS CO",
+  "ticker": "GPC"
+ },
+ "375558103": {
+  "exchange": "US",
+  "name": "GILEAD SCIENCES INC",
+  "ticker": "GILD"
+ },
+ "380237107": {
+  "exchange": "US",
+  "name": "GODADDY INC - CLASS A",
+  "ticker": "GDDY"
+ },
+ "384802104": {
+  "exchange": "US",
+  "name": "WW GRAINGER INC",
+  "ticker": "GWW"
+ },
+ "40434L105": {
+  "exchange": "US",
+  "name": "HP INC",
+  "ticker": "HPQ"
+ },
+ "406216101": {
+  "exchange": "US",
+  "name": "HALLIBURTON CO",
+  "ticker": "HAL"
+ },
+ "42250P103": {
+  "exchange": "US",
+  "name": "HEALTHPEAK PROPERTIES INC",
+  "ticker": "DOC"
+ },
+ "427866108": {
+  "exchange": "US",
+  "name": "HERSHEY CO/THE",
+  "ticker": "HSY"
+ },
+ "42809H107": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "436440101": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "436CVR021": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "437076102": {
+  "exchange": "US",
+  "name": "HOME DEPOT INC",
+  "ticker": "HD"
+ },
+ "438516106": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "443510607": {
+  "exchange": "US",
+  "name": "HUBBELL INC",
+  "ticker": "HUBB"
+ },
+ "445658107": {
+  "exchange": "US",
+  "name": "HUNT (JB) TRANSPRT SVCS INC",
+  "ticker": "JBHT"
+ },
+ "44980X109": {
+  "exchange": "US",
+  "name": "IPG PHOTONICS CORP",
+  "ticker": "IPGP"
+ },
+ "45167R104": {
+  "exchange": "US",
+  "name": "IDEX CORP",
+  "ticker": "IEX"
+ },
+ "45168D104": {
+  "exchange": "US",
+  "name": "IDEXX LABORATORIES INC",
+  "ticker": "IDXX"
+ },
+ "452308109": {
+  "exchange": "US",
+  "name": "ILLINOIS TOOL WORKS",
+  "ticker": "ITW"
+ },
+ "452327109": {
+  "exchange": "US",
+  "name": "ILLUMINA INC",
+  "ticker": "ILMN"
+ },
+ "45337C102": {
+  "exchange": "US",
+  "name": "INCYTE CORP",
+  "ticker": "INCY"
+ },
+ "45687V106": {
+  "exchange": "US",
+  "name": "INGERSOLL-RAND INC",
+  "ticker": "IR"
+ },
+ "45784P101": {
+  "exchange": "US",
+  "name": "INSULET CORP",
+  "ticker": "PODD"
+ },
+ "458140100": {
+  "exchange": "US",
+  "name": "INTEL CORP",
+  "ticker": "INTC"
+ },
+ "459200101": {
+  "exchange": "US",
+  "name": "INTL BUSINESS MACHINES CORP",
+  "ticker": "IBM"
+ },
+ "461202103": {
+  "exchange": "US",
+  "name": "INTUIT INC",
+  "ticker": "INTU"
+ },
+ "46120E602": {
+  "exchange": "US",
+  "name": "INTUITIVE SURGICAL INC",
+  "ticker": "ISRG"
+ },
+ "466313103": {
+  "exchange": "US",
+  "name": "JABIL INC",
+  "ticker": "JBL"
+ },
+ "46982L108": {
+  "exchange": "US",
+  "name": "JACOBS SOLUTIONS INC",
+  "ticker": "J"
+ },
+ "478160104": {
+  "exchange": "US",
+  "name": "JOHNSON & JOHNSON",
+  "ticker": "JNJ"
+ },
+ "48203R104": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "482480100": {
+  "exchange": "US",
+  "name": "KLA CORP",
+  "ticker": "KLAC"
+ },
+ "485170302": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "487836108": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "49177J102": {
+  "exchange": "US",
+  "name": "KENVUE INC",
+  "ticker": "KVUE"
+ },
+ "49271V100": {
+  "exchange": "US",
+  "name": "KEURIG DR PEPPER INC",
+  "ticker": "KDP"
+ },
+ "49338L103": {
+  "exchange": "US",
+  "name": "KEYSIGHT TECHNOLOGIES IN",
+  "ticker": "KEYS"
+ },
+ "494368103": {
+  "exchange": "US",
+  "name": "KIMBERLY-CLARK CORP",
+  "ticker": "KMB"
+ },
+ "501889208": {
+  "exchange": "US",
+  "name": "LKQ CORP",
+  "ticker": "LKQ"
+ },
+ "504922105": {
+  "exchange": "US",
+  "name": "LABCORP HOLDINGS INC",
+  "ticker": "LH"
+ },
+ "50540R409": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "512807108": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "512807306": {
+  "exchange": "US",
+  "name": "LAM RESEARCH CORP",
+  "ticker": "LRCX"
+ },
+ "513272104": {
+  "exchange": "US",
+  "name": "LAMB WESTON HOLDINGS INC",
+  "ticker": "LW"
+ },
+ "518439104": {
+  "exchange": "US",
+  "name": "ESTEE LAUDER COMPANIES-CL A",
+  "ticker": "EL"
+ },
+ "525327102": {
+  "exchange": "US",
+  "name": "LEIDOS HOLDINGS INC",
+  "ticker": "LDOS"
+ },
+ "526057104": {
+  "exchange": "US",
+  "name": "LENNAR CORP-A",
+  "ticker": "LEN"
+ },
+ "526107107": {
+  "exchange": "US",
+  "name": "LENNOX INTERNATIONAL INC",
+  "ticker": "LII"
+ },
+ "532457108": {
+  "exchange": "US",
+  "name": "ELI LILLY & CO",
+  "ticker": "LLY"
+ },
+ "548661107": {
+  "exchange": "US",
+  "name": "LOWE'S COS INC",
+  "ticker": "LOW"
+ },
+ "550021109": {
+  "exchange": "US",
+  "name": "LULULEMON ATHLETICA INC",
+  "ticker": "LULU"
+ },
+ "573284106": {
+  "exchange": "US",
+  "name": "MARTIN MARIETTA MATERIALS",
+  "ticker": "MLM"
+ },
+ "574599106": {
+  "exchange": "US",
+  "name": "MASCO CORP",
+  "ticker": "MAS"
+ },
+ "57772K101": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "579780206": {
+  "exchange": "US",
+  "name": "MCCORMICK & CO-NON VTG SHRS",
+  "ticker": "MKC"
+ },
+ "580135101": {
+  "exchange": "US",
+  "name": "MCDONALD'S CORP",
+  "ticker": "MCD"
+ },
+ "58155Q103": {
+  "exchange": "US",
+  "name": "MCKESSON CORP",
+  "ticker": "MCK"
+ },
+ "58933Y105": {
+  "exchange": "US",
+  "name": "MERCK & CO. INC.",
+  "ticker": "MRK"
+ },
+ "592688105": {
+  "exchange": "US",
+  "name": "METTLER-TOLEDO INTERNATIONAL",
+  "ticker": "MTD"
+ },
+ "594918104": {
+  "exchange": "US",
+  "name": "MICROSOFT CORP",
+  "ticker": "MSFT"
+ },
+ "595017104": {
+  "exchange": "US",
+  "name": "MICROCHIP TECHNOLOGY INC",
+  "ticker": "MCHP"
+ },
+ "595112103": {
+  "exchange": "US",
+  "name": "MICRON TECHNOLOGY INC",
+  "ticker": "MU"
+ },
+ "59522J103": {
+  "exchange": "US",
+  "name": "MID-AMERICA APARTMENT COMM",
+  "ticker": "MAA"
+ },
+ "60770K107": {
+  "exchange": "US",
+  "name": "MODERNA INC",
+  "ticker": "MRNA"
+ },
+ "608190104": {
+  "exchange": "US",
+  "name": "MOHAWK INDUSTRIES INC",
+  "ticker": "MHK"
+ },
+ "60855R100": {
+  "exchange": "US",
+  "name": "MOLINA HEALTHCARE INC",
+  "ticker": "MOH"
+ },
+ "609207105": {
+  "exchange": "US",
+  "name": "MONDELEZ INTERNATIONAL INC-A",
+  "ticker": "MDLZ"
+ },
+ "609839105": {
+  "exchange": "US",
+  "name": "MONOLITHIC POWER SYSTEMS INC",
+  "ticker": "MPWR"
+ },
+ "61174X109": {
+  "exchange": "US",
+  "name": "MONSTER BEVERAGE CORP",
+  "ticker": "MNST"
+ },
+ "61945C103": {
+  "exchange": "US",
+  "name": "MOSAIC CO/THE",
+  "ticker": "MOS"
+ },
+ "620076307": {
+  "exchange": "US",
+  "name": "MOTOROLA SOLUTIONS INC",
+  "ticker": "MSI"
+ },
+ "62944T105": {
+  "exchange": "US",
+  "name": "NVR INC",
+  "ticker": "NVR"
+ },
+ "637071101": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "64110D104": {
+  "exchange": "US",
+  "name": "NETAPP INC",
+  "ticker": "NTAP"
+ },
+ "651639106": {
+  "exchange": "US",
+  "name": "NEWMONT CORP",
+  "ticker": "NEM"
+ },
+ "65249B109": {
+  "exchange": "US",
+  "name": "NEWS CORP - CLASS A",
+  "ticker": "NWSA"
+ },
+ "65249B208": {
+  "exchange": "US",
+  "name": "NEWS CORP - CLASS B",
+  "ticker": "NWS"
+ },
+ "654106103": {
+  "exchange": "US",
+  "name": "NIKE INC -CL B",
+  "ticker": "NKE"
+ },
+ "655663102": {
+  "exchange": "US",
+  "name": "NORDSON CORP",
+  "ticker": "NDSN"
+ },
+ "655844108": {
+  "exchange": "US",
+  "name": "NORFOLK SOUTHERN CORP",
+  "ticker": "NSC"
+ },
+ "668771108": {
+  "exchange": "US",
+  "name": "GEN DIGITAL INC",
+  "ticker": "GEN"
+ },
+ "670346105": {
+  "exchange": "US",
+  "name": "NUCOR CORP",
+  "ticker": "NUE"
+ },
+ "67066G104": {
+  "exchange": "US",
+  "name": "NVIDIA CORP",
+  "ticker": "NVDA"
+ },
+ "67103H107": {
+  "exchange": "US",
+  "name": "O'REILLY AUTOMOTIVE INC",
+  "ticker": "ORLY"
+ },
+ "679580100": {
+  "exchange": "US",
+  "name": "OLD DOMINION FREIGHT LINE",
+  "ticker": "ODFL"
+ },
+ "682189105": {
+  "exchange": "US",
+  "name": "ON SEMICONDUCTOR",
+  "ticker": "ON"
+ },
+ "68389X105": {
+  "exchange": "US",
+  "name": "ORACLE CORP",
+  "ticker": "ORCL"
+ },
+ "68622V106": {
+  "exchange": "US",
+  "name": "ORGANON & CO",
+  "ticker": "OGN"
+ },
+ "68902V107": {
+  "exchange": "US",
+  "name": "OTIS WORLDWIDE CORP",
+  "ticker": "OTIS"
+ },
+ "693506107": {
+  "exchange": "US",
+  "name": "PPG INDUSTRIES INC",
+  "ticker": "PPG"
+ },
+ "69370C100": {
+  "exchange": "US",
+  "name": "PTC INC",
+  "ticker": "PTC"
+ },
+ "695156109": {
+  "exchange": "US",
+  "name": "PACKAGING CORP OF AMERICA",
+  "ticker": "PKG"
+ },
+ "697435105": {
+  "exchange": "US",
+  "name": "PALO ALTO NETWORKS INC",
+  "ticker": "PANW"
+ },
+ "701094104": {
+  "exchange": "US",
+  "name": "PARKER HANNIFIN CORP",
+  "ticker": "PH"
+ },
+ "70432V102": {
+  "exchange": "US",
+  "name": "PAYCOM SOFTWARE INC",
+  "ticker": "PAYC"
+ },
+ "713448108": {
+  "exchange": "US",
+  "name": "PEPSICO INC",
+  "ticker": "PEP"
+ },
+ "714046109": {
+  "exchange": "US",
+  "name": "REVVITY INC",
+  "ticker": "RVTY"
+ },
+ "717081103": {
+  "exchange": "US",
+  "name": "PFIZER INC",
+  "ticker": "PFE"
+ },
+ "723787107": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "73278L105": {
+  "exchange": "US",
+  "name": "POOL CORP",
+  "ticker": "POOL"
+ },
+ "742718109": {
+  "exchange": "US",
+  "name": "PROCTER & GAMBLE CO/THE",
+  "ticker": "PG"
+ },
+ "74340W103": {
+  "exchange": "US",
+  "name": "PROLOGIS INC",
+  "ticker": "PLD"
+ },
+ "74460D109": {
+  "exchange": "US",
+  "name": "PUBLIC STORAGE",
+  "ticker": "PSA"
+ },
+ "745867101": {
+  "exchange": "US",
+  "name": "PULTEGROUP INC",
+  "ticker": "PHM"
+ },
+ "74736K101": {
+  "exchange": "US",
+  "name": "QORVO INC",
+  "ticker": "QRVO"
+ },
+ "74743L100": {
+  "exchange": "US",
+  "name": "QNITY ELECTRONICS INC",
+  "ticker": "Q"
+ },
+ "747525103": {
+  "exchange": "US",
+  "name": "QUALCOMM INC",
+  "ticker": "QCOM"
+ },
+ "74762E102": {
+  "exchange": "US",
+  "name": "QUANTA SERVICES INC",
+  "ticker": "PWR"
+ },
+ "74834L100": {
+  "exchange": "US",
+  "name": "QUEST DIAGNOSTICS INC",
+  "ticker": "DGX"
+ },
+ "751212101": {
+  "exchange": "US",
+  "name": "RALPH LAUREN CORP",
+  "ticker": "RL"
+ },
+ "75886F107": {
+  "exchange": "US",
+  "name": "REGENERON PHARMACEUTICALS",
+  "ticker": "REGN"
+ },
+ "760759100": {
+  "exchange": "US",
+  "name": "REPUBLIC SERVICES INC",
+  "ticker": "RSG"
+ },
+ "761152107": {
+  "exchange": "US",
+  "name": "RESMED INC",
+  "ticker": "RMD"
+ },
+ "770323103": {
+  "exchange": "US",
+  "name": "ROBERT HALF INC",
+  "ticker": "RHI"
+ },
+ "773903109": {
+  "exchange": "US",
+  "name": "ROCKWELL AUTOMATION INC",
+  "ticker": "ROK"
+ },
+ "775711104": {
+  "exchange": "US",
+  "name": "ROLLINS INC",
+  "ticker": "ROL"
+ },
+ "776696106": {
+  "exchange": "US",
+  "name": "ROPER TECHNOLOGIES INC",
+  "ticker": "ROP"
+ },
+ "778296103": {
+  "exchange": "US",
+  "name": "ROSS STORES INC",
+  "ticker": "ROST"
+ },
+ "79466L302": {
+  "exchange": "US",
+  "name": "SALESFORCE INC",
+  "ticker": "CRM"
+ },
+ "80004C200": {
+  "exchange": "US",
+  "name": "SANDISK CORP",
+  "ticker": "SNDK"
+ },
+ "806407102": {
+  "exchange": "US",
+  "name": "HENRY SCHEIN INC",
+  "ticker": "HSIC"
+ },
+ "806857108": {
+  "exchange": "US",
+  "name": "SLB LTD",
+  "ticker": "SLB"
+ },
+ "81762P102": {
+  "exchange": "US",
+  "name": "SERVICENOW INC",
+  "ticker": "NOW"
+ },
+ "824348106": {
+  "exchange": "US",
+  "name": "SHERWIN-WILLIAMS CO/THE",
+  "ticker": "SHW"
+ },
+ "83088M102": {
+  "exchange": "US",
+  "name": "SKYWORKS SOLUTIONS INC",
+  "ticker": "SWKS"
+ },
+ "831865209": {
+  "exchange": "US",
+  "name": "SMITH (A.O.) CORP",
+  "ticker": "AOS"
+ },
+ "83417M104": {
+  "exchange": "US",
+  "name": "SOLAREDGE TECHNOLOGIES INC",
+  "ticker": "SEDG"
+ },
+ "844741108": {
+  "exchange": "US",
+  "name": "SOUTHWEST AIRLINES CO",
+  "ticker": "LUV"
+ },
+ "854502101": {
+  "exchange": "US",
+  "name": "STANLEY BLACK & DECKER INC",
+  "ticker": "SWK"
+ },
+ "855244109": {
+  "exchange": "US",
+  "name": "STARBUCKS CORP",
+  "ticker": "SBUX"
+ },
+ "858119100": {
+  "exchange": "US",
+  "name": "STEEL DYNAMICS INC",
+  "ticker": "STLD"
+ },
+ "863667101": {
+  "exchange": "US",
+  "name": "STRYKER CORP",
+  "ticker": "SYK"
+ },
+ "86800U104": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "86800U302": {
+  "exchange": "US",
+  "name": "SUPER MICRO COMPUTER INC",
+  "ticker": "SMCI"
+ },
+ "871607107": {
+  "exchange": "US",
+  "name": "SYNOPSYS INC",
+  "ticker": "SNPS"
+ },
+ "872540109": {
+  "exchange": "US",
+  "name": "TJX COMPANIES INC",
+  "ticker": "TJX"
+ },
+ "876030107": {
+  "exchange": "US",
+  "name": "TAPESTRY INC",
+  "ticker": "TPR"
+ },
+ "87612E106": {
+  "exchange": "US",
+  "name": "TARGET CORP",
+  "ticker": "TGT"
+ },
+ "879369106": {
+  "exchange": "US",
+  "name": "TELEFLEX INC",
+  "ticker": "TFX"
+ },
+ "880770102": {
+  "exchange": "US",
+  "name": "TERADYNE INC",
+  "ticker": "TER"
+ },
+ "88160R101": {
+  "exchange": "US",
+  "name": "TESLA INC",
+  "ticker": "TSLA"
+ },
+ "882508104": {
+  "exchange": "US",
+  "name": "TEXAS INSTRUMENTS INC",
+  "ticker": "TXN"
+ },
+ "88262P102": {
+  "exchange": "US",
+  "name": "TEXAS PACIFIC LAND CORP",
+  "ticker": "TPL"
+ },
+ "88339J105": {
+  "exchange": "US",
+  "name": "TRADE DESK INC/THE -CLASS A",
+  "ticker": "TTD"
+ },
+ "883556102": {
+  "exchange": "US",
+  "name": "THERMO FISHER SCIENTIFIC INC",
+  "ticker": "TMO"
+ },
+ "88579Y101": {
+  "exchange": "US",
+  "name": "3M CO",
+  "ticker": "MMM"
+ },
+ "886547108": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "892356106": {
+  "exchange": "US",
+  "name": "TRACTOR SUPPLY COMPANY",
+  "ticker": "TSCO"
+ },
+ "896239100": {
+  "exchange": "US",
+  "name": "TRIMBLE INC",
+  "ticker": "TRMB"
+ },
+ "90184L102": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "902252105": {
+  "exchange": "US",
+  "name": "TYLER TECHNOLOGIES INC",
+  "ticker": "TYL"
+ },
+ "90353T100": {
+  "exchange": "US",
+  "name": "UBER TECHNOLOGIES INC",
+  "ticker": "UBER"
+ },
+ "90384S303": {
+  "exchange": "US",
+  "name": "ULTA BEAUTY INC",
+  "ticker": "ULTA"
+ },
+ "904311107": {
+  "exchange": "US",
+  "name": "UNDER ARMOUR INC-CLASS A",
+  "ticker": "UAA"
+ },
+ "904311206": {
+  "exchange": "US",
+  "name": "UNDER ARMOUR INC-CLASS C",
+  "ticker": "UA"
+ },
+ "907818108": {
+  "exchange": "US",
+  "name": "UNION PACIFIC CORP",
+  "ticker": "UNP"
+ },
+ "911312106": {
+  "exchange": "US",
+  "name": "UNITED PARCEL SERVICE-CL B",
+  "ticker": "UPS"
+ },
+ "911363109": {
+  "exchange": "US",
+  "name": "UNITED RENTALS INC",
+  "ticker": "URI"
+ },
+ "918204108": {
+  "exchange": "US",
+  "name": "VF CORP",
+  "ticker": "VFC"
+ },
+ "91913Y100": {
+  "exchange": "US",
+  "name": "VALERO ENERGY CORP",
+  "ticker": "VLO"
+ },
+ "92220P105": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "92338C103": {
+  "exchange": "US",
+  "name": "VERALTO CORP",
+  "ticker": "VLTO"
+ },
+ "92343E102": {
+  "exchange": "US",
+  "name": "VERISIGN INC",
+  "ticker": "VRSN"
+ },
+ "92532F100": {
+  "exchange": "US",
+  "name": "VERTEX PHARMACEUTICALS INC",
+  "ticker": "VRTX"
+ },
+ "92537N108": {
+  "exchange": "US",
+  "name": "VERTIV HOLDINGS CO-A",
+  "ticker": "VRT"
+ },
+ "929160109": {
+  "exchange": "US",
+  "name": "VULCAN MATERIALS CO",
+  "ticker": "VMC"
+ },
+ "92942W107": {
+  "exchange": "US",
+  "name": "WK KELLOGG CO",
+  "ticker": "KLG"
+ },
+ "929740108": {
+  "exchange": "US",
+  "name": "WABTEC CORP",
+  "ticker": "WAB"
+ },
+ "931427108": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "94106L109": {
+  "exchange": "US",
+  "name": "WASTE MANAGEMENT INC",
+  "ticker": "WM"
+ },
+ "941848103": {
+  "exchange": "US",
+  "name": "WATERS CORP",
+  "ticker": "WAT"
+ },
+ "95040Q104": {
+  "exchange": "US",
+  "name": "WELLTOWER INC",
+  "ticker": "WELL"
+ },
+ "955306105": {
+  "exchange": "US",
+  "name": "WEST PHARMACEUTICAL SERVICES",
+  "ticker": "WST"
+ },
+ "962166104": {
+  "exchange": "US",
+  "name": "WEYERHAEUSER CO",
+  "ticker": "WY"
+ },
+ "969904101": {
+  "exchange": "US",
+  "name": "WILLIAMS-SONOMA INC",
+  "ticker": "WSM"
+ },
+ "98138H101": {
+  "exchange": "US",
+  "name": "WORKDAY INC-CLASS A",
+  "ticker": "WDAY"
+ },
+ "98419M100": {
+  "exchange": "US",
+  "name": "XYLEM INC",
+  "ticker": "XYL"
+ },
+ "989207105": {
+  "exchange": "US",
+  "name": "ZEBRA TECHNOLOGIES CORP-CL A",
+  "ticker": "ZBRA"
+ },
+ "98956P102": {
+  "exchange": "US",
+  "name": "ZIMMER BIOMET HOLDINGS INC",
+  "ticker": "ZBH"
+ },
+ "G0176J109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G29183103": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G51502105": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G5494J103": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G5960L103": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G6095L109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G7945M107": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G7S00T104": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G8473T100": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "G8994E103": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "H2906T109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "H84989104": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "N/A": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ },
+ "N6596X109": {
+  "exchange": null,
+  "name": null,
+  "ticker": null
+ }
+}
