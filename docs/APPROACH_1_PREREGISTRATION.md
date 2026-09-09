@@ -31,6 +31,48 @@ reversed and made worse. `scripts/equity_pit_universe.py` knows *which* names
 existed on any date; their prices are not available at any price this project
 is currently paying.
 
+### Correction, 2026-09-09: the constraint was daily-specific
+
+**The paragraph above stands as written and is not edited.** What follows was
+established afterwards, and is recorded here rather than folded into the text
+because a pre-registration that can be rewritten is worth nothing.
+
+Both failures reproduce exactly -- against `TIME_SERIES_DAILY`. Neither
+survives a move to the weekly endpoint, which takes no `outputsize` and is
+free:
+
+| symbol | daily | weekly |
+|---|---|---|
+| `ADVM` | 100 bars, **1 distinct close** (4.3600), 100/100 zero volume | **550 bars, 414 distinct closes**, 0.57 - 24.63 |
+| `FXEN` | `"Invalid API call"` | **843 bars, 549 distinct closes, 0 zero-volume**, ending 2015-12-31 |
+
+ADVM's weekly series falls from 24.63 to 0.57. That decline is the exact thing
+the paragraph above says was replaced by a placeholder, and it is present.
+FXEN -- the name that could not be fetched at all -- returns 843 clean bars
+ending on its delisting date.
+
+So this sentence is no longer true: *"their prices are not available at any
+price this project is currently paying."* They are available, free, including
+the loss.
+
+Three things this does **not** establish, each of which matters more than the
+finding:
+
+- **The placeholder still exists at weekly, bounded.** ADVM's weekly series runs
+  past its delisting to the present with 32 zero-volume bars, ~6% of 550 and
+  confined to the tail. Dropping zero-volume rows recovers the honest series.
+  At daily it was 100 of 100 -- the whole retrievable window.
+- **P3 is unaffected.** It is defined on daily weekday coverage, where weekly
+  caps at 20% against an 80% floor. This changes nothing there.
+- **Weekly is a different horizon, not a cheaper version of this test.** Whether
+  cross-sectional selection works at a weekly rebalance is untested and this
+  says nothing about it.
+
+What it does change is that the *reason* slot 1 avoided the stronger hypothesis
+was a property of one endpoint rather than of the data. The slot is unspent, so
+that choice is still open -- see the stop rule's ledger. Reproduce with
+`python scripts/av_tier_probe.py` and the check in this correction's commit.
+
 So the question becomes: which hypothesis can be tested honestly given that?
 
 **A strategy that is flat at every close barely touches the gap that delisting

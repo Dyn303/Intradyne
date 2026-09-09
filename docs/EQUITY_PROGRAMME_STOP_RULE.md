@@ -96,6 +96,25 @@ companies as zero-volatility assets. A strategy flat at every close barely
 touches that gap, which is why slot 1 is intraday. That is a data constraint
 being respected, not a preference.
 
+**2026-09-09: that constraint is daily-specific, and the slot is still
+unspent.** Both cited failures reproduce against `TIME_SERIES_DAILY` and
+neither survives at the weekly endpoint, which is free and takes no
+`outputsize`. `ADVM` returns 414 distinct closes over 550 weekly bars, carrying
+the fall from 24.63 to 0.57 that the daily placeholder stood in for; `FXEN`,
+which the daily endpoint refuses outright, returns 843 clean bars ending on its
+2015 delisting date. See the correction appended to
+`docs/APPROACH_1_PREREGISTRATION.md`.
+
+This does not decide anything. It removes a stated reason for a choice that has
+not yet been made: a slot is spent when its test runs to a verdict or any
+interim result is seen, and none has been. Whether cross-sectional selection is
+testable at a *weekly* rebalance is a separate question this has not touched,
+and the horizon change is not free -- it trades cost amortisation for a
+different hypothesis than the one A2's breadth finding was measured against.
+
+Recording it here because the alternative is that the reason quietly stops
+being true while the choice it justified stays in place.
+
 ---
 
 ## What counts as an approach
