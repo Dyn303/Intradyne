@@ -28,9 +28,16 @@ router = APIRouter()
 # further to what Binance is actually asked for.
 _TIMEFRAMES = frozenset({"1m", "5m", "15m", "30m", "1h", "4h", "1d"})
 
-# BASE/QUOTE, uppercase alphanumerics only. Excludes '.', '/', '\' and every
-# other separator, so a validated symbol cannot contribute a path segment.
-_SYMBOL_RE = re.compile(r"^[A-Z0-9]{2,15}/[A-Z0-9]{2,15}$")
+# BASE/QUOTE for crypto, or a bare ticker for an equity. Uppercase
+# alphanumerics, with at most one '/' as a pair separator and '-' only
+# inside a ticker for share classes (BRK-B). Every other separator is
+# still excluded, '.' included, so a validated symbol cannot express '..'
+# or contribute a path segment -- the property `_dataset_path` relies on.
+#
+# The pattern required a slash until equities came into scope, which
+# rejected every bare ticker outright: `AAPL` could not be requested at
+# all, whatever the dataset directory held.
+_SYMBOL_RE = re.compile(r"^[A-Z0-9]{1,15}(?:-[A-Z]{1,3}|/[A-Z0-9]{1,15})?$")
 
 
 def _validate(symbol: str, tf: str) -> tuple[str, str]:
@@ -44,7 +51,7 @@ def _validate(symbol: str, tf: str) -> tuple[str, str]:
     sym = (symbol or "").strip().upper()
     if not _SYMBOL_RE.match(sym):
         raise HTTPException(status_code=400, detail="invalid_symbol")
-    allowed = set(load_settings().allowed_crypto_list())
+    allowed = set(load_settings().allowed_instruments())
     if allowed and sym not in allowed:
         raise HTTPException(status_code=400, detail=f"symbol_not_allowed: {sym}")
     timeframe = (tf or "").strip()
