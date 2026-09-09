@@ -14,3 +14,8 @@ prometheus-client==0.20.0
 optuna==3.6.1
 matplotlib==3.9.2
 pydantic-settings==2.6.1
+# Only imported when DB_URL names a Postgres database; the SQLite default
+# needs nothing beyond the standard library. [binary] ships the libpq wheel so
+# the slim image needs no build toolchain, [pool] is the connection pool that
+# keeps three stores from opening a TCP connection per query.
+psycopg[binary,pool]==3.3.5

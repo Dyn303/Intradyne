@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-import sqlite3
 from urllib.parse import urlparse
 
-from intradyne.core.equity import sqlite_path_from_url
+from intradyne.core.db import probe as db_probe
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
@@ -33,32 +32,19 @@ def readyz():
     s = load_settings()
     db_ok = False
     redis_ok = False
-    # DB check (sqlite only)
+    # DB check. A readiness probe must observe, never provision: this used to
+    # call os.makedirs() and open the database in create mode, so it
+    # manufactured the dependency it was reporting on and could not fail --
+    # and an unauthenticated GET wrote to the filesystem, which also breaks
+    # under a read_only container root. db.probe() preserves that for SQLite
+    # and does the equivalent for Postgres.
+    #
+    # It also replaced a `db_ok = True  # skip for non-sqlite` branch. Once
+    # DB_URL can name Postgres that branch is the old defect again in a new
+    # place: the one deployment whose database is a separate service over the
+    # network is the one where readiness could not report it was down.
     try:
-        if s.db_url.startswith("sqlite"):
-            # A readiness probe must observe, never provision. This used to
-            # call os.makedirs() and open the database in create mode, so it
-            # manufactured the dependency it was reporting on and could not
-            # fail -- and an unauthenticated GET wrote to the filesystem,
-            # which also breaks under a read_only container root.
-            path = sqlite_path_from_url(s.db_url)
-            parent = os.path.dirname(path) or "."
-            if not os.path.isdir(parent):
-                db_ok = False
-            elif os.path.exists(path):
-                # mode=rw opens without creating, so a missing or unreadable
-                # file is reported rather than silently conjured.
-                conn = sqlite3.connect(f"file:{path}?mode=rw", uri=True)
-                try:
-                    conn.execute("SELECT 1")
-                finally:
-                    conn.close()
-                db_ok = True
-            else:
-                # Not created yet; ready if we could create it on first write.
-                db_ok = os.access(parent, os.W_OK)
-        else:
-            db_ok = True  # skip for non-sqlite in this minimal build
+        db_ok = db_probe(s.db_url)
     except Exception:
         db_ok = False
     # Redis check (TCP ping if URL given)
