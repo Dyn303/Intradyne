@@ -6,13 +6,16 @@ are where a backend swap goes quietly wrong -- a scheme silently defaulting to
 the wrong engine, or SQL that runs on one and means something else on the
 other.
 
-The second kind needs a live Postgres and is skipped without one. Set
-``TEST_POSTGRES_URL`` to run it, e.g.
+The second kind needs a live Postgres. Set ``TEST_POSTGRES_URL`` to run it:
 
     TEST_POSTGRES_URL=postgresql://intradyne:intradyne@localhost:5432/intradyne
 
-Those tests are the only proof that the three stores behave identically on both
-backends, so CI for the Postgres path is not real until that variable is set.
+CI sets it against a service container (``make test-postgres`` does the
+equivalent locally). Skipping is allowed on a developer machine with no
+database running and nowhere else: these tests are the only proof the three
+stores behave identically on both backends, and a skip still exits 0, so
+:func:`test_ci_runs_the_postgres_suite` turns a skipped suite into a failure
+whenever ``CI`` is set.
 """
 
 from __future__ import annotations
@@ -31,6 +34,30 @@ POSTGRES_URL = os.getenv("TEST_POSTGRES_URL")
 requires_postgres = pytest.mark.skipif(
     not POSTGRES_URL, reason="set TEST_POSTGRES_URL to exercise the Postgres backend"
 )
+
+
+def test_ci_runs_the_postgres_suite():
+    """In CI, a skipped Postgres suite is a failure rather than a pass.
+
+    Every test below skips when TEST_POSTGRES_URL is unset, and pytest exits 0
+    on skips. So a service container that failed to start, a renamed variable,
+    or a dropped `env:` block would leave the Postgres gate reporting green
+    while testing nothing -- the same shape as the `/readyz` branch that
+    answered "ready" for every non-SQLite database, and as the guardrails that
+    read an empty history and found no drawdown. A check that cannot fail is
+    not a check.
+
+    Local runs with no database are exempt: skipping is the right behaviour
+    there, and requiring Docker to run the unit suite would be its own tax.
+    """
+    if os.getenv("CI", "").strip().lower() not in {"1", "true", "yes"}:
+        pytest.skip("only meaningful in CI, where a database is provisioned")
+    assert POSTGRES_URL, (
+        "TEST_POSTGRES_URL is unset in CI, so every Postgres test in this file "
+        "skipped and the suite passed without touching the backend the compose "
+        "stack actually runs on. Check the postgres service and the env: block "
+        "on the pytest step in .github/workflows/ci.yml."
+    )
 
 
 # --- classification -------------------------------------------------------

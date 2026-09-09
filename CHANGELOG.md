@@ -83,9 +83,16 @@
   three tables, verifies row counts, and refuses a non-empty target unless
   `--replace` is passed, since these tables are append-only with no natural key.
   Never writes to the SQLite side.
-- Tests: `tests/test_db_backends.py`. The dialect and classification tests run
-  everywhere; the store-behaviour tests need `TEST_POSTGRES_URL` and skip
-  without it, so the Postgres path is not covered by default CI.
+- Tests: `tests/test_db_backends.py`, covering both backends.
+- CI: added a `postgres:16-alpine` service container to `build-and-test` and
+  set `TEST_POSTGRES_URL` on the pytest step, so the store tests run against
+  the engine the compose stack actually uses. `TZ=Asia/Kuching` on the service
+  is load-bearing: Postgres defaults to UTC, which would make the daily-close
+  bucketing assertion pass no matter what the day expression did.
+  `test_ci_runs_the_postgres_suite` turns a skipped suite into a failure when
+  `CI` is set — a skip still exits 0, so a service that failed to start or a
+  dropped `env:` block would otherwise leave the gate green having tested
+  nothing.
 - Deps: `psycopg[binary,pool]==3.3.5`. Imported only when `DB_URL` names a
   Postgres database.
 

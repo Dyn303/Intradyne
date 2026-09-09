@@ -13,6 +13,33 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      # The three durable stores run on either SQLite or Postgres depending on
+      # DB_URL, and the compose stack uses Postgres. Without a database here
+      # the Postgres half of tests/test_db_backends.py skips, so the only
+      # coverage of the deployed backend would be the dialect logic -- the
+      # stores themselves would go untested on the engine they actually run on.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: intradyne
+          POSTGRES_USER: intradyne
+          POSTGRES_PASSWORD: intradyne
+          # Matches the deployment, and it is load-bearing for the test that
+          # daily closes bucket by UTC. Postgres defaults to UTC, which would
+          # make that assertion pass no matter what the day expression did;
+          # against Asia/Kuching a server-local bucket is eight hours out and
+          # the test fails, which is the whole point of having it.
+          TZ: Asia/Kuching
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U intradyne -d intradyne"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,6 +75,12 @@ jobs:
         run: mypy --pretty
 
       - name: Tests (pytest)
+        # TEST_POSTGRES_URL is what un-skips the Postgres store tests. If it is
+        # unset or wrong they skip and the suite still exits 0, so
+        # test_ci_runs_the_postgres_suite fails on a skip whenever CI is set --
+        # a green gate that never ran the backend is worse than no gate.
+        env:
+          TEST_POSTGRES_URL: postgresql://intradyne:intradyne@localhost:5432/intradyne
         run: pytest -q
 
       - name: Docker build

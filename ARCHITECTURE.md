@@ -49,9 +49,14 @@ Storage
 - The explainability ledger is deliberately *not* in either database. It is an
   append-only hash chain in a JSONL file and is single-writer by construction;
   two processes appending would fork the chain.
-- The Postgres half of `tests/test_db_backends.py` skips without a live
-  database. Until `TEST_POSTGRES_URL` is set (`make test-postgres`), CI covers
-  the SQLite path and the dialect logic, not the Postgres path itself.
+- Both backends are tested. CI runs a `postgres:16-alpine` service container
+  with `TZ=Asia/Kuching` (the deployment timezone — under UTC the daily-close
+  bucketing test would pass regardless of what the day expression did) and
+  sets `TEST_POSTGRES_URL` on the pytest step. `make test-postgres` is the
+  local equivalent. Skipping is allowed on a machine with no database running
+  and nowhere else: `test_ci_runs_the_postgres_suite` fails on a skip whenever
+  `CI` is set, because a skipped suite exits 0 and a gate that cannot fail is
+  not a gate.
 
 Build & CI
 - Lint: `ruff check src app tests`
