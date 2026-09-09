@@ -75,3 +75,9 @@ research-log:
 	# Regenerate docs/RESEARCH_LOG.md from the hash-chained run ledger.
 	# Exits non-zero if the chain is broken; the document still says so.
 	python scripts/research_ledger.py --write
+
+av-probe:
+	# Check the Alpha Vantage free-tier assumptions price_source is built on.
+	# Needs ALPHAVANTAGE_API_KEY; costs 6 of the 25 free requests per day.
+	# Exit 1 = an assumption is contradicted. Exit 2 = throttled, nothing learned.
+	python scripts/av_tier_probe.py
