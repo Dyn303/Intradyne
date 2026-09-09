@@ -240,8 +240,29 @@ class Settings(BaseSettings):
 
     # ---- derived -------------------------------------------------------
 
-    def allowed_crypto_list(self) -> List[str]:
+    def allowed_instruments(self) -> List[str]:
+        """Every configured instrument, crypto and equity alike, unmangled.
+
+        A bare symbol used to mean crypto shorthand -- `BTC` became
+        `BTC/USDT` -- and that was right while this system traded nothing else.
+        It stopped being right when equities came into scope, because `BTC` and
+        `AAPL` have exactly the same shape: `classify_symbol` reads both as
+        equities, and the append silently turned a configured equity into a
+        crypto pair that does not exist. An operator naming `AAPL` was then
+        told that `AAPL/USDT` was missing from the Shariah whitelist and
+        advised to add it there, which is the wrong remedy for an instrument
+        that needs a dated screen record instead.
+
+        The whitelist decides, because it is already the compliance ceiling and
+        it is the only thing here that knows a crypto base from a ticker: a
+        bare symbol whose USDT pair is screened *is* that pair, preserving the
+        shorthand exactly; anything else is left alone as an equity ticker.
+        Nothing is guessed from shape.
+        """
         raw = [s.strip() for s in (self.allowed_symbols or "").split(",") if s.strip()]
+        bases = {
+            p.split("/", 1)[0].upper() for p in self.compliance_universe() if "/" in p
+        }
         out: List[str] = []
         for s in raw:
             if "/" in s:
@@ -252,11 +273,27 @@ class Settings(BaseSettings):
                 if base.upper() == quote.upper():
                     continue
                 out.append(f"{base}/{quote}")
-            else:
-                if s.upper() == "USDT":
-                    continue
+            elif s.upper() in bases:
+                # Screened crypto named by its base. The shorthand stands.
                 out.append(f"{s}/USDT")
+            elif s.upper() == "USDT":
+                # A quote currency alone is not an instrument, and was already
+                # dropped before equities existed.
+                continue
+            else:
+                out.append(s)
         return out
+
+    def allowed_crypto_list(self) -> List[str]:
+        """The crypto subset, which is what an allow-list means.
+
+        `ShariahPolicy(allowed_crypto=...)` screens crypto against this and
+        screens equities against dated screen records instead, so handing it
+        an equity ticker here would offer the wrong evidence for that class.
+        """
+        from intradyne.risk.shariah import classify_symbol
+
+        return [s for s in self.allowed_instruments() if classify_symbol(s) == "crypto"]
 
     def compliance_universe(self) -> List[str]:
         """Every instrument the Shariah screen permits, from `whitelist.json`.
@@ -296,7 +333,7 @@ class Settings(BaseSettings):
         unscreened instrument, and it is logged rather than dropped quietly.
         """
         permitted = self.compliance_universe()
-        selected = self.allowed_crypto_list()
+        selected = self.allowed_instruments()
 
         if selected:
             # Matched case-insensitively. An operator writing `btc/usdt` means
@@ -307,10 +344,36 @@ class Settings(BaseSettings):
             chosen = {by_upper[s.upper()] for s in selected if s.upper() in by_upper}
             unscreened = [s for s in selected if s.upper() not in by_upper]
             if unscreened:
+                # Two classes, two remedies. Telling the operator of an equity
+                # to add it to a crypto whitelist sends them to the wrong
+                # place: `risk/shariah.py` permits equities on a dated screen
+                # record and refuses without one, and that map is populated by
+                # whoever made the ruling rather than by editing a JSON file.
+                from intradyne.risk.shariah import classify_symbol
+
+                crypto = [s for s in unscreened if classify_symbol(s) == "crypto"]
+                other = [s for s in unscreened if classify_symbol(s) != "crypto"]
+                parts = []
+                if crypto:
+                    parts.append(
+                        f"crypto absent from the whitelist: {sorted(crypto)} -- "
+                        "add them to engine/whitelist.json if they have been "
+                        "screened"
+                    )
+                if other:
+                    # A bare symbol is shape-ambiguous, which is the whole
+                    # reason this branch exists, so both remedies are named
+                    # rather than guessing which the operator meant.
+                    parts.append(
+                        f"bare symbols {sorted(other)} -- if crypto, write the "
+                        "pair (e.g. DOGE/USDT) and add it to "
+                        "engine/whitelist.json once screened; if an equity, it "
+                        "is permitted by a dated screen record rather than the "
+                        "whitelist, see risk/shariah.py"
+                    )
                 logger.bind(event="unscreened_symbols_ignored").warning(
-                    "ALLOWED_SYMBOLS names instruments absent from the Shariah "
-                    f"whitelist and they will not be traded: {sorted(unscreened)}. "
-                    "Add them to engine/whitelist.json if they have been screened."
+                    "ALLOWED_SYMBOLS names instruments that will not be traded. "
+                    + "; ".join(parts)
                 )
             syms = [s for s in permitted if s in chosen]
         else:
