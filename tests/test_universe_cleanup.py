@@ -52,6 +52,35 @@ def test_polygon_was_not_silently_re_added_as_pol():
     assert "POL/USDT" not in WHITELIST
 
 
+def test_the_dead_ticker_is_gone_from_the_operator_list_too():
+    """It left the whitelist in #54 and stayed in ALLOWED_SYMBOLS, so every
+    startup warned about a name nobody could trade. Removed from compliance
+    and removed from the operator list are two separate acts, and the second
+    was missed."""
+    from intradyne.core.config import Settings
+
+    assert "MATIC" not in Settings().allowed_symbols.upper()
+
+
+def test_pol_was_not_quietly_substituted_into_the_operator_list():
+    """The obvious repair for a dead ticker is to swap in its successor. That
+    is the one thing this must not do without a ruling."""
+    from intradyne.core.config import Settings
+
+    configured = Settings().allowed_symbols.upper().replace("/", ",").split(",")
+    assert "POL" not in configured
+
+
+def test_removing_the_dead_ticker_left_the_rest_intact():
+    """A cleanup that quietly drops a live name is worse than the warning it
+    was meant to silence."""
+    from intradyne.core.config import Settings
+
+    resolved = Settings().load_symbols()
+    for sym in ("BTC/USDT", "ETH/USDT", "SOL/USDT", "ADA/USDT", "DOT/USDT"):
+        assert sym in resolved, f"{sym} was lost with MATIC"
+
+
 def test_expensive_names_keep_their_compliance_ruling():
     """ADA at 4.51bps and DOT at 11.44bps are refused by the live cost filter.
     That is an economic fact and belongs in ALLOWED_SYMBOLS; the permission to
