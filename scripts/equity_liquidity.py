@@ -60,6 +60,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+from dotenv import find_dotenv, load_dotenv
 
 try:
     import httpx
@@ -311,6 +312,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("no symbols given; use --symbols or --symbols-file", flush=True)
         return 2
 
+        # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
     cache = Path(args.cache)
     verdicts: List[Verdict] = []
