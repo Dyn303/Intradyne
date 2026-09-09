@@ -1003,6 +1003,10 @@
   "delisted": null,
   "ticker": "SYK"
  },
+ "86800U104": {
+  "delisted": null,
+  "ticker": "SMCI"
+ },
  "86800U302": {
   "delisted": null,
   "ticker": "SMCI"
@@ -1238,5 +1242,9 @@
  "N/A": {
   "delisted": null,
   "ticker": "MDT"
+ },
+ "N6596X109": {
+  "delisted": null,
+  "ticker": "NXPI"
  }
 }

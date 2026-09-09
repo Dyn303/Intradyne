@@ -72,10 +72,22 @@ def normalise(name: Optional[str]) -> str:
 
     Returns an empty string for anything unusable, which never matches --
     an empty key must not become a bucket that collects unrelated issuers.
+
+    Full stops are **deleted** rather than turned into spaces, so a dotted
+    legal form survives as one word. Replacing them with spaces made the
+    normalisation asymmetric on punctuation alone: N-PORT writes "NXP
+    Semiconductors NV", where `NV` is stripped as a corporate form, while SEC
+    writes "NXP Semiconductors N.V.", which became `N V` -- two single letters
+    that no form rule matches. The same company, the same legal form, two
+    different keys, and NXP resolved to nothing.
+
+    This is a punctuation rule, not a looser comparison: the match still has
+    to be exact afterwards.
     """
     if not name:
         return ""
     s = name.upper().replace("&AMP;", "&")
+    s = s.replace(".", "")
     s = re.sub(r"[^A-Z0-9 ]", " ", s)
     s = _FORM_RE.sub(" ", s)
     return re.sub(r"\s+", " ", s).strip()
@@ -119,7 +131,53 @@ def load_registry(
         ticker = entry.get("ticker")
         if key and ticker:
             counts.setdefault(key, set()).add(str(ticker))
-    return {k: next(iter(v)) for k, v in counts.items() if len(v) == 1}
+    out: Dict[str, str] = {}
+    for key, tickers in counts.items():
+        if len(tickers) == 1:
+            out[key] = next(iter(tickers))
+            continue
+        common = _common_line(tickers)
+        if common:
+            out[key] = common
+    return out
+
+
+#: Letters the exchanges append to a common symbol to name a derived line --
+#: preferred, warrant, right, unit. Deliberately not the whole alphabet: a
+#: bare prefix test would take `GOOG` over `GOOGL`, and those are two genuine
+#: Alphabet share classes, not a common and its preferred. SEC lists GOOGL,
+#: GOOG, GOOGM and GOOGN all under "Alphabet Inc.", so the prefix relation
+#: alone cannot tell a derived line from a share class.
+_DERIVED_SUFFIX = frozenset("PWRU")
+
+
+def _common_line(tickers: set) -> Optional[str]:
+    """The common stock among tickers sharing one issuer name, if unambiguous.
+
+    SEC files a preferred line under the issuer's own title, so `SMCI` and
+    `SMCIP` both read "Super Micro Computer, Inc." -- and dropping the name as
+    ambiguous lost the common stock over the mere existence of its preferred.
+
+    A ticker is treated as derived only when it is the shortest symbol plus
+    exactly one letter from `_DERIVED_SUFFIX`. That is the same reasoning
+    `delisted_names` applies to the `-P-` suffix; here the separator is absent,
+    so the appended form letter has to carry it.
+
+    Anything else stays dropped. `BRK-A` and `BRK-B` are two share classes with
+    neither a prefix of the other; `GOOGL` and `GOOG` are two share classes
+    where one *is* a prefix of the other. Both are genuine ambiguity, and
+    picking either would be the silent coin flip this module exists to refuse.
+    """
+    shortest = min(tickers, key=len)
+    others = tickers - {shortest}
+    if not others:
+        return None
+    for t in others:
+        if len(t) != len(shortest) + 1 or not t.startswith(shortest):
+            return None
+        if t[-1] not in _DERIVED_SUFFIX:
+            return None
+    return shortest
 
 
 def recover(
