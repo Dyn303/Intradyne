@@ -138,7 +138,16 @@ class Settings(BaseSettings):
     explain_ledger_path: str = "explainability_ledger.jsonl"
 
     # Universe. Accepts either BASE or BASE/QUOTE.
-    allowed_symbols: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,MATIC,USDT"
+    # MATIC is absent deliberately. Polygon migrated the token to POL in 2024,
+    # so the ticker names no live instrument, and it left the whitelist in #54.
+    # It lingered here afterwards -- removed from compliance, still in the
+    # operator list -- which is how the loop kept warning about it on startup.
+    #
+    # POL is not its replacement. POL/USDT is listed and would trade, but the
+    # Shariah ruling was issued against MATIC, and re-admitting the asset under
+    # a new ticker is a scholarly decision rather than a rename. See
+    # tests/test_universe_cleanup.py.
+    allowed_symbols: str = "BTC,ETH,SOL,XRP,ADA,LTC,AVAX,DOT,USDT"
     symbols: List[str] = []
 
     # HTTP rate limits
