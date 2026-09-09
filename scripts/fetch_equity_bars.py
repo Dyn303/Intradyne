@@ -61,6 +61,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import httpx
+from dotenv import find_dotenv, load_dotenv
 
 AV = "https://www.alphavantage.co/query"
 TD = "https://api.twelvedata.com/time_series"
@@ -285,6 +286,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     td = args.source == "twelvedata"
     env = "TWELVEDATA_API_KEY" if td else "ALPHAVANTAGE_API_KEY"
+    # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = os.getenv(env, "").strip()
     if not key:
         print(f"{env} is not set; see .env.example", flush=True)

@@ -29,6 +29,7 @@ import sys
 from typing import Callable, List, Optional, Tuple
 
 import httpx
+from dotenv import find_dotenv, load_dotenv
 
 # (path, description, extra check on the response)
 Check = Tuple[str, str, Optional[Callable[[httpx.Response], Optional[str]]]]
@@ -73,6 +74,10 @@ CHECKS: List[Check] = [
 
 def main() -> int:
     base = os.getenv("API_BASE", "http://localhost:8000").rstrip("/")
+    # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = (os.getenv("X_API_KEY") or "").strip()
     headers = {"X-API-Key": key} if key else {}
     if not key:

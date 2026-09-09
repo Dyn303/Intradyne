@@ -43,9 +43,10 @@ import argparse
 import csv
 import json
 import math
+import statistics
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -69,6 +70,34 @@ HOLDS: List[Tuple[str, int]] = [
 
 #: Fees on the sell leg only (SEC + TAF), in basis points, approximate.
 SELL_SIDE_FEES_BPS = 0.3
+
+#: US equities quote in one-cent increments, so the *full* spread cannot be
+#: narrower than a cent: `100 / price` bps. `--spread-bps` is the half-spread
+#: paid per side, hence half of that.
+#:
+#: This matters because the flat default is a large-cap number. It is
+#: conservative above $50, where the floor falls below 1 bp -- and understates
+#: below it, badly: a $5 name carries a 10 bp half-spread, ten times assumed.
+TICK_CENTS = 0.01
+
+
+def half_spread_floor_bps(price: float) -> float:
+    """The narrowest half-spread a one-cent tick permits at this price."""
+    if price <= 0:
+        return 0.0
+    return (TICK_CENTS / price) * 1e4 / 2.0
+
+
+def price_band(price: float) -> str:
+    for hi, label in (
+        (10, "under $10"),
+        (25, "$10-25"),
+        (50, "$25-50"),
+        (100, "$50-100"),
+    ):
+        if price < hi:
+            return label
+    return "over $100"
 
 
 def load_csv(path: Path) -> List[Tuple[str, float]]:
@@ -120,6 +149,12 @@ def main() -> int:
         help="half-spread paid per side; 1.0 is a central liquid large-cap value",
     )
     ap.add_argument("--slippage-bps", type=float, default=1.0)
+    ap.add_argument(
+        "--flat-spread",
+        action="store_true",
+        help="use --spread-bps for every name, ignoring the tick floor. The "
+        "old behaviour, kept for comparison against the committed result.",
+    )
     ap.add_argument("--out", default="artifacts/equity_feasibility.json")
     args = ap.parse_args()
 
@@ -129,14 +164,26 @@ def main() -> int:
     if not files:
         raise SystemExit("no %s files under %s" % (args.interval, data))
 
-    round_trip_bps = (
-        round_trip_cost_pct(taker_bps=args.spread_bps, slippage_bps=args.slippage_bps)
-        * 1e4
-        + SELL_SIDE_FEES_BPS
-    )
+    def cost_bps(spread_bps: float) -> float:
+        return (
+            round_trip_cost_pct(taker_bps=spread_bps, slippage_bps=args.slippage_bps)
+            * 1e4
+            + SELL_SIDE_FEES_BPS
+        )
+
+    flat_round_trip = cost_bps(args.spread_bps)
 
     print("A1 -- feasibility gate, US equities")
-    print("round trip assumed : %.2f bps (%s bars)" % (round_trip_bps, args.interval))
+    if args.flat_spread:
+        print(
+            "round trip assumed : %.2f bps flat (%s bars)"
+            % (flat_round_trip, args.interval)
+        )
+    else:
+        print(
+            "round trip         : per name, max(%.2f bps assumed, tick floor) "
+            "(%s bars)" % (args.spread_bps, args.interval)
+        )
     print("crypto comparison  : 4 bps all-maker, 14 bps taker")
     print()
 
@@ -147,6 +194,14 @@ def main() -> int:
         per_sqrt_s, bars, sessions = intraday_sigma(rows)
         per_sqrt_s /= math.sqrt(bar_s)
 
+        # The cost is a property of the name, not of the study. A flat spread
+        # asks whether the *average large cap* clears its costs; the gate is
+        # supposed to ask whether the names being traded do.
+        price = statistics.median([px for _, px in rows]) if rows else 0.0
+        floor = half_spread_floor_bps(price)
+        spread = args.spread_bps if args.flat_spread else max(args.spread_bps, floor)
+        round_trip_bps = cost_bps(spread)
+
         moves = {}
         for label, secs in HOLDS:
             move = per_sqrt_s * math.sqrt(secs)
@@ -154,6 +209,10 @@ def main() -> int:
         breakeven_s = (round_trip_bps / per_sqrt_s) ** 2
 
         print("=== %s ===  %d bars, %d sessions" % (symbol, bars, sessions))
+        print(
+            "  median price $%.2f -> tick floor %.2f bps half-spread, "
+            "round trip %.2f bps" % (price, floor, round_trip_bps)
+        )
         print("  realised vol %.4f bps per sqrt(second)" % per_sqrt_s)
         for label, _ in HOLDS:
             m = moves[label]
@@ -168,6 +227,11 @@ def main() -> int:
                 "symbol": symbol,
                 "bars": bars,
                 "sessions": sessions,
+                "median_price": price,
+                "half_spread_floor_bps": floor,
+                "half_spread_used_bps": spread,
+                "round_trip_bps": round_trip_bps,
+                "price_band": price_band(price),
                 "bps_per_sqrt_second": per_sqrt_s,
                 "breakeven_hold_seconds": breakeven_s,
                 "holds": moves,
@@ -179,6 +243,32 @@ def main() -> int:
     worst = min(ratios)
     passed = worst > 1.0
 
+    # The point of the re-run: the gate is not one number when the cost is a
+    # function of price. A universe whose cheap names fail is a smaller
+    # universe, which is A2's breadth input, not a footnote here.
+    print("--- by price band ---")
+    bands: Dict[str, List[Dict[str, Any]]] = {}
+    for r in results:
+        bands.setdefault(r["price_band"], []).append(r)
+    order = ["under $10", "$10-25", "$25-50", "$50-100", "over $100"]
+    print(
+        "  %-10s %6s %12s %14s %10s"
+        % ("band", "names", "round trip", "2-min move", "ratio")
+    )
+    for label in order:
+        group = bands.get(label)
+        if not group:
+            continue
+        rt = statistics.median([g["round_trip_bps"] for g in group])
+        mv = statistics.median([g["holds"]["2 min"]["move_bps"] for g in group])
+        rs = [g["holds"]["2 min"]["ratio"] for g in group]
+        flag = "" if min(rs) > 1.0 else "   <-- fails"
+        print(
+            "  %-10s %6d %9.2f bps %11.2f bps %9.2fx%s"
+            % (label, len(group), rt, mv, statistics.median(rs), flag)
+        )
+    print()
+
     print("--- verdict ---")
     print(
         "  worst 2-minute move/cost ratio across %d names: %.2fx"
@@ -186,6 +276,35 @@ def main() -> int:
     )
     print("  crypto at the same hold: 0.25x (3.5 bps against 14 bps)")
     print("  A1: %s" % ("PASS" if passed else "FAIL"))
+
+    # A verdict driven by the worst name was the right shape when the cost was
+    # one number. Once it varies with price, a global FAIL can mean "one $6
+    # stock" rather than "equities are infeasible", and the second reading is
+    # the one someone takes from a single word. So the gate says which.
+    if not passed:
+        failing = [r for r in results if r["holds"]["2 min"]["ratio"] <= 1.0]
+        clears = [r for r in results if r["holds"]["2 min"]["ratio"] > 1.0]
+        print()
+        print(
+            "  %d of %d names fail, all of them cheap: %s"
+            % (
+                len(failing),
+                len(results),
+                ", ".join(
+                    "%s ($%.2f, %.2fx)"
+                    % (r["symbol"], r["median_price"], r["holds"]["2 min"]["ratio"])
+                    for r in sorted(failing, key=lambda r: r["median_price"])
+                ),
+            )
+        )
+        if clears:
+            floor = max(r["median_price"] for r in failing)
+            print(
+                "  Every name above $%.2f clears it, worst %.2fx. So this reads as a"
+                % (floor, min(r["holds"]["2 min"]["ratio"] for r in clears))
+            )
+            print("  price floor on the tradeable universe, not as infeasibility --")
+            print("  which is a universe-size question, and therefore A2's input.")
     print()
     print("  A pass means costs do not make the search hopeless. It is not")
     print("  evidence of an edge, and does not authorise a search on its own --")
@@ -198,7 +317,8 @@ def main() -> int:
             {
                 "gate": "A1_feasibility",
                 "interval": args.interval,
-                "round_trip_bps": round_trip_bps,
+                "flat_spread": args.flat_spread,
+                "flat_round_trip_bps": flat_round_trip,
                 "spread_bps": args.spread_bps,
                 "slippage_bps": args.slippage_bps,
                 "sell_side_fees_bps": SELL_SIDE_FEES_BPS,

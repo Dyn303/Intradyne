@@ -89,6 +89,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from dotenv import find_dotenv, load_dotenv
 
 try:
     import httpx
@@ -492,6 +493,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--refresh", action="store_true")
     args = p.parse_args(argv)
 
+    # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
     if not key:
         print("ALPHAVANTAGE_API_KEY is not set; see .env.example", flush=True)

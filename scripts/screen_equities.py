@@ -62,6 +62,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import httpx
+from dotenv import find_dotenv, load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fundamentals_asof import (  # noqa: E402
@@ -680,6 +681,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = ap.parse_args(argv)
 
+    # A key in .env reached some scripts and not others, so the same
+    # configuration worked or failed depending on the entry point. usecwd
+    # because the default search walks up from the calling file.
+    load_dotenv(find_dotenv(usecwd=True))
     key = os.getenv("ALPHAVANTAGE_API_KEY", "").strip()
     if not key:
         print("ALPHAVANTAGE_API_KEY is not set; see .env.example", flush=True)
