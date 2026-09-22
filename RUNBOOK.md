@@ -84,6 +84,7 @@ The ledger is append-only and hash-chained. To check it has not been altered:
 
 ```python
 from intradyne.core.ledger import Ledger
+
 ok, index, reason = Ledger(path="/app/data/explainability_ledger.jsonl").verify_chain()
 ```
 
