@@ -27,3 +27,8 @@ Maintain a Shariah-compliant, spot-only crypto trading backend with default-on g
 - Tests green, lints clean, types pass, Docker build OK
 - No unjustified image size bloat
 - Docs updated (CHANGELOG, runbooks)
+- Code is automatically committed with a descriptive message upon task completion.
+
+## Workflow Automation
+- **Auto-Commit:** Whenever an AI agent completes a functional change, it MUST automatically stage the changes (`git add .`) and commit them (`git commit -m "..."`) before finishing the turn.
+- **Auto-Push:** A Git `post-commit` hook is installed to automatically push every commit to the remote. You do not need to run `git push` manually.

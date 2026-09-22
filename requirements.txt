@@ -19,3 +19,4 @@ pydantic-settings==2.6.1
 # the slim image needs no build toolchain, [pool] is the connection pool that
 # keeps three stores from opening a TCP connection per query.
 psycopg[binary,pool]==3.3.5
+tardis-dev
