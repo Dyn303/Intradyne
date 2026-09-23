@@ -101,7 +101,7 @@ DEFAULT_BLOCKED_TAGS = ("gambling", "riba", "porn")
 
 
 #: A crypto pair: BASE/QUOTE, both alphanumeric, and not the same asset twice.
-_CRYPTO = re.compile(r"^([A-Z0-9]{2,15})/([A-Z0-9]{2,15})$")
+_CRYPTO = re.compile(r"^([A-Z0-9]{2,15})[/_-]([A-Z0-9]{2,15})$")
 
 #: A US equity ticker, including share classes (BRK-B) and the dotted form.
 _EQUITY = re.compile(r"^[A-Z]{1,5}([.-][A-Z]{1,3})?$")

@@ -252,14 +252,18 @@ class Guardrails:
         # 4) Risk metrics
         eq = self.risk.equity_series_30d()
         dd = dd_30d(eq)
+        intent = (req.meta or {}).get("intent", "")
         if dd >= self.th["dd_halt"]:
-            self._breach(
-                "dd_halt",
-                metric=round(dd, 6),
-                threshold=self.th["dd_halt"],
-                action="halt",
-            )
-            return "halt", [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"], req
+            if intent in ("reduce-only", "close"):
+                pass
+            else:
+                self._breach(
+                    "dd_halt",
+                    metric=round(dd, 6),
+                    threshold=self.th["dd_halt"],
+                    action="halt",
+                )
+                return "halt", [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"], req
         if dd >= self.th["dd_warn"]:
             self._breach(
                 "dd_warn",
@@ -293,14 +297,25 @@ class Guardrails:
         rets = self.risk.equity_daily_returns_30d()
         var = historical_var(rets, alpha=0.95)
         if var > self.th["var_max"]:
-            self._breach(
-                "var_stepdown",
-                metric=round(var, 6),
-                threshold=self.th["var_max"],
-                action="stepdown",
-            )
-            req = req.step_down()
-            reasons.append(f"var {var:.3f} > {self.th['var_max']:.3f}")
+            if req.side.lower() != "sell":
+                # Check for repeated small orders circumvention
+                recent_stepdowns = sum(
+                    1 for r in self.ledger.iter_recent(now - timedelta(hours=24))
+                    if r.get("type") == "var_stepdown" and r.get("symbol") == req.symbol
+                )
+                if recent_stepdowns >= 10:
+                    self._breach("var_ratelimit", symbol=req.symbol, action="block")
+                    return "block", ["var stepdown rate limit exceeded for symbol"], req
+
+                self._breach(
+                    "var_stepdown",
+                    symbol=req.symbol,
+                    metric=round(var, 6),
+                    threshold=self.th["var_max"],
+                    action="stepdown",
+                )
+                req = req.step_down()
+                reasons.append(f"var {var:.3f} > {self.th['var_max']:.3f}")
 
         return "allow", reasons, req
 
