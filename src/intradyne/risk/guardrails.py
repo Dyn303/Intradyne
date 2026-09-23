@@ -24,6 +24,9 @@ _BREACH_COUNTER = Counter(
     labelnames=("type", "action"),
 )
 
+SystemHalted: bool = False
+
+
 
 @dataclass
 class OrderReq:
@@ -58,6 +61,10 @@ class PriceFeed:
 
     def get_price(self, symbol: str, at: Optional[datetime] = None) -> Optional[float]:
         raise NotImplementedError
+
+    def get_high(self, symbol: str, since: datetime) -> Optional[float]:
+        """Return the highest price recorded for the symbol since the given time."""
+        return None
 
 
 class RiskData:
@@ -206,6 +213,10 @@ class Guardrails:
         return True, "ok"
 
     def gate_trade(self, req: OrderReq) -> Tuple[str, List[str], OrderReq]:
+        global SystemHalted
+        if SystemHalted:
+            return "halt", ["system_halted"], req
+
         reasons: List[str] = []
 
         # 0) Operator halt. Checked here rather than in the route so that it
@@ -235,6 +246,7 @@ class Guardrails:
         # this check was never reached and repeated breaches could never
         # escalate to a halt -- which is the entire purpose of a kill switch.
         if self._recent_breach_count(24) >= int(self.th["kill_switch"]):
+            SystemHalted = True
             self._breach("kill_switch", action="halt")
             return "halt", ["kill_switch"], req
 
@@ -276,9 +288,9 @@ class Guardrails:
         # 5) Flash crash check (1h drop > threshold)
         now = datetime.utcnow()
         p_now = self.price.get_price(req.symbol, now)
-        p_1h = self.price.get_price(req.symbol, now - timedelta(hours=1))
-        if p_now and p_1h and p_1h > 0:
-            drop = (p_1h - p_now) / p_1h
+        p_1h_high = self.price.get_high(req.symbol, now - timedelta(hours=1))
+        if p_now and p_1h_high and p_1h_high > 0:
+            drop = (p_1h_high - p_now) / p_1h_high
             if drop > self.th["flash"]:
                 self._breach(
                     "flash_crash",

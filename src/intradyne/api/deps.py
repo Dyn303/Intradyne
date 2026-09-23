@@ -34,6 +34,9 @@ class _MarkStorePriceFeed(PriceFeed):
     def get_price(self, symbol: str, at: Optional[datetime] = None) -> Optional[float]:
         return self._marks.get(symbol, at)
 
+    def get_high(self, symbol: str, since: datetime) -> Optional[float]:
+        return self._marks.get_high(symbol, since)
+
 
 class _SqliteRiskData(RiskData):
     """Equity history from disk.
