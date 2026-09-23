@@ -10,6 +10,7 @@
 - [ ] Connect the downloaded data directly into the Optuna backtester.
 
 ## 📚 Recent Discoveries & Decisions
+- **Guardrails (Phase 2):** Implemented a global `SystemHalted` state flag to prevent kill-switch ledger spam and duplicate alerts. Updated flash-crash detection to use a rolling 1-hour high price for more accurate point-to-peak drawdown calculation.
 - **Data Provider:** Decided on Tardis.dev for micro-scalping data because it provides the tick-level granularity (order book, trades) needed for 1s/5s timeframes, whereas others are too slow, rate-limited, or expensive.
 - **Tardis Connector:** Created `scripts/download_tardis.py` to fetch Tardis tick data and automatically resample it into Intradyne's `1m` or `5s` OHLCV CSV format.
 
