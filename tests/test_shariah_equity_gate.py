@@ -248,6 +248,9 @@ class _FlatPrice:
     def get_price(self, symbol, at=None):
         return 100.0
 
+    def get_high(self, symbol, since):
+        return 100.0
+
 
 def test_screened_equity_passes_the_guardrail(tmp_path):
     from intradyne.core.ledger import Ledger

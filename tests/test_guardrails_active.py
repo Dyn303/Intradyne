@@ -24,6 +24,9 @@ class _MarkFeed(PriceFeed):
     def get_price(self, symbol, at=None):
         return self._m.get(symbol, at)
 
+    def get_high(self, symbol, since):
+        return self._m.get_high(symbol, since)
+
 
 class _HistoryData(RiskData):
     def __init__(self, history: EquityHistory):
