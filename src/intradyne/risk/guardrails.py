@@ -24,9 +24,6 @@ _BREACH_COUNTER = Counter(
     labelnames=("type", "action"),
 )
 
-SystemHalted: bool = False
-
-
 
 @dataclass
 class OrderReq:
@@ -136,6 +133,7 @@ class Guardrails:
         }
         if thresholds:
             self.th.update(thresholds)
+        self._system_halted: bool = False
 
     def _breach(self, btype: str, **fields: Any) -> None:
         payload = {"type": btype}
@@ -213,8 +211,7 @@ class Guardrails:
         return True, "ok"
 
     def gate_trade(self, req: OrderReq) -> Tuple[str, List[str], OrderReq]:
-        global SystemHalted
-        if SystemHalted:
+        if self._system_halted:
             return "halt", ["system_halted"], req
 
         reasons: List[str] = []
@@ -246,7 +243,7 @@ class Guardrails:
         # this check was never reached and repeated breaches could never
         # escalate to a halt -- which is the entire purpose of a kill switch.
         if self._recent_breach_count(24) >= int(self.th["kill_switch"]):
-            SystemHalted = True
+            self._system_halted = True
             self._breach("kill_switch", action="halt")
             return "halt", ["kill_switch"], req
 
@@ -275,7 +272,11 @@ class Guardrails:
                     threshold=self.th["dd_halt"],
                     action="halt",
                 )
-                return "halt", [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"], req
+                return (
+                    "halt",
+                    [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"],
+                    req,
+                )
         if dd >= self.th["dd_warn"]:
             self._breach(
                 "dd_warn",
@@ -288,9 +289,12 @@ class Guardrails:
         # 5) Flash crash check (1h drop > threshold)
         now = datetime.utcnow()
         p_now = self.price.get_price(req.symbol, now)
+        p_1h = self.price.get_price(req.symbol, now - timedelta(hours=1))
         p_1h_high = self.price.get_high(req.symbol, now - timedelta(hours=1))
-        if p_now and p_1h_high and p_1h_high > 0:
-            drop = (p_1h_high - p_now) / p_1h_high
+        high = max(p_1h_high or 0.0, p_1h or 0.0) if (p_1h_high or p_1h) else None
+
+        if p_now and p_1h and high and high > 0:
+            drop = (high - p_now) / high
             if drop > self.th["flash"]:
                 self._breach(
                     "flash_crash",
@@ -312,7 +316,8 @@ class Guardrails:
             if req.side.lower() != "sell":
                 # Check for repeated small orders circumvention
                 recent_stepdowns = sum(
-                    1 for r in self.ledger.iter_recent(now - timedelta(hours=24))
+                    1
+                    for r in self.ledger.iter_recent(now - timedelta(hours=24))
                     if r.get("type") == "var_stepdown" and r.get("symbol") == req.symbol
                 )
                 if recent_stepdowns >= 10:

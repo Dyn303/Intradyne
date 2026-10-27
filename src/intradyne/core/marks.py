@@ -94,14 +94,18 @@ class MarkStore:
                 return None
             return best[1]
 
-    def get_high(self, symbol: str, since: Optional[datetime] = None) -> Optional[float]:
+    def get_high(
+        self, symbol: str, since: Optional[datetime] = None
+    ) -> Optional[float]:
         """Highest price recorded since `since`."""
         target = _to_epoch(since)
+        if target is not None:
+            target -= self.tolerance_seconds
         with self._lock:
             series = self._series.get(symbol)
             if not series:
                 return None
-            
+
             high = None
             for ts, price in series:
                 if target is None or ts >= target:
