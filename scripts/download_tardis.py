@@ -1,10 +1,11 @@
 import argparse
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 import pandas as pd
-from tardis_dev import datasets
+from tardis_dev import download_datasets_async
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tardis_downloader")
@@ -29,14 +30,16 @@ async def download_and_resample(
     temp_dir = out_dir / "tardis_temp"
     temp_dir.mkdir(parents=True, exist_ok=True)
 
+    api_key = os.getenv("TARDIS_API_KEY", "")
     try:
-        await datasets.download(
+        await download_datasets_async(
             exchange=exchange,
             data_types=["trades"],
             from_date=start_date,
             to_date=end_date,
             symbols=[tardis_symbol],
-            dir=str(temp_dir),
+            download_dir=str(temp_dir),
+            api_key=api_key,
         )
     except Exception as e:
         logger.error(f"Failed to download data from Tardis: {e}")
