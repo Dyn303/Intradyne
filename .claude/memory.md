@@ -8,6 +8,7 @@
 - [x] Debug and fix the GitHub CI failure (resolved: tolerance window in get_high, instance-scoped _system_halted, ruff format).
 - [x] Test the Tardis downloader script with a real download (resolved: updated to tardis_dev v5 API with download_datasets_async, downloaded BTC/USDT and ETH/USDT 1m bars for Bitget).
 - [x] Connect the downloaded data directly into the Optuna backtester (verified: backtest and optimize both execute cleanly against data/bitget/*.csv).
+- [x] Run API E2E smoke test suite (verified: all 10 checks passed on local Uvicorn instance via scripts/e2e_smoke.py).
 - [ ] Run multi-day or sub-minute (5s) optimization sweep to tune production params.
 
 ## 📚 Recent Discoveries & Decisions
