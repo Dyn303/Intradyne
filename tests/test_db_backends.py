@@ -234,6 +234,35 @@ def test_equity_history_round_trips_on_postgres(pg_url):
 
 
 @requires_postgres
+def test_operator_halt_survives_reopening_postgres(pg_url, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+
+    from intradyne.core.config import reset_settings_cache
+    from intradyne.risk.kill_switch import read_halt, set_halt
+
+    monkeypatch.setenv("DB_URL", pg_url)
+    reset_settings_cache()
+    set_halt(False)
+    alerts = []
+    monkeypatch.setattr(
+        "intradyne.risk.kill_switch.alert",
+        lambda event, payload: alerts.append(payload),
+    )
+    try:
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            changes = [
+                pool.submit(set_halt, True, "restore rehearsal") for _ in range(4)
+            ]
+            for change in changes:
+                change.result(timeout=10)
+        assert len(alerts) == 1
+        db.close_pools()
+        assert read_halt() == (True, "restore rehearsal")
+    finally:
+        set_halt(False)
+
+
+@requires_postgres
 def test_daily_closes_bucket_by_utc_on_postgres(pg_url):
     """The container runs TZ=Asia/Kuching. A day expression that used server
     local time would put a 23:00 UTC observation in the following day."""

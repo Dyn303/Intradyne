@@ -5,6 +5,7 @@ import pytest
 
 def test_prod_missing_bitget_creds_raises(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("MODE", "live")
     monkeypatch.delenv("BITGET_API_KEY", raising=False)
     monkeypatch.delenv("BITGET_API_SECRET", raising=False)
     monkeypatch.delenv("BITGET_API_PASSPHRASE", raising=False)
@@ -18,6 +19,7 @@ def test_prod_missing_bitget_creds_raises(monkeypatch: pytest.MonkeyPatch):
 
 def test_prod_allows_when_creds_present(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("MODE", "live")
     monkeypatch.setenv("BITGET_API_KEY", "bg_abcdef")
     monkeypatch.setenv("BITGET_API_SECRET", "s3cr3t")
     monkeypatch.setenv("BITGET_API_PASSPHRASE", "passphrase")
@@ -25,6 +27,17 @@ def test_prod_allows_when_creds_present(monkeypatch: pytest.MonkeyPatch):
 
     s = load_settings()
     assert s.bitget_api_key.startswith("bg_")
+
+
+def test_prod_paper_does_not_require_venue_credentials(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("MODE", "paper")
+    for key in ("BITGET_API_KEY", "BITGET_API_SECRET", "BITGET_API_PASSPHRASE"):
+        monkeypatch.setenv(key, "")
+
+    from intradyne.core.config import load_settings
+
+    assert load_settings().mode == "paper"
 
 
 def test_ccxt_mapping_fills_bitget_when_exchange_is_bitget(

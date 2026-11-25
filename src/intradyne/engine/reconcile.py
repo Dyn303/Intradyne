@@ -47,18 +47,20 @@ def reconcile_on_start(
     store: Optional[OrderKeyStore],
     *,
     live: bool,
-    grace_seconds: float = IN_FLIGHT_GRACE_SECONDS,
+    grace_seconds: float = 0.0,
 ) -> Dict[str, Any]:
     """Check for unresolved submissions and halt if any are found.
 
     Returns a summary. Halting is the point: the system refuses to trade until
     someone has confirmed what the venue actually holds.
     """
-    if store is None:
-        return {"checked": False, "reason": "no order key store", "unreconciled": []}
     if not live:
         # Paper fills are in-process and cannot be half-submitted.
         return {"checked": False, "reason": "not live", "unreconciled": []}
+    if store is None:
+        reason = "live order key storage unavailable"
+        set_halt(True, reason=reason)
+        return {"checked": False, "reason": reason, "unreconciled": [], "halted": True}
 
     unresolved = find_unreconciled(store, grace_seconds)
     if not unresolved:

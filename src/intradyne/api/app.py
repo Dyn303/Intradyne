@@ -31,7 +31,7 @@ from intradyne.api.deps import (
     is_prod,
     require_api_key_or_telegram,
 )
-from intradyne.api.deps import get_execution_manager
+from intradyne.api.deps import get_execution_manager, get_ledger
 from intradyne.api.models import FrontendConfig
 from intradyne.api.ratelimit import general_rate_limit
 from intradyne.core.config import (
@@ -40,6 +40,8 @@ from intradyne.core.config import (
     load_settings,
 )
 from intradyne.core.logging import setup_logging
+from intradyne.core.ledger import Ledger
+from intradyne.risk.kill_switch import read_halt
 
 # Read .env into the process environment before anything reads it.
 #
@@ -71,21 +73,26 @@ async def _lifespan(app: FastAPI):
     # Checked before the task is created, so a strategy with no demonstrated
     # edge fails the service at boot rather than quietly trading.
     assert_strategy_edge_gate(settings)
+    with Ledger.writer_lease(settings.explain_ledger_path):
+        await asyncio.to_thread(read_halt)
+        ledger_ok, _, reason = await asyncio.to_thread(get_ledger().verify_chain)
+        if not ledger_ok:
+            raise RuntimeError(f"explainability ledger verification failed: {reason}")
 
-    task: "asyncio.Task | None" = None
-    if settings.engine_enabled:
-        from intradyne.engine.loop import supervise
+        task: "asyncio.Task | None" = None
+        if settings.engine_enabled:
+            from intradyne.engine.loop import supervise
 
-        task = asyncio.create_task(
-            supervise(settings, get_execution_manager()), name="intradyne-engine"
-        )
-    try:
-        yield
-    finally:
-        if task is not None:
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+            task = asyncio.create_task(
+                supervise(settings, get_execution_manager()), name="intradyne-engine"
+            )
+        try:
+            yield
+        finally:
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
 
 
 def create_app() -> FastAPI:

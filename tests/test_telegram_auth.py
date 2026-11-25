@@ -248,6 +248,30 @@ def test_a_signed_request_reaches_the_api(secured):
     assert r.status_code == 200
 
 
+def test_telegram_sign_in_alone_cannot_release_operator_halt(secured, monkeypatch):
+    monkeypatch.setenv("ADMIN_SECRET", "operator-test-secret")
+    telegram = {"X-Telegram-Init-Data": make_init_data()}
+    operator = {**telegram, "X-Admin-Secret": "operator-test-secret"}
+    assert (
+        secured.post(
+            "/admin/halt", json={"enabled": True}, headers=operator
+        ).status_code
+        == 200
+    )
+    for path, request in (
+        ("/admin/halt", {"json": {"enabled": False}}),
+        ("/admin/kill-switch/toggle", {"params": {"enabled": False}}),
+    ):
+        assert secured.post(path, headers=telegram, **request).status_code == 401
+        assert secured.get("/admin/halt", headers=telegram).json()["enabled"]
+    assert (
+        secured.post(
+            "/admin/kill-switch/toggle", params={"enabled": False}, headers=operator
+        ).status_code
+        == 200
+    )
+
+
 def test_an_unauthenticated_request_is_refused(secured):
     assert secured.get("/risk/status").status_code == 401
 

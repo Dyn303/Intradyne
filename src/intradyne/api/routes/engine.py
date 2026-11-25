@@ -15,9 +15,10 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from intradyne.api.deps import get_execution_manager, get_ledger
+from intradyne.api.routes.admin import require_operator_secret
 from intradyne.core.config import load_settings
 from intradyne.engine import loop as engine_loop
 
@@ -104,7 +105,7 @@ def _apply(runtime: Dict[str, Any], source: str) -> Dict[str, Any]:
     return {"applied": True, "detail": applied, "source": source}
 
 
-@router.post("/engine/params/apply")
+@router.post("/engine/params/apply", dependencies=[Depends(require_operator_secret)])
 def apply_profile() -> Dict[str, Any]:
     """Apply artifacts/production_params.json to the running engine.
 
@@ -151,7 +152,7 @@ def apply_profile() -> Dict[str, Any]:
     return result
 
 
-@router.post("/engine/params/revert")
+@router.post("/engine/params/revert", dependencies=[Depends(require_operator_secret)])
 def revert_profile() -> Dict[str, Any]:
     """Restore the configuration that was running before the last apply.
 

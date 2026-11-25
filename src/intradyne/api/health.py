@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 from urllib.parse import urlparse
 
 from intradyne.core.db import probe as db_probe
@@ -27,6 +28,7 @@ def healthz():
 
 @router.get("/readyz")
 def readyz():
+    from intradyne.api.deps import get_ledger
     from intradyne.core.config import load_settings
 
     s = load_settings()
@@ -62,12 +64,20 @@ def readyz():
             redis_ok = True
     except Exception:
         redis_ok = False
-    ready = db_ok and redis_ok
+    try:
+        ledger_path = Path(s.explain_ledger_path)
+        ledger_ok = not ledger_path.exists() or get_ledger().verify_chain()[0]
+    except OSError:
+        ledger_ok = False
+    ready = db_ok and redis_ok and ledger_ok
     return JSONResponse(
         status_code=status.HTTP_200_OK
         if ready
         else status.HTTP_503_SERVICE_UNAVAILABLE,
-        content={"ready": ready, "components": {"db": db_ok, "redis": redis_ok}},
+        content={
+            "ready": ready,
+            "components": {"db": db_ok, "redis": redis_ok, "ledger": ledger_ok},
+        },
     )
 
 

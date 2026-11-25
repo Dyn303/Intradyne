@@ -428,7 +428,7 @@ class Settings(BaseSettings):
 
     def _validate_required_in_prod(self) -> None:
         env = _env("APP_ENV", "ENV", "ENVIRONMENT").lower()
-        if env not in {"prod", "production"}:
+        if env not in {"prod", "production"} or self.mode == "paper":
             return
         missing = [
             name

@@ -45,6 +45,6 @@ ENV MODE=paper \
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD python -c "import sys,urllib.request; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=5).getcode()==200 else sys.exit(1)"
+  CMD python -c "import os,urllib.request; request=urllib.request.Request('http://127.0.0.1:8000/readyz', headers={'X-API-Key': os.getenv('X_API_KEY', '')}); urllib.request.urlopen(request, timeout=4).close()"
 
 CMD ["uvicorn", "intradyne.api.app:app", "--host", "0.0.0.0", "--port", "8000"]

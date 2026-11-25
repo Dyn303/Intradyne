@@ -1,8 +1,10 @@
 
 {
-    email {env.CADDY_EMAIL}
+    email {$CADDY_EMAIL}
 }
-{env.DOMAIN} {
+{$DOMAIN} {
     encode zstd gzip
+    @private_metrics path /metrics /metrics/*
+    respond @private_metrics 404
     reverse_proxy api:8000
 }

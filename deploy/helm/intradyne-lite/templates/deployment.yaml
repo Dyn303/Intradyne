@@ -5,6 +5,8 @@ metadata:
   name: {{ include "intradyne-lite.fullname" . }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: {{ include "intradyne-lite.name" . }}
@@ -20,6 +22,8 @@ spec:
         ports:
         - containerPort: 8000
         env:
+        - name: EXPLAIN_LEDGER_PATH
+          value: /app/data/explainability_ledger.jsonl
         - name: CONFIG
           value: {{ .Values.env.CONFIG | quote }}
         - name: WATCHER_AUTOSTART

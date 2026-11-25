@@ -63,10 +63,10 @@ def _buy():
 # ---- drawdown ------------------------------------------------------------
 
 
-def test_a_25_percent_drawdown_halts_trading(tmp_path):
+def test_a_20_percent_drawdown_halts_trading(tmp_path):
     gr, _, history = _build(tmp_path)
     now = datetime.utcnow()
-    for days_ago, equity in ((10, 10_000.0), (5, 9_000.0), (1, 7_500.0)):
+    for days_ago, equity in ((10, 10_000.0), (5, 9_000.0), (1, 8_000.0)):
         history.record(equity, ts=now - timedelta(days=days_ago))
 
     action, reasons, _ = gr.gate_trade(_buy())
@@ -74,10 +74,10 @@ def test_a_25_percent_drawdown_halts_trading(tmp_path):
     assert "drawdown" in reasons[0]
 
 
-def test_a_small_drawdown_only_warns_and_still_allows(tmp_path):
+def test_a_15_percent_drawdown_warns_and_still_allows(tmp_path):
     gr, _, history = _build(tmp_path)
     now = datetime.utcnow()
-    for days_ago, equity in ((10, 10_000.0), (1, 8_300.0)):  # -17%, warn not halt
+    for days_ago, equity in ((10, 10_000.0), (1, 8_500.0)):
         history.record(equity, ts=now - timedelta(days=days_ago))
 
     action, reasons, _ = gr.gate_trade(_buy())
@@ -162,6 +162,19 @@ def test_flash_crash_pause_is_recorded(tmp_path):
     assert gr.ledger.verify_chain()[0] is True
 
 
+def test_flash_boundary_and_inventory_reduction(tmp_path):
+    gr, marks, _ = _build(tmp_path)
+    now = datetime.now(timezone.utc).timestamp()
+    marks.record("BTC/USDT", 100.0, ts=now - 3600)
+    marks.record("BTC/USDT", 70.0, ts=now)
+    assert gr.gate_trade(_buy())[0] == "allow"
+
+    marks.record("BTC/USDT", 69.0, ts=now + 0.001)
+    assert gr.gate_trade(_buy())[0] == "pause"
+    sell = OrderReq(symbol="BTC/USDT", side="sell", qty=1.0, base_inventory=1.0)
+    assert gr.gate_trade(sell)[0] == "allow"
+
+
 def test_a_short_window_is_not_mistaken_for_an_hourly_move(tmp_path):
     """A store holding five minutes of data must not answer a 'price an hour
     ago' query with a five-minute-old price -- that would report a brief move
@@ -198,6 +211,13 @@ def test_var_breach_steps_the_order_down(tmp_path):
     assert adjusted.qty < 1.0
 
 
+def test_var_at_five_percent_does_not_step_down(tmp_path, monkeypatch):
+    gr, _, _ = _build(tmp_path)
+    monkeypatch.setattr(gr.risk, "equity_daily_returns_30d", lambda: [-0.05])
+    action, reasons, approved = gr.gate_trade(_buy())
+    assert (action, reasons, approved.qty) == ("allow", [], 1.0)
+
+
 # ---- kill switch ---------------------------------------------------------
 
 
@@ -208,5 +228,4 @@ def test_kill_switch_halts_after_repeated_breaches(tmp_path):
     marks.record("BTC/USDT", 50.0, ts=now)
 
     seen = [gr.gate_trade(_buy())[0] for _ in range(5)]
-    assert seen[0] == "pause"
-    assert "halt" in seen, f"kill switch never engaged: {seen}"
+    assert seen == ["pause", "pause", "pause", "halt", "halt"]

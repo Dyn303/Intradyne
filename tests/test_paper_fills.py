@@ -133,6 +133,23 @@ def test_only_one_resting_entry_per_symbol():
     assert len(broker.open_orders("BTC/USDT")) == 1
 
 
+def test_halt_cancels_a_resting_paper_order_before_fill():
+    from intradyne.engine.execution import ExecutionManager
+    from intradyne.risk.kill_switch import set_halt
+
+    portfolio = Portfolio()
+    broker = PaperBroker(portfolio)
+    execution = ExecutionManager(_maker_ctx(portfolio, broker))
+    order = broker.place_order("BTC/USDT", "buy", "limit", 1.0, 99.0, _l1(100.0))
+    assert order.status == "open"
+
+    set_halt(True, reason="operator stop")
+    execution.sweep_paper_orders(_l1(98.0))
+    assert order.status == "canceled"
+    assert portfolio.get_position("BTC/USDT").base == 0
+    assert list(execution.ctx.ledger.iter_all())[-1]["event"] == "order_canceled_halt"
+
+
 def test_exits_always_cross_even_in_maker_mode():
     """A passive stop is not a stop: it rests unfilled exactly when the
     market is running away, leaving the position open."""

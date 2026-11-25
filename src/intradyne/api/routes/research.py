@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from prometheus_client import Gauge
 
 from intradyne.backtester.engine import run_backtest
+from intradyne.api.deps import is_prod
+from intradyne.api.routes.admin import require_operator_secret
 # metrics available for future use
 
 
@@ -325,7 +327,7 @@ async def research_profile_best() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/research/profile/apply")
+@router.post("/research/profile/apply", dependencies=[Depends(require_operator_secret)])
 async def research_profile_apply() -> Dict[str, Any]:
     """Marks the tuned profile as active and records to the ledger.
 
@@ -337,6 +339,8 @@ async def research_profile_apply() -> Dict[str, Any]:
     import orjson
     from intradyne.api.deps import get_ledger
 
+    if is_prod():
+        raise HTTPException(status_code=409, detail="promote a reviewed release image")
     led = get_ledger()
     path = os.path.join("artifacts", "tuned_profile.json")
     try:

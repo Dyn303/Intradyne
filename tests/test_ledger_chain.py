@@ -3,7 +3,28 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict
 
+import pytest
+
 from intradyne.core.ledger import Ledger
+
+
+def test_verify_chain_rejects_a_partial_tail(tmp_path: Path) -> None:
+    path = tmp_path / "ledger.jsonl"
+    ledger = Ledger(str(path))
+    ledger.append("event")
+    with path.open("ab") as stream:
+        stream.write(b'{"event":')
+    assert ledger.verify_chain() == (False, 1, "record is not valid JSON")
+
+
+def test_writer_lease_allows_only_one_service_and_recovers(tmp_path: Path) -> None:
+    path = str(tmp_path / "ledger.jsonl")
+    with Ledger.writer_lease(path):
+        with pytest.raises(RuntimeError, match="writer lease"):
+            with Ledger.writer_lease(path):
+                pytest.fail("both writers acquired the lease")
+    with Ledger.writer_lease(path):
+        assert Ledger(path).verify_chain()[0]
 
 
 def test_ledger_hash_chain(tmp_path: Path) -> None:
