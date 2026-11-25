@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add public Bitget spot quotes and use fresh quotes for manual paper market orders without a price.
 - Make the Compose and Caddy production profile paper-only, authenticate health checks, and limit metrics to the private monitoring network.
 - Send safety alerts through the production Alertmanager configuration. Replace scheduled parameter activation with authenticated, manual candidate inspection.
 - Persist operator halts in SQLite or PostgreSQL and enforce the configured operator secret on both halt endpoints.

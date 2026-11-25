@@ -27,6 +27,10 @@ Caddy, PostgreSQL 16 and one API replica. It sets production authentication,
 paper execution, and an idle strategy loop. Authenticated API paper orders
 remain available. Helm and the Nginx variant are outside this rehearsal.
 
+Use `GET /market/quote?symbol=BTC%2FUSDT` to read a public Bitget spot quote.
+Manual paper market orders with no price fetch a fresh bid and ask on demand.
+Limit orders still require a price. Unavailable or stale quotes return 503.
+
 ```bash
 docker compose -f deploy/docker-compose.prod.yml up -d --build
 ```

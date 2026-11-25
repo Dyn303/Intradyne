@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import time
+from math import isfinite
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from intradyne.risk.guardrails import Guardrails, OrderReq
 from intradyne.api.deps import get_execution_manager, get_guardrails
+from intradyne.core.config import load_settings
 
 
 router = APIRouter()
@@ -17,11 +20,51 @@ class OrderIn(BaseModel):
     symbol: str
     side: str
     qty: float = Field(gt=0)
-    #: Limit price, or the mark to fill a market order against. Required
-    #: while the engine loop is not running, since there is then no live mark
-    #: to price a market order from.
+    #: Limit price, or an optional manual mark for a paper market order.
     price: Optional[float] = Field(default=None, gt=0)
     type: str = "market"
+
+
+@router.get("/market/quote")
+async def market_quote(symbol: str = Query(max_length=32)) -> Dict[str, Any]:
+    """Read a fresh public Bitget spot quote for an allowlisted pair."""
+    pair = symbol.strip().upper()
+    if pair not in load_settings().allowed_crypto_list():
+        raise HTTPException(status_code=400, detail="symbol is not on the whitelist")
+    venue_symbol = pair.replace("/", "")
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://api.bitget.com/api/v3/market/tickers",
+                params={"category": "SPOT", "symbol": venue_symbol},
+            )
+            response.raise_for_status()
+        payload = response.json()
+        if payload["code"] != "00000":
+            raise ValueError("provider rejected quote")
+        quote = payload["data"][0]
+        if quote["symbol"] != venue_symbol or quote["category"] != "SPOT":
+            raise ValueError("unexpected venue instrument")
+        bid, ask, last = (
+            float(quote[field]) for field in ("bid1Price", "ask1Price", "lastPrice")
+        )
+        ts = float(quote["ts"]) / 1000
+        if not all(isfinite(value) and value > 0 for value in (bid, ask, last, ts)):
+            raise ValueError("invalid quote values")
+        if bid > ask or not -5 <= time.time() - ts <= 30:
+            raise ValueError("crossed or stale quote")
+    except (httpx.HTTPError, ValueError, TypeError, KeyError, IndexError) as exc:
+        raise HTTPException(
+            status_code=503, detail="fresh Bitget spot quote unavailable"
+        ) from exc
+    return {
+        "symbol": pair,
+        "source": "bitget_spot",
+        "bid": bid,
+        "ask": ask,
+        "last": last,
+        "ts": ts,
+    }
 
 
 def submit_order(
@@ -82,25 +125,27 @@ async def create_order(inp: OrderIn) -> Dict[str, Any]:
     type_ = inp.type.strip().lower()
     if type_ not in {"market", "limit"}:
         raise HTTPException(status_code=400, detail="type must be market or limit")
-    if inp.price is None:
+    if inp.price is None and (type_ == "limit" or load_settings().mode != "paper"):
         raise HTTPException(
             status_code=400,
             detail=(
-                "price_required: no live mark is available to fill against. "
-                "Supply the limit price, or the mark for a market order."
+                "price_required: supply a limit price or a mark for non-paper orders."
             ),
         )
 
     execution = get_execution_manager()
-    mark = float(inp.price)
-    l1 = {"bid": mark, "ask": mark, "last": mark, "ts": time.time()}
+    if inp.price is None:
+        l1 = await market_quote(inp.symbol)
+    else:
+        mark = float(inp.price)
+        l1 = {"bid": mark, "ask": mark, "last": mark, "ts": time.time()}
 
     result = await execution.submit(
-        symbol=inp.symbol,
+        symbol=l1.get("symbol", inp.symbol),
         side=side,
         type_=type_,
         qty=inp.qty,
-        price=mark if type_ == "limit" else None,
+        price=inp.price if type_ == "limit" else None,
         l1=l1,
         strategy_id="api",
         features={},

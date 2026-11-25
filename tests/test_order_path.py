@@ -188,10 +188,49 @@ def test_refusal_is_recorded_in_the_ledger(api):
 # ---- input validation ----------------------------------------------------
 
 
-def test_market_order_without_a_mark_is_rejected(api):
+def test_market_order_without_a_fresh_quote_is_rejected(api, monkeypatch):
+    import httpx
+
+    async def unavailable(*args, **kwargs):
+        raise httpx.ConnectError("exchange unavailable")
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", unavailable)
     r = _post(api, "/orders", {"symbol": "BTC/USDT", "side": "buy", "qty": 0.01})
-    assert r.status_code == 400
-    assert "price_required" in str(r.json()["detail"])
+    assert r.status_code == 503
+    assert "fresh Bitget spot quote unavailable" == r.json()["detail"]
+
+
+@pytest.mark.parametrize("age, status", [(0, 200), (90, 503)])
+def test_paper_market_order_uses_fresh_spot_quote(api, monkeypatch, age, status):
+    import time
+
+    import httpx
+
+    async def ticker(self, url, *, params):
+        assert params == {"category": "SPOT", "symbol": "BTCUSDT"}
+        return httpx.Response(
+            200,
+            request=httpx.Request("GET", url),
+            json={
+                "code": "00000",
+                "data": [
+                    {
+                        "symbol": "BTCUSDT",
+                        "category": "SPOT",
+                        "bid1Price": "9999",
+                        "ask1Price": "10000",
+                        "lastPrice": "9999.5",
+                        "ts": str(int((time.time() - age) * 1000)),
+                    }
+                ],
+            },
+        )
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", ticker)
+    r = _post(api, "/orders", {"symbol": "BTC/USDT", "side": "buy", "qty": 0.01})
+    assert r.status_code == status
+    if status == 200:
+        assert r.json()["status"] == "filled"
 
 
 @pytest.mark.parametrize("qty", [0, -1])
