@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make the Compose and Caddy production profile paper-only, authenticate health checks, and limit metrics to the private monitoring network.
+- Send safety alerts through the production Alertmanager configuration. Replace scheduled parameter activation with authenticated, manual candidate inspection.
 - Persist operator halts in SQLite or PostgreSQL and enforce the configured operator secret on both halt endpoints.
 - Retain ambiguous order claims for reconciliation and halt live submissions when venue confirmation is missing. The live boot gate remains closed.
 - Reject malformed audit records at startup and in readiness, and enforce one ledger writer per service deployment.

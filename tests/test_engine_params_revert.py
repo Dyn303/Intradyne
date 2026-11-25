@@ -49,6 +49,54 @@ def write_params(root: Path, marker: str) -> None:
     )
 
 
+def test_candidate_cannot_apply_or_revert_with_ordinary_access(applied, monkeypatch):
+    client, root, seen = applied
+    monkeypatch.setenv("ADMIN_SECRET", "operator-test-only")
+    write_params(root, "REVIEWED")
+    (root / "tuned_profile.json").write_text('{"marker":"CANDIDATE"}', encoding="utf-8")
+
+    assert client.post("/engine/params/apply").status_code == 401
+    assert client.post("/engine/params/revert").status_code == 401
+    assert seen == []
+    assert (
+        client.post(
+            "/engine/params/apply", headers={"X-Admin-Secret": "operator-test-only"}
+        ).status_code
+        == 200
+    )
+    assert [runtime["marker"] for runtime in seen] == ["REVIEWED"]
+
+
+def test_n8n_candidate_workflow_is_manual_and_read_only():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "deploy/n8n/workflows/nightly_tuning_apply.json"
+    )
+    workflow = json.loads(path.read_text(encoding="utf-8"))
+    assert workflow["active"] is False
+    trigger, request = workflow["nodes"]
+    assert trigger["type"] == "n8n-nodes-base.manualTrigger"
+    assert request["parameters"]["method"] == "GET"
+    assert request["parameters"]["url"].endswith("/research/profile/best")
+    assert request["parameters"]["genericAuthType"] == "httpHeaderAuth"
+
+
+def test_production_research_candidate_cannot_be_activated(applied, monkeypatch):
+    client, root, seen = applied
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("ADMIN_SECRET", "operator-test-only")
+    (root / "tuned_profile.json").write_text('{"marker":"CANDIDATE"}', encoding="utf-8")
+
+    assert client.post("/research/profile/apply").status_code == 401
+    assert (
+        client.post(
+            "/research/profile/apply", headers={"X-Admin-Secret": "operator-test-only"}
+        ).status_code
+        == 409
+    )
+    assert seen == []
+
+
 def test_revert_restores_the_previous_parameters(applied):
     """The bug this file was written for.
 

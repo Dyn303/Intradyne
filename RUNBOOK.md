@@ -22,17 +22,27 @@ uvicorn intradyne.api.app:app        # the whole system
 
 ## 2. Start and stop
 
+The supported Phase 3 deployment is `deploy/docker-compose.prod.yml` with
+Caddy, PostgreSQL 16 and one API replica. It sets production authentication,
+paper execution, and an idle strategy loop. Authenticated API paper orders
+remain available. Helm and the Nginx variant are outside this rehearsal.
+
 ```bash
-docker compose -f deploy/docker-compose.prod.yml up -d
+docker compose -f deploy/docker-compose.prod.yml up -d --build
 ```
 
-Required in production, or the container refuses to start:
+Set these in the deployment environment or the Compose interpolation file.
+Keep secret values out of command history and Git.
 
-| Variable            | Why it blocks startup                                  |
-| ------------------- | ------------------------------------------------------ |
-| `X_API_KEY`         | Auth is on by default in prod; without a key it fails closed |
-| `FRONTEND_ORIGINS`  | A `*` origin list is refused in prod                   |
-| `BITGET_API_KEY` / `_SECRET` / `_PASSPHRASE` | Broker settings validation |
+| Variable | Purpose |
+| --- | --- |
+| `DOMAIN`, `CADDY_EMAIL` | Public hostname and ACME contact. Point DNS at Caddy before starting. |
+| `X_API_KEY`, `ADMIN_SECRET` | Request authentication and distinct operator authorization. |
+| `FRONTEND_ORIGINS` | Explicit comma-separated frontend origins, including scheme. |
+| `POSTGRES_PASSWORD` | Database credential. If it contains URL-reserved characters, set `DB_URL` with a percent-encoded password. |
+| `INTRADYNE_IMAGE` | Release image reference. Use an immutable registry digest with `up -d --no-build` for deployed releases and rollback. |
+
+Engage the halt before shutting down. Use `docker compose -f deploy/docker-compose.prod.yml stop` to preserve the database and proxy volumes.
 
 ## 3. Health and state
 
@@ -41,14 +51,16 @@ Required in production, or the container refuses to start:
 | `/healthz`        | Process is up                                           |
 | `/readyz`         | Database reachable. Observes only; never creates        |
 | `/version`        | Running version                                         |
-| `/metrics`        | Prometheus exposition, including the safety gauges      |
+| `/metrics`        | Internal Prometheus scrape. Caddy returns 404.          |
 | `/risk/status`    | Drawdown, VaR, breach count, halt state, thresholds     |
 | `/portfolio`      | Balances and open positions                             |
 | `/engine/status`  | Whether the loop is running, and on which symbols       |
 | `/engine/state`   | Same portfolio the loop trades                          |
 | `/ledger/tail`    | Recent explainability records                           |
 
-All of these require the `X-API-Key` header when auth is enabled.
+Send your API key or valid Telegram Mini App auth to the API routes. The
+static dashboard can load publicly. Operator mutations require the separate
+secret. Use the command line to supply it.
 
 ## 4. Halting trading
 
@@ -57,8 +69,9 @@ gate, so it stops **every** order path — API-submitted and strategy-generated 
 and is enforced again at the live broker boundary.
 
 ```bash
-curl -X POST localhost:8080/admin/halt \
+curl -X POST "https://$DOMAIN/admin/halt" \
   -H "X-API-Key: $X_API_KEY" -H "X-Admin-Secret: $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
   -d '{"enabled": true}'
 ```
 
@@ -84,7 +97,43 @@ The second opened a copy of the first container's stopped SQLite database and
 ledger. It preserved the halt, rejected a paper order and a release without
 the operator secret, accepted the authorized release, and verified the ledger.
 
+### PostgreSQL recovery and rollback
+
+Check `/readyz` through Caddy during and after an outage. Keep the halt set and
+stop the API before backup so the database dump and JSONL ledger describe the
+same stopped writer. Use `pg_dump -Fc` against the configured database, copy
+the ledger, and record SHA-256 hashes for both. Keep the previous release image
+digest with the backup.
+
+Restore using `pg_restore --exit-on-error --no-owner` into a new database.
+Restore the matching ledger to a new path, then set `DB_URL` and
+`EXPLAIN_LEDGER_PATH` for one isolated API instance. Verify readiness, ledger
+integrity, and the persisted halt through Caddy. Review outstanding order
+claims and investigate any venue uncertainty before authorizing a release.
+Paper balances are process-local and are reinitialized at restart. The backup
+preserves the audited fills and durable risk and halt state.
+
+For an image rollback, keep the API stopped while selecting the previous
+`INTRADYNE_IMAGE` digest. If its database schema or ledger is incompatible,
+point it at the matching verified restore. Resume through `up -d --no-build`,
+repeat readiness and halt checks, and release only after operator review.
+
 ## 5. Alerts
+
+Enable the `monitoring` profile with a file containing only the approved
+Alertmanager webhook URL. Set `ALERT_WEBHOOK_FILE` to its path and
+`GRAFANA_ADMIN_PASSWORD` to a separate secret. Grafana listens on loopback.
+Prometheus scrapes the API on the Compose network and forwards alerts to the
+internal Alertmanager. Confirm a halt alert arrives at the authorized test
+receiver, record the receiver acknowledgement, then record who acknowledged
+the alert and when. The rehearsal uses a disposable local receiver and makes
+no external notification.
+
+The checked-in n8n candidate workflow is inactive and runs by manual trigger.
+Bind a Header Auth credential to `X-API-Key` to inspect an existing candidate.
+Remove any older imported scheduled workflow that calls parameter apply. A
+reviewed release image carries `production_params.json`. The candidate store
+is separate, and operator authorization is required for apply and revert.
 
 `deploy/monitoring/prometheus-alerts/intradyne.yml`, group `intradyne-safety`:
 

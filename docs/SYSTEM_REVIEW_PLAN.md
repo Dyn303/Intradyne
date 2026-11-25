@@ -49,6 +49,8 @@ Phase 1 proof is recorded in [the operations runbook](../RUNBOOK.md#4-halting-tr
 - For eligible research only, preregister costs, liquidity, dates, controls, concentration, statistical power and acceptance criteria. Include an independent chronological holdout and the applicable stop rules. For sub-minute crypto, record native Tardis provenance and explicitly reject minute-derived bars for qualification. Keep optimization and candidate production separate from promotion. Use `scripts/sweep_edge.py:143–209`, `scripts/download_tardis.py:81–141`, and `docs/STRATEGY_RESEARCH_FRAMEWORK.md:524–564`. Apply the existing closure and reopening rules in `docs/CRYPTO_REOPENING_PREREGISTRATION.md` before spending another crypto slot.
 - **Exit evidence.** Reproducible manifest and coverage report, explicit pass or hold decision, and a hash-verifiable research record for any preregistered run. Treat the ~1% daily target as an unverified hypothesis.
 
+See the [Phase 2 data qualification decision](RESEARCH_DATA_QUALIFICATION.md) for the reproduced coverage, provider findings, artifact locations, and tests.
+
 ## Phase 3 — Prove the production operator path in paper mode
 
 **How this serves the primary goal:** Operators rehearse the tested controls and recovery procedures on the deployment they will use.
@@ -56,6 +58,8 @@ Phase 1 proof is recorded in [the operations runbook](../RUNBOOK.md#4-halting-tr
 - Pick one supported production profile first. I recommend Compose with Caddy and PostgreSQL because that matches the checked-in production runbook. Pin version and image across supported profiles. Verify production-mode startup, auth and CORS requirements, Telegram permissions, dashboard and research assets, REST/OpenAPI agreement, and guarded metrics ingress at the proxy. Confirm monitoring targets match the selected topology and page a test recipient.
 - Rehearse paper fills, broker or feed outage, alerting, backup and restore, restart and order reconciliation. Validate diagnostics and readiness at the reverse proxy. Review n8n tuning against the parameter promotion rules and prove that a failed or unreviewed candidate cannot replace active parameters. Use `RUNBOOK.md:107–165`, `scripts/e2e_smoke.py`, `tests/test_dashboard_mount.py`, and `tests/test_telegram_auth.py`.
 - **Exit evidence.** Authenticated production-profile paper smoke log, backup and restore record, delivered and acknowledged alert, image size record, and a versioned runbook for start, halt, recovery and rollback.
+
+See the [Phase 3 paper operations rehearsal](PAPER_OPERATIONS_REHEARSAL.md) for the profile, smoke checks, alert acknowledgement, and recovery evidence.
 
 ## Phase 4 — Independent verification and release decision
 
