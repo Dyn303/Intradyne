@@ -68,3 +68,5 @@ See the [Phase 3 paper operations rehearsal](PAPER_OPERATIONS_REHEARSAL.md) for 
 - Re-run CI against the candidate revision including the PostgreSQL suite, Docker smoke and research ledger freshness. Repeat the phase exit checks with the candidate image and production-equivalent config. Update changelog and runbook alongside each functional change.
 - Record distinct decisions for research eligibility, paper operability and live readiness. For any future live request, follow the explicit operator sign-off, small-scope rollout and rollback criteria in `RUNBOOK.md:107–165`. Equity execution would need its own broker and compliance design. The immediate deliverables are reconciled evidence, verified kill controls and reproducible paper operation.
 - **Exit evidence.** A decision record linking each gate to its exact revision, environment, test result, responsible operator and any remaining blockers.
+
+See the [Phase 4 release decision](PHASE_4_RELEASE_DECISION.md) for the candidate and separate eligibility decisions.

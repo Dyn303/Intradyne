@@ -229,8 +229,10 @@ development machine:**
    this system. The structural rules remain enforced in code — spot only,
    long only, no leverage, whitelist.
 
-Then set `LIVE_TRADING_GATE_OPEN = True`, in its own commit, and start with
-`MODE=live LIVE_TRADING_ENABLED=true` and caps configured.
+Record the gate evidence, responsible operator, scope, and rollback trigger.
+After explicit operator sign-off, review the gate change in its own commit.
+Use a separately authorized, small-scope rollout with configured caps, and
+rehearse the rollback in section 4 before beginning it.
 
 ## 9. Common problems
 
