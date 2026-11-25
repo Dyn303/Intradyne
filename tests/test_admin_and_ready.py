@@ -7,7 +7,11 @@ the database healthy without opening it. They now hit the real handler.
 
 from __future__ import annotations
 
-import pytest
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from intradyne.api.app import app
@@ -15,15 +19,6 @@ from intradyne.risk.kill_switch import is_halted, set_halt
 
 
 client = TestClient(app)
-
-
-@pytest.fixture(autouse=True)
-def _reset_halt():
-    """The halt is process-global. Without this a failure mid-test would leave
-    trading halted for every test that follows."""
-    set_halt(False)
-    yield
-    set_halt(False)
 
 
 def test_admin_halt_toggle_sequence():
@@ -67,14 +62,72 @@ def test_readyz_reports_a_real_database_check():
     assert body["components"]["db"] is True
 
 
-def test_readyz_fails_when_the_database_is_unusable(monkeypatch):
+def test_operator_release_requires_secret_on_both_routes(monkeypatch):
+    monkeypatch.setenv("ADMIN_SECRET", "operator-test-secret")
+    set_halt(True, reason="test rehearsal")
+
+    for path, request in (
+        ("/admin/halt", {"json": {"enabled": False}}),
+        ("/admin/kill-switch/toggle", {"params": {"enabled": False}}),
+    ):
+        assert client.post(path, **request).status_code == 401
+        assert is_halted()
+
+    result = client.post(
+        "/admin/kill-switch/toggle",
+        params={"enabled": False},
+        headers={"X-Admin-Secret": "operator-test-secret"},
+    )
+    assert result.status_code == 200
+    assert not is_halted()
+
+
+def test_operator_halt_survives_process_restart():
+    set_halt(True, reason="test rehearsal")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from intradyne.risk.kill_switch import read_halt; "
+            "assert read_halt() == (True, 'test rehearsal')",
+        ],
+        env={
+            **os.environ,
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_invalid_halt_payload_does_not_release():
+    set_halt(True)
+    assert client.post("/admin/halt", json={}).status_code == 422
+    assert is_halted()
+
+
+def test_corrupt_ledger_fails_readiness():
+    Path(os.environ["EXPLAIN_LEDGER_PATH"]).write_bytes(b'{"event":')
+    response = client.get("/readyz")
+    assert response.status_code == 503
+    assert response.json()["components"]["ledger"] is False
+
+
+def test_readyz_fails_when_the_database_is_unusable(monkeypatch, tmp_path):
     """The stub could never fail. The real handler must."""
-    monkeypatch.setenv("DB_URL", "sqlite:////nonexistent-dir-xyz/definitely/no.sqlite")
+    blocked_parent = tmp_path / "file-not-directory"
+    blocked_parent.touch()
+    monkeypatch.setenv("DB_URL", f"sqlite:///{blocked_parent / 'trades.sqlite'}")
     from intradyne.core.config import reset_settings_cache
 
     reset_settings_cache()
     r = client.get("/readyz")
-    assert r.status_code in (503, 500) or r.json()["components"]["db"] is False
+    assert r.status_code == 503
+    assert r.json()["components"]["db"] is False
+    assert is_halted()
+    assert client.post("/admin/halt", json={"enabled": False}).status_code == 503
 
 
 def test_kill_switch_toggle_actually_stops_trading():

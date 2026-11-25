@@ -147,7 +147,7 @@ class OrderKeyStore:
         with self._db.connect() as conn:
             rows = conn.execute(
                 "SELECT key, symbol, side, qty, ts FROM order_keys "
-                "WHERE status = 'in_flight' ORDER BY ts"
+                "WHERE status IN ('in_flight', 'failed') ORDER BY ts"
             ).fetchall()
         return [
             {"key": k, "symbol": s, "side": d, "qty": q, "ts": t}

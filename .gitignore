@@ -30,6 +30,7 @@ portfolio_snapshot.json
 explainability_ledger.jsonl
 guardrails_ledger.jsonl
 orders_api_ledger_*.jsonl
+*.writer.lock
 
 # Virtualenvs
 .venv/

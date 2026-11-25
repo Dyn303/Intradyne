@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sys
 import threading
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Tuple
@@ -40,6 +42,29 @@ class Ledger:
         # Read once at construction rather than rescanning the file on every
         # append, which made writes O(n) and the ledger O(n^2) to fill.
         self._last_hash: str = self._read_last_hash()
+
+    @staticmethod
+    @contextmanager
+    def writer_lease(path: str) -> Iterator[None]:
+        """Give one service process ownership for the lifetime of its order paths."""
+        lease = Path(path).resolve().with_name(Path(path).name + ".writer.lock")
+        lease.parent.mkdir(parents=True, exist_ok=True)
+        with lease.open("a+b") as handle:
+            try:
+                if sys.platform == "win32":
+                    import msvcrt
+
+                    handle.seek(0)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as exc:
+                raise RuntimeError(
+                    "cannot acquire explainability ledger writer lease"
+                ) from exc
+            yield
 
     # ---- internals ----------------------------------------------------
 
@@ -131,15 +156,22 @@ class Ledger:
         ledger read as authentic.
         """
         prev = ""
-        for i, rec in enumerate(self.iter_all()):
-            stored = rec.get("hash")
-            if not isinstance(stored, str) or not stored:
-                return False, i, "record has no hash"
-            if rec.get("hash_prev", "") != prev:
-                return False, i, "hash_prev does not match previous record's hash"
-            if self._hash_record(rec) != stored:
-                return False, i, "record content does not match its hash"
-            prev = stored
+        with self._lock, self.path.open("rb") as stream:
+            for i, line in enumerate(stream):
+                try:
+                    rec = orjson.loads(line)
+                except orjson.JSONDecodeError:
+                    return False, i, "record is not valid JSON"
+                if not line.endswith(b"\n") or not isinstance(rec, dict):
+                    return False, i, "record is incomplete or not an object"
+                stored = rec.get("hash")
+                if not isinstance(stored, str) or not stored:
+                    return False, i, "record has no hash"
+                if rec.get("hash_prev", "") != prev:
+                    return False, i, "hash_prev does not match previous record's hash"
+                if self._hash_record(rec) != stored:
+                    return False, i, "record content does not match its hash"
+                prev = stored
         return True, None, "ok"
 
 

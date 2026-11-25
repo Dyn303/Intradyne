@@ -98,7 +98,7 @@ class RiskManager:
         if max_px <= 0:
             return False
         drop = (max_px - price) / max_px
-        if drop >= self.flash_crash_drop_1h:
+        if drop > self.flash_crash_drop_1h:
             self._register_breach(ts)
             return True
         return False

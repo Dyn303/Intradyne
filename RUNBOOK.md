@@ -65,6 +65,25 @@ curl -X POST localhost:8080/admin/halt \
 Confirm with `GET /risk/status` (`halted`, `halt_reason`). Every halt and every
 refused order is written to the hash-chained ledger.
 
+The operator halt is stored in `DB_URL` and survives process restart. Both
+halt endpoints require `X-Admin-Secret` when `ADMIN_SECRET` is configured.
+Production release requires that secret even when ordinary API or Telegram
+authentication succeeds. Verify uncertain broker claims on the venue before
+release. A halt cannot retract an order already sent to a venue.
+
+For the paper stop and restore rehearsal, engage the halt, confirm a blocked
+order, stop the service, and back up the database and ledger together. Restore
+to a disposable environment with one API process and the engine disabled.
+Confirm the persisted halt and the ledger verification result before release.
+Keep one writer per ledger path and use a filesystem that supports file locks.
+Never delete the lease file while a service may hold it. A corrupt ledger or
+unavailable halt store at startup requires operator recovery before serving.
+
+The Phase 1 rehearsal used two successive engine-disabled Docker containers.
+The second opened a copy of the first container's stopped SQLite database and
+ledger. It preserved the halt, rejected a paper order and a release without
+the operator secret, accepted the authorized release, and verified the ledger.
+
 ## 5. Alerts
 
 `deploy/monitoring/prometheus-alerts/intradyne.yml`, group `intradyne-safety`:

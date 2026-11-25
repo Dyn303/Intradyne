@@ -198,6 +198,17 @@ def test_paper_mode_is_not_gated_by_reconciliation(tmp_path):
     assert result["checked"] is False and is_halted() is False
 
 
+def test_failed_order_is_reconciled_after_restart(tmp_path):
+    db_url = f"sqlite:///{tmp_path / 'claims.sqlite'}"
+    store = OrderKeyStore(db_url)
+    store.reserve("idy-1", "BTC/USDT", "buy", 1.0)
+    store.fail("idy-1")
+
+    result = reconcile_on_start(OrderKeyStore(db_url), live=True)
+    assert [row["key"] for row in result["unreconciled"]] == ["idy-1"]
+    assert is_halted()
+
+
 def test_recent_claims_are_within_the_grace_period(tmp_path):
     store = OrderKeyStore(f"sqlite:///{tmp_path / 'k.sqlite'}")
     store.reserve("idy-1", "BTC/USDT", "buy", 1.0)
@@ -219,6 +230,66 @@ def test_live_broker_refuses_while_halted():
     set_halt(True, reason="manual stop")
     with pytest.raises(ComplianceError, match="halted"):
         asyncio.run(_broker(True).place_order("BTC/USDT", "buy", "market", 1.0, None))
+
+
+@pytest.mark.parametrize("ambiguous", [True, False])
+def test_queued_live_order_stops_when_halt_arrives(tmp_path, monkeypatch, ambiguous):
+    from intradyne.engine.broker_paper import PaperBroker
+    from intradyne.engine.execution import ExecContext, ExecutionManager
+    from intradyne.engine.portfolio import Portfolio
+
+    async def exercise():
+        started = asyncio.Event()
+        respond = asyncio.Event()
+        submissions = []
+
+        async def uncertain(*args, **kwargs):
+            submissions.append(kwargs["client_order_id"])
+            started.set()
+            await respond.wait()
+            if ambiguous:
+                raise TimeoutError("venue response lost")
+            return {"id": "confirmed-test-order", "price": 100}
+
+        broker = _broker(True)
+        monkeypatch.setattr(broker, "place_order", uncertain)
+        portfolio = Portfolio()
+        claims = OrderKeyStore(f"sqlite:///{tmp_path / 'claims.sqlite'}")
+        manager = ExecutionManager(
+            ExecContext(
+                portfolio=portfolio,
+                paper=PaperBroker(portfolio),
+                ledger=Ledger(str(tmp_path / "orders.jsonl")),
+                whitelist=["BTC/USDT"],
+                live_enabled=True,
+                live_broker=broker,
+                order_keys=claims,
+            )
+        )
+
+        def submit(strategy):
+            return manager.submit(
+                "BTC/USDT", "buy", "market", 1, 100, {}, strategy, {}, {}
+            )
+
+        first = asyncio.create_task(submit("first"))
+        await asyncio.wait_for(started.wait(), timeout=3)
+        second = asyncio.create_task(submit("second"))
+        await asyncio.sleep(0)
+        if not ambiguous:
+            set_halt(True, reason="operator halt while order is in flight")
+        respond.set()
+        if ambiguous:
+            with pytest.raises(TimeoutError, match="venue response lost"):
+                await first
+        else:
+            assert (await first)["id"] == "confirmed-test-order"
+        assert (await second)["action"] == "halt"
+        assert len(submissions) == 1
+        assert claims.status(submissions[0]) == ("failed" if ambiguous else "submitted")
+        assert is_halted()
+
+    asyncio.run(exercise())
 
 
 def test_live_broker_refuses_when_live_is_disabled():

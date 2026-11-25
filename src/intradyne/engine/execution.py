@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional
 
@@ -8,6 +9,12 @@ from loguru import logger
 from .broker_paper import PaperBroker
 from .broker_ccxt import CCXTBroker
 from intradyne.risk.guardrails import Guardrails, OrderReq
+from intradyne.risk.kill_switch import (
+    HaltStorageUnavailable,
+    halt_reason,
+    is_halted,
+    set_halt,
+)
 from intradyne.risk.shariah import (
     assert_whitelisted,
     enforce_spot_only,
@@ -78,6 +85,8 @@ class ExecutionManager:
 
     def __init__(self, ctx: ExecContext) -> None:
         self.ctx = ctx
+        self._live_order_lock = asyncio.Lock()
+        self._live_halt_write_failed = False
         #: Symbols holding a position too small for the venue to accept a
         #: closing order. Recorded so the refusal is reported once rather
         #: than on every tick -- see the dust floor in `submit`.
@@ -124,6 +133,20 @@ class ExecutionManager:
         mark = l1.get("last") or l1.get("bid") or l1.get("ask") or price
         if mark:
             self.ctx.marks.record(symbol, float(mark), ts=l1.get("ts"))
+
+    def sweep_paper_orders(self, l1: Mapping[str, Any]) -> None:
+        open_orders = self.ctx.paper.open_orders()
+        if not open_orders:
+            return
+        if is_halted():
+            for order_id, order in open_orders.items():
+                self.ctx.paper.cancel(order_id)
+                self.ctx.ledger.append(
+                    "order_canceled_halt",
+                    {"order_id": order_id, "symbol": order.symbol},
+                )
+            return
+        self.ctx.paper.on_tick(l1)
 
     def _record_notional(self, symbol: str, qty: float, px: Optional[float]) -> None:
         if self.ctx.limits is None or not px:
@@ -308,10 +331,25 @@ class ExecutionManager:
         gate_record = {"action": action, "reasons": reasons}
 
         if self.ctx.live_enabled and self.ctx.live_broker is not None:
-            # Claim an idempotency key before the venue is contacted, so a
-            # crash mid-flight cannot become a second real order on restart.
-            key = make_key(symbol, side, qty, strategy_id)
-            if self.ctx.order_keys is not None:
+            async with self._live_order_lock:
+                if self._live_halt_write_failed or is_halted():
+                    return {
+                        "status": "blocked",
+                        "action": "halt",
+                        "reasons": [
+                            halt_reason() or "live submission requires reconciliation"
+                        ],
+                    }
+                # Claim an idempotency key before the venue is contacted, so a
+                # crash mid-flight cannot become a second real order on restart.
+                key = make_key(symbol, side, qty, strategy_id)
+                if self.ctx.order_keys is None:
+                    set_halt(True, reason="live order key storage unavailable")
+                    return {
+                        "status": "blocked",
+                        "action": "halt",
+                        "reasons": ["order key storage unavailable"],
+                    }
                 try:
                     self.ctx.order_keys.reserve(key, symbol, side, qty)
                 except DuplicateOrder as exc:
@@ -325,18 +363,29 @@ class ExecutionManager:
                         "action": "duplicate",
                         "reasons": [str(exc)],
                     }
-            try:
-                res = await self.ctx.live_broker.place_order(
-                    symbol, side, type_, qty, price, params, client_order_id=key
-                )
-            except Exception:
-                # Keep the claim: the venue may have received it, so the key
-                # must not be freed for silent reuse.
-                if self.ctx.order_keys is not None:
-                    self.ctx.order_keys.fail(key)
-                raise
-            if self.ctx.order_keys is not None:
-                self.ctx.order_keys.complete(key, res.get("id"))
+                try:
+                    res = await self.ctx.live_broker.place_order(
+                        symbol, side, type_, qty, price, params, client_order_id=key
+                    )
+                    venue_id = res.get("id")
+                    if not venue_id:
+                        raise RuntimeError("venue acknowledgement lacks an order ID")
+                    self.ctx.order_keys.complete(key, venue_id)
+                except (Exception, asyncio.CancelledError):
+                    # Keep the claim: the venue may have received it, so the key
+                    # must not be freed for silent reuse. Halt before another order.
+                    try:
+                        set_halt(True, reason="unconfirmed live submission")
+                    except HaltStorageUnavailable:
+                        self._live_halt_write_failed = True
+                        logger.error(
+                            "could not persist halt after an unconfirmed order"
+                        )
+                    try:
+                        self.ctx.order_keys.fail(key)
+                    except Exception:
+                        logger.error("could not update unresolved order claim")
+                    raise
             px = res.get("price") or price
             if not self.ctx.fast_mode:
                 self.ctx.ledger.append(

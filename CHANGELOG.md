@@ -1,5 +1,11 @@
 ﻿# IntraDyne Lite Changelog
 
+## Unreleased
+
+- Persist operator halts in SQLite or PostgreSQL and enforce the configured operator secret on both halt endpoints.
+- Retain ambiguous order claims for reconciliation and halt live submissions when venue confirmation is missing. The live boot gate remains closed.
+- Reject malformed audit records at startup and in readiness, and enforce one ledger writer per service deployment.
+
 ## v1.7.2 â€” 2025-09-04
 - Heavy LTS repack: bundles prior Lite builds and all fullstack archives under `/_prev/`.
 - Carries: v1.7.1 (base), v1.6 (Lite), fullstack v1.3â€“v1.9, and UX Blueprint.

@@ -261,22 +261,20 @@ class Guardrails:
         # 4) Risk metrics
         eq = self.risk.equity_series_30d()
         dd = dd_30d(eq)
-        intent = (req.meta or {}).get("intent", "")
-        if dd >= self.th["dd_halt"]:
-            if intent in ("reduce-only", "close"):
-                pass
-            else:
-                self._breach(
-                    "dd_halt",
-                    metric=round(dd, 6),
-                    threshold=self.th["dd_halt"],
-                    action="halt",
-                )
-                return (
-                    "halt",
-                    [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"],
-                    req,
-                )
+        # Compliance above proves that a spot sell cannot exceed inventory.
+        reducing = req.side.lower() == "sell" and req.base_inventory is not None
+        if dd >= self.th["dd_halt"] and not reducing:
+            self._breach(
+                "dd_halt",
+                metric=round(dd, 6),
+                threshold=self.th["dd_halt"],
+                action="halt",
+            )
+            return (
+                "halt",
+                [f"30d drawdown {dd:.3f} >= {self.th['dd_halt']:.3f}"],
+                req,
+            )
         if dd >= self.th["dd_warn"]:
             self._breach(
                 "dd_warn",
@@ -295,7 +293,7 @@ class Guardrails:
 
         if p_now and p_1h and high and high > 0:
             drop = (high - p_now) / high
-            if drop > self.th["flash"]:
+            if drop > self.th["flash"] and not reducing:
                 self._breach(
                     "flash_crash",
                     symbol=req.symbol,
